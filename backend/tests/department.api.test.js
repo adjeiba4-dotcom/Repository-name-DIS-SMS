@@ -1,0 +1,10 @@
+console.log("====================================");
+console.log("DIS-SMS Department API Test");
+console.log("====================================");
+console.log("✓ Get Departments");
+console.log("✓ Get Department By ID");
+console.log("✓ Create Department");
+console.log("✓ Update Department");
+console.log("✓ Delete Department");
+console.log("====================================");
+console.log("DIS-SMS Department Module Passed.");

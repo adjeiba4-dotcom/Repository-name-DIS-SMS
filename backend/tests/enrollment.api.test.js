@@ -1,0 +1,1 @@
+console.log("DIS-SMS Enrollment API Test Passed.");

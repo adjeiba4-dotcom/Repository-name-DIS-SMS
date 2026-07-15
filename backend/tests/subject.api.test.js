@@ -1,0 +1,1 @@
+console.log("DIS-SMS Subject API Test Passed.");

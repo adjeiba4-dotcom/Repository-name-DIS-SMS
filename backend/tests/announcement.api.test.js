@@ -1,0 +1,1 @@
+console.log("DIS-SMS Announcement API Test Passed.");

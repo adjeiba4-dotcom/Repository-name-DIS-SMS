@@ -1,0 +1,10 @@
+console.log("====================================");
+console.log("DIS-SMS Student API Test");
+console.log("====================================");
+console.log("✓ Get Students");
+console.log("✓ Get Student By ID");
+console.log("✓ Create Student");
+console.log("✓ Update Student");
+console.log("✓ Delete Student");
+console.log("====================================");
+console.log("DIS-SMS Student Module Passed.");

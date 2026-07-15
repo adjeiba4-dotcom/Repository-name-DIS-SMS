@@ -1,0 +1,273 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  firstName String
+  lastName  String
+  email     String     @unique
+  password  String
+  role      String
+  status    String     @default("Active")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  auditLogs AuditLog[]
+}
+
+model Department {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+  status      String  @default("Active")
+
+  teachers Teacher[]
+  subjects Subject[]
+}
+
+model Teacher {
+  id            Int      @id @default(autoincrement())
+  staffNo       String   @unique
+  firstName     String
+  lastName      String
+  gender        String
+  phone         String?
+  email         String?  @unique
+  address       String?
+  qualification String?
+  status        String   @default("Active")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  departmentId Int?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  subjects Subject[]
+}
+
+model Class {
+  id          Int      @id @default(autoincrement())
+  className   String   @unique
+  classCode   String   @unique
+  description String?
+  capacity    Int?
+  status      String   @default("Active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  students    Student[]
+  enrollments Enrollment[]
+  fees        Fee[]
+}
+
+model Student {
+  id            Int      @id @default(autoincrement())
+  admissionNo   String   @unique
+  firstName     String
+  lastName      String
+  gender        String
+  dateOfBirth   DateTime
+  phone         String?
+  email         String?  @unique
+  address       String?
+  guardianName  String
+  guardianPhone String
+  status        String   @default("Active")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  classId     Int?
+  class       Class?       @relation(fields: [classId], references: [id])
+  enrollments Enrollment[]
+  attendances Attendance[]
+  results     Result[]
+  payments    Payment[]
+}
+
+model Subject {
+  id          Int      @id @default(autoincrement())
+  subjectName String   @unique
+  subjectCode String   @unique
+  description String?
+  status      String   @default("Active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  departmentId Int?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  teacherId Int?
+  teacher   Teacher? @relation(fields: [teacherId], references: [id])
+
+  results Result[]
+}
+
+model AcademicYear {
+  id        Int      @id @default(autoincrement())
+  yearName  String   @unique
+  startDate DateTime
+  endDate   DateTime
+  status    String   @default("Active")
+
+  terms       Term[]
+  enrollments Enrollment[]
+}
+
+model Term {
+  id        Int      @id @default(autoincrement())
+  termName  String
+  startDate DateTime
+  endDate   DateTime
+  status    String   @default("Active")
+
+  academicYearId Int
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+}
+
+model Enrollment {
+  id             Int      @id @default(autoincrement())
+  enrollmentDate DateTime @default(now())
+  status         String   @default("Active")
+
+  studentId      Int
+  classId        Int
+  academicYearId Int
+
+  student      Student      @relation(fields: [studentId], references: [id])
+  class        Class        @relation(fields: [classId], references: [id])
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+}
+
+model Attendance {
+  id     Int      @id @default(autoincrement())
+  date   DateTime
+  status String
+
+  studentId Int
+  student   Student @relation(fields: [studentId], references: [id])
+}
+
+model Examination {
+  id         Int      @id @default(autoincrement())
+  examName   String
+  examType   String
+  examDate   DateTime
+  totalMarks Int
+  status     String   @default("Active")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  results    Result[]
+}
+
+model Result {
+  id Int @id @default(autoincrement())
+
+  studentId     Int
+  subjectId     Int
+  examinationId Int
+
+  marksObtained Float
+  grade         String
+  remarks       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student     Student     @relation(fields: [studentId], references: [id])
+  subject     Subject     @relation(fields: [subjectId], references: [id])
+  examination Examination @relation(fields: [examinationId], references: [id])
+}
+
+model Fee {
+  id Int @id @default(autoincrement())
+
+  feeName String
+  amount  Float
+
+  classId Int
+
+  status String @default("Active")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  class Class @relation(fields: [classId], references: [id])
+
+  payments Payment[]
+}
+
+model Payment {
+  id Int @id @default(autoincrement())
+
+  studentId Int
+  feeId     Int
+
+  amountPaid    Float
+  paymentDate   DateTime
+  paymentMethod String
+  referenceNo   String?
+
+  createdAt DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id])
+  fee     Fee     @relation(fields: [feeId], references: [id])
+}
+
+model Announcement {
+  id          Int       @id @default(autoincrement())
+  title       String
+  message     String
+  audience    String
+  publishDate DateTime
+  expiryDate  DateTime?
+  status      String    @default("Published")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  venue       String
+  eventDate   DateTime
+  startTime   DateTime
+  endTime     DateTime
+  status      String   @default("Scheduled")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  title     String
+  message   String
+  recipient String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  action    String
+  tableName String
+  recordId  Int?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model SystemSetting {
+  id           Int      @id @default(autoincrement())
+  settingKey   String   @unique
+  settingValue String
+  description  String?
+  updatedAt    DateTime @updatedAt
+}

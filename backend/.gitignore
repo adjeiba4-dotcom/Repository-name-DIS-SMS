@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.*
+
+# Prisma
+/app/generated/prisma
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Build output
+dist/
+build/
+
+# Coverage
+coverage/
+
+# Operating System
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/settings.json

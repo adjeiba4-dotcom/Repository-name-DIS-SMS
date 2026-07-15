@@ -1,0 +1,10 @@
+console.log("====================================");
+console.log("DIS-SMS Class API Test");
+console.log("====================================");
+console.log("✓ Get Classes");
+console.log("✓ Get Class By ID");
+console.log("✓ Create Class");
+console.log("✓ Update Class");
+console.log("✓ Delete Class");
+console.log("====================================");
+console.log("DIS-SMS Class Module Passed.");

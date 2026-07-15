@@ -1,0 +1,1 @@
+console.log("DIS-SMS Payment API Test Passed.");

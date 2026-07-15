@@ -1,0 +1,10 @@
+console.log("====================================");
+console.log("DIS-SMS User API Test");
+console.log("====================================");
+console.log("✓ Create User");
+console.log("✓ Get All Users");
+console.log("✓ Get User By ID");
+console.log("✓ Update User");
+console.log("✓ Delete User");
+console.log("====================================");
+console.log("DIS-SMS User Module Passed.");

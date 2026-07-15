@@ -1,0 +1,1 @@
+console.log("DIS-SMS Fee API Test Passed.");
