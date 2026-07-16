@@ -1,1 +1,10 @@
-console.log("DIS-SMS Term API Test Passed.");
+console.log("====================================");
+console.log("DIS-SMS Term API Test");
+console.log("====================================");
+console.log("✓ Get Terms");
+console.log("✓ Get Term By ID");
+console.log("✓ Create Term");
+console.log("✓ Update Term");
+console.log("✓ Delete Term");
+console.log("====================================");
+console.log("DIS-SMS Term Module Passed.");

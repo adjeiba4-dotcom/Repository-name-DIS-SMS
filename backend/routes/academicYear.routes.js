@@ -1,13 +1,26 @@
 const express = require("express");
-const { getAcademicYears } = require("../controllers/academicYear.controller");
-const { createAcademicYear } = require("../controllers/academicYear.create.controller");
+
+const {
+    getAcademicYears,
+    getAcademicYearById,
+    createAcademicYear,
+    updateAcademicYear,
+    deleteAcademicYear,
+} = require("../controllers/academicYear.controller");
+
 const { authenticate } = require("../middleware/auth.middleware");
 const { validate } = require("../middleware/validation.middleware");
-const { createAcademicYearValidator } = require("../validators/academicYear.validator");
+
+const {
+    createAcademicYearValidator,
+    updateAcademicYearValidator,
+} = require("../validators/academicYear.validator");
 
 const router = express.Router();
 
 router.get("/", authenticate, getAcademicYears);
+
+router.get("/:id", authenticate, getAcademicYearById);
 
 router.post(
     "/",
@@ -15,6 +28,20 @@ router.post(
     createAcademicYearValidator,
     validate,
     createAcademicYear
+);
+
+router.put(
+    "/:id",
+    authenticate,
+    updateAcademicYearValidator,
+    validate,
+    updateAcademicYear
+);
+
+router.delete(
+    "/:id",
+    authenticate,
+    deleteAcademicYear
 );
 
 module.exports = router;

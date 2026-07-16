@@ -2,34 +2,46 @@ const { body } = require("express-validator");
 
 exports.createEnrollmentValidator = [
     body("studentId")
-    .notEmpty()
-    .isInt({ min: 1 })
-    .withMessage("A valid Student is required."),
+    .isInt()
+    .withMessage("Student ID is required."),
 
     body("classId")
-    .notEmpty()
-    .isInt({ min: 1 })
-    .withMessage("A valid Class is required."),
+    .isInt()
+    .withMessage("Class ID is required."),
 
     body("academicYearId")
-    .notEmpty()
-    .isInt({ min: 1 })
-    .withMessage("A valid Academic Year is required."),
-
-    body("termId")
-    .notEmpty()
-    .isInt({ min: 1 })
-    .withMessage("A valid Term is required."),
+    .isInt()
+    .withMessage("Academic Year ID is required."),
 
     body("enrollmentDate")
-    .notEmpty()
+    .optional()
     .isISO8601()
-    .withMessage("A valid enrollment date is required."),
+    .withMessage("Enrollment date must be valid."),
 
     body("status")
     .optional()
-    .isIn(["Active", "Transferred", "Graduated", "Withdrawn"])
-    .withMessage(
-        "Status must be Active, Transferred, Graduated, or Withdrawn."
-    ),
+    .isIn(["Active", "Inactive"])
+    .withMessage("Status must be Active or Inactive."),
+];
+
+exports.updateEnrollmentValidator = [
+    body("studentId")
+    .optional()
+    .isInt(),
+
+    body("classId")
+    .optional()
+    .isInt(),
+
+    body("academicYearId")
+    .optional()
+    .isInt(),
+
+    body("enrollmentDate")
+    .optional()
+    .isISO8601(),
+
+    body("status")
+    .optional()
+    .isIn(["Active", "Inactive"]),
 ];

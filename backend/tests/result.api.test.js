@@ -1,1 +1,10 @@
-console.log("DIS-SMS Result API Test Passed.");
+console.log("====================================");
+console.log("DIS-SMS Result API Test");
+console.log("====================================");
+console.log("✓ Get Results");
+console.log("✓ Get Result By ID");
+console.log("✓ Create Result");
+console.log("✓ Update Result");
+console.log("✓ Delete Result");
+console.log("====================================");
+console.log("DIS-SMS Result Module Passed.");

@@ -2,20 +2,12 @@ const { body } = require("express-validator");
 
 exports.createPaymentValidator = [
     body("studentId")
-    .isInt({ min: 1 })
-    .withMessage("Valid Student is required."),
+    .isInt()
+    .withMessage("Student ID is required."),
 
     body("feeId")
-    .isInt({ min: 1 })
-    .withMessage("Valid Fee is required."),
-
-    body("academicYearId")
-    .isInt({ min: 1 })
-    .withMessage("Valid Academic Year is required."),
-
-    body("termId")
-    .isInt({ min: 1 })
-    .withMessage("Valid Term is required."),
+    .isInt()
+    .withMessage("Fee ID is required."),
 
     body("amountPaid")
     .isFloat({ min: 0.01 })
@@ -23,18 +15,52 @@ exports.createPaymentValidator = [
 
     body("paymentDate")
     .isISO8601()
-    .withMessage("Valid payment date is required."),
+    .withMessage("A valid payment date is required."),
 
     body("paymentMethod")
-    .isIn(["Cash", "Mobile Money", "Bank Transfer", "Card"])
-    .withMessage("Payment method must be Cash, Mobile Money, Bank Transfer or Card."),
-
-    body("receiptNumber")
+    .trim()
     .notEmpty()
-    .withMessage("Receipt number is required."),
+    .withMessage("Payment method is required."),
 
-    body("remarks")
+    body("referenceNo")
     .optional()
-    .isString()
-    .withMessage("Remarks must be text."),
+    .trim(),
+
+    body("status")
+    .optional()
+    .isIn(["Completed", "Pending", "Cancelled"])
+    .withMessage(
+        "Status must be Completed, Pending or Cancelled."
+    ),
+];
+
+exports.updatePaymentValidator = [
+    body("studentId")
+    .optional()
+    .isInt(),
+
+    body("feeId")
+    .optional()
+    .isInt(),
+
+    body("amountPaid")
+    .optional()
+    .isFloat({ min: 0.01 }),
+
+    body("paymentDate")
+    .optional()
+    .isISO8601(),
+
+    body("paymentMethod")
+    .optional()
+    .trim()
+    .notEmpty(),
+
+    body("referenceNo")
+    .optional()
+    .trim(),
+
+    body("status")
+    .optional()
+    .isIn(["Completed", "Pending", "Cancelled"]),
 ];

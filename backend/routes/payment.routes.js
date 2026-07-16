@@ -1,13 +1,26 @@
 const express = require("express");
-const { getPayments } = require("../controllers/payment.controller");
-const { createPayment } = require("../controllers/payment.create.controller");
+
+const {
+    getPayments,
+    getPaymentById,
+    createPayment,
+    updatePayment,
+    deletePayment,
+} = require("../controllers/payment.controller");
+
 const { authenticate } = require("../middleware/auth.middleware");
 const { validate } = require("../middleware/validation.middleware");
-const { createPaymentValidator } = require("../validators/payment.validator");
+
+const {
+    createPaymentValidator,
+    updatePaymentValidator,
+} = require("../validators/payment.validator");
 
 const router = express.Router();
 
 router.get("/", authenticate, getPayments);
+
+router.get("/:id", authenticate, getPaymentById);
 
 router.post(
     "/",
@@ -15,6 +28,20 @@ router.post(
     createPaymentValidator,
     validate,
     createPayment
+);
+
+router.put(
+    "/:id",
+    authenticate,
+    updatePaymentValidator,
+    validate,
+    updatePayment
+);
+
+router.delete(
+    "/:id",
+    authenticate,
+    deletePayment
 );
 
 module.exports = router;

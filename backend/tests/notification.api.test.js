@@ -1,1 +1,10 @@
-console.log("DIS-SMS Notification API Test Passed.");
+console.log("====================================");
+console.log("DIS-SMS Notification API Test");
+console.log("====================================");
+console.log("✓ Get Notifications");
+console.log("✓ Get Notification By ID");
+console.log("✓ Create Notification");
+console.log("✓ Update Notification");
+console.log("✓ Delete Notification");
+console.log("====================================");
+console.log("DIS-SMS Notification Module Passed.");

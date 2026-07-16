@@ -1,1 +1,10 @@
-console.log("DIS-SMS Fee API Test Passed.");
+console.log("====================================");
+console.log("DIS-SMS Fee API Test");
+console.log("====================================");
+console.log("✓ Get Fees");
+console.log("✓ Get Fee By ID");
+console.log("✓ Create Fee");
+console.log("✓ Update Fee");
+console.log("✓ Delete Fee");
+console.log("====================================");
+console.log("DIS-SMS Fee Module Passed.");

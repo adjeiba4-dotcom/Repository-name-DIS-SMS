@@ -2,21 +2,41 @@ const { body } = require("express-validator");
 
 exports.createAcademicYearValidator = [
     body("yearName")
+    .trim()
     .notEmpty()
-    .withMessage("Academic year name is required."),
+    .withMessage("Academic year is required."),
 
     body("startDate")
     .notEmpty()
     .isISO8601()
-    .withMessage("A valid start date is required."),
+    .withMessage("Valid start date is required."),
 
     body("endDate")
     .notEmpty()
     .isISO8601()
-    .withMessage("A valid end date is required."),
+    .withMessage("Valid end date is required."),
 
     body("status")
     .optional()
     .isIn(["Active", "Inactive"])
-    .withMessage("Status must be either Active or Inactive."),
+    .withMessage("Status must be Active or Inactive."),
+];
+
+exports.updateAcademicYearValidator = [
+    body("yearName")
+    .optional()
+    .trim()
+    .notEmpty(),
+
+    body("startDate")
+    .optional()
+    .isISO8601(),
+
+    body("endDate")
+    .optional()
+    .isISO8601(),
+
+    body("status")
+    .optional()
+    .isIn(["Active", "Inactive"]),
 ];

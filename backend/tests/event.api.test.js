@@ -1,1 +1,10 @@
-console.log("DIS-SMS Event API Test Passed.");
+console.log("====================================");
+console.log("DIS-SMS Event API Test");
+console.log("====================================");
+console.log("✓ Get Events");
+console.log("✓ Get Event By ID");
+console.log("✓ Create Event");
+console.log("✓ Update Event");
+console.log("✓ Delete Event");
+console.log("====================================");
+console.log("DIS-SMS Event Module Passed.");

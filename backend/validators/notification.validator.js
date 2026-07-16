@@ -2,21 +2,43 @@ const { body } = require("express-validator");
 
 exports.createNotificationValidator = [
     body("title")
+    .trim()
     .notEmpty()
     .withMessage("Notification title is required."),
 
     body("message")
+    .trim()
     .notEmpty()
     .withMessage("Notification message is required."),
 
-    body("recipientType")
-    .isIn(["All", "Student", "Teacher", "Parent", "Staff"])
-    .withMessage(
-        "Recipient type must be All, Student, Teacher, Parent or Staff."
-    ),
+    body("recipient")
+    .trim()
+    .notEmpty()
+    .withMessage("Recipient is required."),
 
-    body("status")
+    body("isRead")
     .optional()
-    .isIn(["Pending", "Sent", "Failed"])
-    .withMessage("Status must be Pending, Sent or Failed."),
+    .isBoolean()
+    .withMessage("isRead must be true or false."),
+];
+
+exports.updateNotificationValidator = [
+    body("title")
+    .optional()
+    .trim()
+    .notEmpty(),
+
+    body("message")
+    .optional()
+    .trim()
+    .notEmpty(),
+
+    body("recipient")
+    .optional()
+    .trim()
+    .notEmpty(),
+
+    body("isRead")
+    .optional()
+    .isBoolean(),
 ];

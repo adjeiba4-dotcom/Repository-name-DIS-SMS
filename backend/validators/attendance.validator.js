@@ -2,26 +2,30 @@ const { body } = require("express-validator");
 
 exports.createAttendanceValidator = [
     body("studentId")
-    .isInt({ min: 1 })
-    .withMessage("Valid student is required."),
+    .isInt()
+    .withMessage("Student ID is required."),
 
-    body("classId")
-    .isInt({ min: 1 })
-    .withMessage("Valid class is required."),
-
-    body("academicYearId")
-    .isInt({ min: 1 })
-    .withMessage("Valid academic year is required."),
-
-    body("termId")
-    .isInt({ min: 1 })
-    .withMessage("Valid term is required."),
-
-    body("attendanceDate")
+    body("date")
     .isISO8601()
-    .withMessage("Valid attendance date is required."),
+    .withMessage("A valid attendance date is required."),
 
     body("status")
     .isIn(["Present", "Absent", "Late", "Excused"])
-    .withMessage("Status must be Present, Absent, Late or Excused."),
+    .withMessage(
+        "Status must be Present, Absent, Late or Excused."
+    ),
+];
+
+exports.updateAttendanceValidator = [
+    body("studentId")
+    .optional()
+    .isInt(),
+
+    body("date")
+    .optional()
+    .isISO8601(),
+
+    body("status")
+    .optional()
+    .isIn(["Present", "Absent", "Late", "Excused"]),
 ];

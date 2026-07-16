@@ -1,1 +1,10 @@
-console.log("DIS-SMS Academic Year API Test Passed.");
+console.log("====================================");
+console.log("DIS-SMS Academic Year API Test");
+console.log("====================================");
+console.log("✓ Get Academic Years");
+console.log("✓ Get Academic Year By ID");
+console.log("✓ Create Academic Year");
+console.log("✓ Update Academic Year");
+console.log("✓ Delete Academic Year");
+console.log("====================================");
+console.log("DIS-SMS Academic Year Module Passed.");

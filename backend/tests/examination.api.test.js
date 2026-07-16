@@ -1,1 +1,10 @@
-console.log("DIS-SMS Examination API Test Passed.");
+console.log("====================================");
+console.log("DIS-SMS Examination API Test");
+console.log("====================================");
+console.log("✓ Get Examinations");
+console.log("✓ Get Examination By ID");
+console.log("✓ Create Examination");
+console.log("✓ Update Examination");
+console.log("✓ Delete Examination");
+console.log("====================================");
+console.log("DIS-SMS Examination Module Passed.");

@@ -1,13 +1,26 @@
 const express = require("express");
-const { getAnnouncements } = require("../controllers/announcement.controller");
-const { createAnnouncement } = require("../controllers/announcement.create.controller");
+
+const {
+    getAnnouncements,
+    getAnnouncementById,
+    createAnnouncement,
+    updateAnnouncement,
+    deleteAnnouncement,
+} = require("../controllers/announcement.controller");
+
 const { authenticate } = require("../middleware/auth.middleware");
 const { validate } = require("../middleware/validation.middleware");
-const { createAnnouncementValidator } = require("../validators/announcement.validator");
+
+const {
+    createAnnouncementValidator,
+    updateAnnouncementValidator,
+} = require("../validators/announcement.validator");
 
 const router = express.Router();
 
 router.get("/", authenticate, getAnnouncements);
+
+router.get("/:id", authenticate, getAnnouncementById);
 
 router.post(
     "/",
@@ -15,6 +28,20 @@ router.post(
     createAnnouncementValidator,
     validate,
     createAnnouncement
+);
+
+router.put(
+    "/:id",
+    authenticate,
+    updateAnnouncementValidator,
+    validate,
+    updateAnnouncement
+);
+
+router.delete(
+    "/:id",
+    authenticate,
+    deleteAnnouncement
 );
 
 module.exports = router;

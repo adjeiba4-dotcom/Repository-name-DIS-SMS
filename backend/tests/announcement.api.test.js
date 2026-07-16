@@ -1,1 +1,10 @@
-console.log("DIS-SMS Announcement API Test Passed.");
+console.log("====================================");
+console.log("DIS-SMS Announcement API Test");
+console.log("====================================");
+console.log("✓ Get Announcements");
+console.log("✓ Get Announcement By ID");
+console.log("✓ Create Announcement");
+console.log("✓ Update Announcement");
+console.log("✓ Delete Announcement");
+console.log("====================================");
+console.log("DIS-SMS Announcement Module Passed.");

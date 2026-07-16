@@ -1,13 +1,26 @@
 const express = require("express");
-const { getEvents } = require("../controllers/event.controller");
-const { createEvent } = require("../controllers/event.create.controller");
+
+const {
+    getEvents,
+    getEventById,
+    createEvent,
+    updateEvent,
+    deleteEvent,
+} = require("../controllers/event.controller");
+
 const { authenticate } = require("../middleware/auth.middleware");
 const { validate } = require("../middleware/validation.middleware");
-const { createEventValidator } = require("../validators/event.validator");
+
+const {
+    createEventValidator,
+    updateEventValidator,
+} = require("../validators/event.validator");
 
 const router = express.Router();
 
 router.get("/", authenticate, getEvents);
+
+router.get("/:id", authenticate, getEventById);
 
 router.post(
     "/",
@@ -15,6 +28,20 @@ router.post(
     createEventValidator,
     validate,
     createEvent
+);
+
+router.put(
+    "/:id",
+    authenticate,
+    updateEventValidator,
+    validate,
+    updateEvent
+);
+
+router.delete(
+    "/:id",
+    authenticate,
+    deleteEvent
 );
 
 module.exports = router;

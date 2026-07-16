@@ -4,59 +4,55 @@ exports.getDashboardStatistics = async() => {
     const [
         totalStudents,
         totalTeachers,
+        totalDepartments,
         totalClasses,
         totalSubjects,
-        totalPayments,
+        totalAcademicYears,
+        totalTerms,
+        totalEnrollments,
+        totalAttendance,
+        totalExaminations,
+        totalResults,
         totalFees,
+        totalPayments,
         totalAnnouncements,
         totalEvents,
         totalNotifications,
     ] = await Promise.all([
         db.student.count(),
         db.teacher.count(),
+        db.department.count(),
         db.class.count(),
         db.subject.count(),
-        db.payment.count(),
+        db.academicYear.count(),
+        db.term.count(),
+        db.enrollment.count(),
+        db.attendance.count(),
+        db.examination.count(),
+        db.result.count(),
         db.fee.count(),
+        db.payment.count(),
         db.announcement.count(),
         db.event.count(),
         db.notification.count(),
     ]);
 
-    const totalRevenue = await db.payment.aggregate({
-        _sum: {
-            amountPaid: true,
-        },
-    });
-
-    const averageResult = await db.result.aggregate({
-        _avg: {
-            marksObtained: true,
-        },
-    });
-
     return {
-        schoolOverview: {
-            totalStudents,
-            totalTeachers,
-            totalClasses,
-            totalSubjects,
-        },
-
-        finance: {
-            totalFees,
-            totalPayments,
-            totalRevenue: totalRevenue._sum.amountPaid || 0,
-        },
-
-        academics: {
-            averageScore: averageResult._avg.marksObtained || 0,
-        },
-
-        communication: {
-            totalAnnouncements,
-            totalEvents,
-            totalNotifications,
-        },
+        totalStudents,
+        totalTeachers,
+        totalDepartments,
+        totalClasses,
+        totalSubjects,
+        totalAcademicYears,
+        totalTerms,
+        totalEnrollments,
+        totalAttendance,
+        totalExaminations,
+        totalResults,
+        totalFees,
+        totalPayments,
+        totalAnnouncements,
+        totalEvents,
+        totalNotifications,
     };
 };

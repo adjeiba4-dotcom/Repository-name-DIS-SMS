@@ -4,7 +4,7 @@ exports.loginValidator = [
     body("email")
     .trim()
     .isEmail()
-    .withMessage("Valid email is required."),
+    .withMessage("A valid email is required."),
 
     body("password")
     .notEmpty()

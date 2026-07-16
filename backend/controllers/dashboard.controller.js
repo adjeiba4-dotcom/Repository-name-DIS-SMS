@@ -1,11 +1,16 @@
 const dashboardService = require("../services/dashboard.service");
 
-exports.getDashboard = async(req, res) => {
-    const dashboard = await dashboardService.getDashboard();
+exports.getDashboardStatistics = async(req, res, next) => {
+    try {
+        const statistics =
+            await dashboardService.getDashboardStatistics();
 
-    res.json({
-        success: true,
-        message: "Dashboard data retrieved successfully.",
-        data: dashboard,
-    });
+        res.status(200).json({
+            success: true,
+            message: "Dashboard statistics retrieved successfully.",
+            data: statistics,
+        });
+    } catch (error) {
+        next(error);
+    }
 };

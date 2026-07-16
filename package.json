@@ -1,7 +1,7 @@
 {
     "name": "backend",
     "version": "1.0.0",
-    "description": "DIS-SMS Backend API",
+    "description": "DIS-SMS Backend API - School Management System",
     "main": "server.js",
     "directories": {
         "test": "tests"
@@ -10,23 +10,21 @@
         "dev": "nodemon server.js",
         "start": "node server.js",
         "test": "node tests/dashboard.api.test.js",
-
         "prisma:generate": "prisma generate",
-        "prisma:validate": "prisma validate",
-        "prisma:migrate": "prisma migrate dev",
-        "prisma:reset": "prisma migrate reset",
-        "prisma:studio": "prisma studio",
-
-        "db:push": "prisma db push",
-        "db:seed": "node seeders/admin.seeder.js"
+        "prisma:push": "prisma db push",
+        "prisma:migrate": "prisma migrate dev"
     },
     "keywords": [
         "school",
-        "management",
+        "school-management-system",
+        "sms",
+        "education",
         "erp",
         "express",
         "prisma",
-        "mysql"
+        "mysql",
+        "backend",
+        "api"
     ],
     "author": "Emmanuel Adjei Baffour",
     "license": "ISC",
@@ -44,6 +42,6 @@
         "prisma": "^6.16.2"
     },
     "devDependencies": {
-        "nodemon": "^3.1.14"
+        "nodemon": "^3.1.10"
     }
 }

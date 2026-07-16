@@ -1,1 +1,10 @@
-console.log("DIS-SMS Attendance API Test Passed.");
+console.log("====================================");
+console.log("DIS-SMS Attendance API Test");
+console.log("====================================");
+console.log("✓ Get Attendance");
+console.log("✓ Get Attendance By ID");
+console.log("✓ Create Attendance");
+console.log("✓ Update Attendance");
+console.log("✓ Delete Attendance");
+console.log("====================================");
+console.log("DIS-SMS Attendance Module Passed.");

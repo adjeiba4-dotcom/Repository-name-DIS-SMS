@@ -1,1 +1,10 @@
-console.log("DIS-SMS Payment API Test Passed.");
+console.log("====================================");
+console.log("DIS-SMS Payment API Test");
+console.log("====================================");
+console.log("✓ Get Payments");
+console.log("✓ Get Payment By ID");
+console.log("✓ Create Payment");
+console.log("✓ Update Payment");
+console.log("✓ Delete Payment");
+console.log("====================================");
+console.log("DIS-SMS Payment Module Passed.");

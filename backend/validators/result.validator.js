@@ -2,34 +2,23 @@ const { body } = require("express-validator");
 
 exports.createResultValidator = [
     body("studentId")
-    .isInt({ min: 1 })
-    .withMessage("Valid Student is required."),
-
-    body("examinationId")
-    .isInt({ min: 1 })
-    .withMessage("Valid Examination is required."),
+    .isInt()
+    .withMessage("Student ID is required."),
 
     body("subjectId")
-    .isInt({ min: 1 })
-    .withMessage("Valid Subject is required."),
+    .isInt()
+    .withMessage("Subject ID is required."),
 
-    body("classId")
-    .isInt({ min: 1 })
-    .withMessage("Valid Class is required."),
+    body("examinationId")
+    .isInt()
+    .withMessage("Examination ID is required."),
 
-    body("academicYearId")
-    .isInt({ min: 1 })
-    .withMessage("Valid Academic Year is required."),
-
-    body("termId")
-    .isInt({ min: 1 })
-    .withMessage("Valid Term is required."),
-
-    body("marks")
-    .isFloat({ min: 0, max: 100 })
-    .withMessage("Marks must be between 0 and 100."),
+    body("marksObtained")
+    .isFloat({ min: 0 })
+    .withMessage("Marks obtained must be a valid number."),
 
     body("grade")
+    .trim()
     .notEmpty()
     .withMessage("Grade is required."),
 
@@ -37,4 +26,31 @@ exports.createResultValidator = [
     .optional()
     .isString()
     .withMessage("Remarks must be text."),
+];
+
+exports.updateResultValidator = [
+    body("studentId")
+    .optional()
+    .isInt(),
+
+    body("subjectId")
+    .optional()
+    .isInt(),
+
+    body("examinationId")
+    .optional()
+    .isInt(),
+
+    body("marksObtained")
+    .optional()
+    .isFloat({ min: 0 }),
+
+    body("grade")
+    .optional()
+    .trim()
+    .notEmpty(),
+
+    body("remarks")
+    .optional()
+    .isString(),
 ];
