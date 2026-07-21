@@ -65,7 +65,7 @@ exports.deleteStudent = async(req, res, next) => {
 
         res.status(200).json({
             success: true,
-            message: "Student deleted successfully.",
+            message: "Student archived successfully.",
             data: result,
         });
     } catch (error) {

@@ -1,0 +1,97 @@
+==================== auth.controller.js ====================
+const authService = require("../services/auth.service");
+const { generateToken } = require("../helpers/jwt.helper");
+
+exports.login = async(req, res, next) => {
+    try {
+        const { email, password } = req.body;
+
+        const user = await authService.login(email, password);
+
+        const token = generateToken(user);
+
+        res.status(200).json({
+            success: true,
+            message: "Login successful.",
+            token,
+            user,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+==================== auth.service.js ====================
+const bcrypt = require("bcryptjs");
+const authRepository = require("../repositories/auth.repository");
+
+exports.login = async(email, password) => {
+    const user = await authRepository.findUserByEmail(email);
+
+    if (!user) {
+        throw new Error("Invalid email or password.");
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+
+    if (!passwordMatch) {
+        throw new Error("Invalid email or password.");
+    }
+
+    return {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+    };
+};
+==================== auth.repository.js ====================
+const db = require("../database/db");
+
+exports.findUserByEmail = async(email) => {
+    return await db.user.findUnique({
+        where: {
+            email,
+        },
+    });
+};
+==================== auth.routes.js ====================
+const express = require("express");
+
+const { login } = require("../controllers/auth.controller");
+const { authenticate } = require("../middleware/auth.middleware");
+const { validate } = require("../middleware/validation.middleware");
+const { loginValidator } = require("../validators/auth.validator");
+
+const router = express.Router();
+
+router.post(
+    "/login",
+    loginValidator,
+    validate,
+    login
+);
+
+router.get("/profile", authenticate, (req, res) => {
+    res.json({
+        success: true,
+        message: "Profile retrieved successfully.",
+        data: req.user,
+    });
+});
+
+module.exports = router;
+==================== auth.validator.js ====================
+const { body } = require("express-validator");
+
+exports.loginValidator = [
+    body("email")
+    .trim()
+    .isEmail()
+    .withMessage("A valid email is required."),
+
+    body("password")
+    .notEmpty()
+    .withMessage("Password is required."),
+];

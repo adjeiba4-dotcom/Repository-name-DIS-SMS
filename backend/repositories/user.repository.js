@@ -1,16 +1,27 @@
 const db = require("../database/db");
 
-exports.findAllUsers = async() => {
-    return await db.user.findMany({
+const userSelect = {
+    id: true,
+    firstName: true,
+    lastName: true,
+    email: true,
+    status: true,
+    createdAt: true,
+    updatedAt: true,
+    role: {
         select: {
             id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            role: true,
-            status: true,
-            createdAt: true,
+            name: true,
         },
+    },
+};
+
+exports.findAllUsers = async() => {
+    return await db.user.findMany({
+        where: {
+            deletedAt: null,
+        },
+        select: userSelect,
         orderBy: {
             id: "desc",
         },
@@ -18,17 +29,23 @@ exports.findAllUsers = async() => {
 };
 
 exports.findUserById = async(id) => {
-    return await db.user.findUnique({
+    return await db.user.findFirst({
         where: {
             id: Number(id),
+            deletedAt: null,
         },
+        select: userSelect,
     });
 };
 
 exports.findUserByEmail = async(email) => {
-    return await db.user.findUnique({
+    return await db.user.findFirst({
         where: {
             email,
+            deletedAt: null,
+        },
+        include: {
+            role: true,
         },
     });
 };
@@ -36,15 +53,7 @@ exports.findUserByEmail = async(email) => {
 exports.createUser = async(userData) => {
     return await db.user.create({
         data: userData,
-        select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            role: true,
-            status: true,
-            createdAt: true,
-        },
+        select: userSelect,
     });
 };
 
@@ -54,21 +63,18 @@ exports.updateUser = async(id, userData) => {
             id: Number(id),
         },
         data: userData,
-        select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            role: true,
-            status: true,
-            createdAt: true,
-        },
+        select: userSelect,
     });
 };
-exports.deleteUser = async(id) => {
-    return await db.user.delete({
+
+exports.softDeleteUser = async(id) => {
+    return await db.user.update({
         where: {
             id: Number(id),
+        },
+        data: {
+            status: "ARCHIVED",
+            deletedAt: new Date(),
         },
     });
 };

@@ -1,7 +1,32 @@
 const db = require("../database/db");
 
-exports.findAllTeachers = async() => {
+exports.findAllTeachers = async(search = "") => {
     return await db.teacher.findMany({
+        where: search ?
+            {
+                OR: [{
+                        staffNo: {
+                            contains: search,
+                        },
+                    },
+                    {
+                        firstName: {
+                            contains: search,
+                        },
+                    },
+                    {
+                        lastName: {
+                            contains: search,
+                        },
+                    },
+                    {
+                        email: {
+                            contains: search,
+                        },
+                    },
+                ],
+            } :
+            {},
         orderBy: {
             firstName: "asc",
         },
@@ -36,5 +61,13 @@ exports.updateTeacher = async(id, teacherData) => {
             id: Number(id),
         },
         data: teacherData,
+    });
+};
+
+exports.deleteTeacher = async(id) => {
+    return await db.teacher.delete({
+        where: {
+            id: Number(id),
+        },
     });
 };

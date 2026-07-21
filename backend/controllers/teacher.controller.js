@@ -2,7 +2,9 @@ const teacherService = require("../services/teacher.service");
 
 exports.getTeachers = async(req, res, next) => {
     try {
-        const teachers = await teacherService.getTeachers();
+        const { search = "" } = req.query;
+
+        const teachers = await teacherService.getTeachers(search);
 
         res.status(200).json({
             success: true,
@@ -53,6 +55,19 @@ exports.updateTeacher = async(req, res, next) => {
             success: true,
             message: "Teacher updated successfully.",
             data: teacher,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.deleteTeacher = async(req, res, next) => {
+    try {
+        await teacherService.deleteTeacher(req.params.id);
+
+        res.status(200).json({
+            success: true,
+            message: "Teacher deleted successfully.",
         });
     } catch (error) {
         next(error);

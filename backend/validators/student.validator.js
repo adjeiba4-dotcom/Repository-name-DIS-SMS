@@ -1,6 +1,9 @@
 const { body } = require("express-validator");
 
+const genderValues = ["MALE", "FEMALE"];
+
 exports.createStudentValidator = [
+
     body("admissionNo")
     .trim()
     .notEmpty()
@@ -16,22 +19,48 @@ exports.createStudentValidator = [
     .notEmpty()
     .withMessage("Last name is required."),
 
+    body("otherName")
+    .optional()
+    .trim(),
+
     body("gender")
     .notEmpty()
-    .withMessage("Gender is required."),
+    .withMessage("Gender is required.")
+    .isIn(genderValues)
+    .withMessage("Gender must be MALE or FEMALE."),
 
-    body("guardianName")
-    .trim()
-    .notEmpty()
-    .withMessage("Guardian name is required."),
+    body("dateOfBirth")
+    .optional()
+    .isISO8601()
+    .withMessage("Date of birth must be a valid date."),
 
-    body("guardianPhone")
-    .trim()
+    body("admissionDate")
     .notEmpty()
-    .withMessage("Guardian phone is required."),
+    .withMessage("Admission date is required.")
+    .isISO8601()
+    .withMessage("Admission date must be a valid date."),
+
+    body("guardianId")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("Guardian ID must be a positive integer."),
+
+    body("email")
+    .optional({ checkFalsy: true })
+    .isEmail()
+    .withMessage("Invalid email address."),
+
+    body("phone")
+    .optional()
+    .trim(),
+
+    body("address")
+    .optional()
+    .trim(),
 ];
 
 exports.updateStudentValidator = [
+
     body("admissionNo")
     .optional()
     .trim()
@@ -50,20 +79,40 @@ exports.updateStudentValidator = [
     .notEmpty()
     .withMessage("Last name cannot be empty."),
 
+    body("otherName")
+    .optional()
+    .trim(),
+
     body("gender")
     .optional()
-    .notEmpty()
-    .withMessage("Gender cannot be empty."),
+    .isIn(genderValues)
+    .withMessage("Gender must be MALE or FEMALE."),
 
-    body("guardianName")
+    body("dateOfBirth")
     .optional()
-    .trim()
-    .notEmpty()
-    .withMessage("Guardian name cannot be empty."),
+    .isISO8601()
+    .withMessage("Date of birth must be a valid date."),
 
-    body("guardianPhone")
+    body("admissionDate")
     .optional()
-    .trim()
-    .notEmpty()
-    .withMessage("Guardian phone cannot be empty."),
+    .isISO8601()
+    .withMessage("Admission date must be a valid date."),
+
+    body("guardianId")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("Guardian ID must be a positive integer."),
+
+    body("email")
+    .optional({ checkFalsy: true })
+    .isEmail()
+    .withMessage("Invalid email address."),
+
+    body("phone")
+    .optional()
+    .trim(),
+
+    body("address")
+    .optional()
+    .trim(),
 ];

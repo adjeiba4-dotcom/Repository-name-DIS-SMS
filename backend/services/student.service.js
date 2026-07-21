@@ -28,7 +28,8 @@ exports.createStudent = async(studentData) => {
 };
 
 exports.updateStudent = async(id, studentData) => {
-    const existingStudent = await studentRepository.findStudentById(id);
+    const existingStudent =
+        await studentRepository.findStudentById(id);
 
     if (!existingStudent) {
         throw new Error("Student not found.");
@@ -52,15 +53,16 @@ exports.updateStudent = async(id, studentData) => {
 };
 
 exports.deleteStudent = async(id) => {
-    const existingStudent = await studentRepository.findStudentById(id);
+    const existingStudent =
+        await studentRepository.findStudentById(id);
 
     if (!existingStudent) {
         throw new Error("Student not found.");
     }
 
-    await studentRepository.deleteStudent(id);
+    await studentRepository.softDeleteStudent(id);
 
     return {
-        id: Number(id),
+        message: "Student archived successfully.",
     };
 };

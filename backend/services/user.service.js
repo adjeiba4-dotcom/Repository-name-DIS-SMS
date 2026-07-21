@@ -25,8 +25,16 @@ exports.createUser = async(userData) => {
     const hashedPassword = await bcrypt.hash(userData.password, 10);
 
     return await userRepository.createUser({
-        ...userData,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
         password: hashedPassword,
+        role: {
+            connect: {
+                id: Number(userData.roleId),
+            },
+        },
+        status: userData.status || "ACTIVE",
     });
 };
 
@@ -48,14 +56,28 @@ exports.updateUser = async(id, userData) => {
         }
     }
 
-    if (userData.password) {
-        userData.password = await bcrypt.hash(userData.password, 10);
-    } else {
-        delete userData.password;
+    const updateData = {};
+
+    if (userData.firstName) updateData.firstName = userData.firstName;
+    if (userData.lastName) updateData.lastName = userData.lastName;
+    if (userData.email) updateData.email = userData.email;
+    if (userData.status) updateData.status = userData.status;
+
+    if (userData.roleId) {
+        updateData.role = {
+            connect: {
+                id: Number(userData.roleId),
+            },
+        };
     }
 
-    return await userRepository.updateUser(id, userData);
+    if (userData.password) {
+        updateData.password = await bcrypt.hash(userData.password, 10);
+    }
+
+    return await userRepository.updateUser(id, updateData);
 };
+
 exports.deleteUser = async(id) => {
     const existingUser = await userRepository.findUserById(id);
 
@@ -63,9 +85,10 @@ exports.deleteUser = async(id) => {
         throw new Error("User not found.");
     }
 
-    await userRepository.deleteUser(id);
+    await userRepository.softDeleteUser(id);
 
     return {
         id: Number(id),
+        message: "User archived successfully.",
     };
 };
