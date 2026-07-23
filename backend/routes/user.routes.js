@@ -41,54 +41,100 @@ const router = express.Router();
  *         id:
  *           type: integer
  *           example: 1
- *         fullName:
+ *         firstName:
  *           type: string
- *           example: Emmanuel Adjei Baffour
+ *           example: Emmanuel
+ *         lastName:
+ *           type: string
+ *           example: Adjei Baffour
  *         email:
  *           type: string
  *           format: email
  *           example: admin@dissms.edu.gh
  *         role:
- *           type: string
- *           example: ADMINISTRATOR
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: integer
+ *               example: 1
+ *             name:
+ *               type: string
+ *               example: Administrator
  *         status:
  *           type: string
+ *           enum:
+ *             - ACTIVE
+ *             - INACTIVE
+ *             - ARCHIVED
  *           example: ACTIVE
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
  *
  *     CreateUserRequest:
  *       type: object
  *       required:
- *         - fullName
+ *         - firstName
+ *         - lastName
  *         - email
  *         - password
- *         - role
+ *         - roleId
  *       properties:
- *         fullName:
+ *         firstName:
  *           type: string
- *           example: John Mensah
+ *           example: John
+ *         lastName:
+ *           type: string
+ *           example: Mensah
  *         email:
  *           type: string
  *           format: email
- *           example: john@dissms.edu.gh
+ *           example: john.mensah@dissms.edu.gh
  *         password:
  *           type: string
  *           format: password
  *           example: Password@123
- *         role:
+ *         roleId:
+ *           type: integer
+ *           example: 2
+ *         status:
  *           type: string
- *           example: TEACHER
+ *           enum:
+ *             - ACTIVE
+ *             - INACTIVE
+ *             - ARCHIVED
+ *           example: ACTIVE
  *
  *     UpdateUserRequest:
  *       type: object
  *       properties:
- *         fullName:
+ *         firstName:
  *           type: string
+ *           example: John
+ *         lastName:
+ *           type: string
+ *           example: Mensah
  *         email:
  *           type: string
- *         role:
+ *           format: email
+ *           example: john.updated@dissms.edu.gh
+ *         password:
  *           type: string
+ *           format: password
+ *           example: NewPassword@123
+ *         roleId:
+ *           type: integer
+ *           example: 2
  *         status:
  *           type: string
+ *           enum:
+ *             - ACTIVE
+ *             - INACTIVE
+ *             - ARCHIVED
+ *           example: ACTIVE
  */
 
 /**
@@ -96,14 +142,14 @@ const router = express.Router();
  * /users:
  *   get:
  *     summary: Retrieve all users
- *     description: Returns a list of all registered users.
+ *     description: Returns a list of all active users.
  *     tags:
  *       - Users
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: List of users retrieved successfully.
+ *         description: Users retrieved successfully.
  *       401:
  *         description: Unauthorized.
  *       403:
@@ -131,7 +177,6 @@ router.get(
  *         required: true
  *         schema:
  *           type: integer
- *         description: User ID
  *     responses:
  *       200:
  *         description: User retrieved successfully.
@@ -216,8 +261,8 @@ router.put(
  * @swagger
  * /users/{id}:
  *   delete:
- *     summary: Delete a user
- *     description: Permanently removes a user from the system.
+ *     summary: Archive a user
+ *     description: Archives a user by setting the status to ARCHIVED and populating deletedAt.
  *     tags:
  *       - Users
  *     security:
@@ -230,7 +275,7 @@ router.put(
  *           type: integer
  *     responses:
  *       200:
- *         description: User deleted successfully.
+ *         description: User archived successfully.
  *       404:
  *         description: User not found.
  */

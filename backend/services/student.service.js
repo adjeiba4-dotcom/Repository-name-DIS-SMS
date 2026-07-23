@@ -24,6 +24,15 @@ exports.createStudent = async(studentData) => {
         throw new Error("Admission number already exists.");
     }
 
+    // Convert date strings to JavaScript Date objects
+    if (studentData.dateOfBirth) {
+        studentData.dateOfBirth = new Date(studentData.dateOfBirth);
+    }
+
+    if (studentData.admissionDate) {
+        studentData.admissionDate = new Date(studentData.admissionDate);
+    }
+
     return await studentRepository.createStudent(studentData);
 };
 
@@ -47,6 +56,15 @@ exports.updateStudent = async(id, studentData) => {
         if (duplicate) {
             throw new Error("Admission number already exists.");
         }
+    }
+
+    // Convert date strings to JavaScript Date objects
+    if (studentData.dateOfBirth) {
+        studentData.dateOfBirth = new Date(studentData.dateOfBirth);
+    }
+
+    if (studentData.admissionDate) {
+        studentData.admissionDate = new Date(studentData.admissionDate);
     }
 
     return await studentRepository.updateStudent(id, studentData);

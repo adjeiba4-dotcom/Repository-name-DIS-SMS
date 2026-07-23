@@ -20,7 +20,7 @@ const eventRoutes = require("./event.routes");
 const notificationRoutes = require("./notification.routes");
 const auditRoutes = require("./audit.routes");
 const dashboardRoutes = require("./dashboard.routes");
-
+const roleRoutes = require("./role.routes");
 const router = express.Router();
 
 router.get("/", (req, res) => {
@@ -32,6 +32,7 @@ router.get("/", (req, res) => {
 
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
+router.use("/roles", roleRoutes);
 router.use("/students", studentRoutes);
 router.use("/teachers", teacherRoutes);
 router.use("/departments", departmentRoutes);
