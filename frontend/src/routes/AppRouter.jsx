@@ -1,44 +1,65 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
-const Home = () => {
-    return (
-        <div
-            style={{
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-                height: "100vh",
-                background: "#f8fafc",
-                fontFamily: "Arial, sans-serif",
-            }}
-        >
-            <h1
-                style={{
-                    color: "#2563eb",
-                    fontSize: "3rem",
-                    marginBottom: "1rem",
-                }}
-            >
-                DIS-SMS ERP Frontend v2.0
-            </h1>
+import AuthLayout from "../layouts/AuthLayout";
+import DashboardLayout from "../layouts/DashboardLayout";
 
-            <p
-                style={{
-                    color: "#64748b",
-                    fontSize: "1.2rem",
-                }}
-            >
-                Foundation Ready ✅
-            </p>
-        </div>
-    );
-};
+import Login from "../pages/auth/Login";
+import Dashboard from "../pages/dashboard/Dashboard";
+import UIShowcase from "../pages/ui/UIShowcase";
+
+import ProtectedRoute from "../components/common/ProtectedRoute";
 
 export default function AppRouter() {
     return (
         <Routes>
-            <Route path="/" element={<Home />} />
+
+            {/* ===========================
+                UI Showcase
+            =========================== */}
+            <Route
+                path="/ui"
+                element={<UIShowcase />}
+            />
+
+            {/* ===========================
+                Login
+            =========================== */}
+            <Route
+                path="/login"
+                element={
+                    <AuthLayout>
+                        <Login />
+                    </AuthLayout>
+                }
+            />
+
+            {/* ===========================
+                Dashboard
+            =========================== */}
+            <Route
+                path="/"
+                element={
+                    <ProtectedRoute>
+                        <DashboardLayout>
+                            <Dashboard />
+                        </DashboardLayout>
+                    </ProtectedRoute>
+                }
+            />
+
+            {/* ===========================
+                404 Redirect
+            =========================== */}
+            <Route
+                path="*"
+                element={
+                    <Navigate
+                        to="/login"
+                        replace
+                    />
+                }
+            />
+
         </Routes>
     );
 }

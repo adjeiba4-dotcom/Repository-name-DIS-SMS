@@ -1,0 +1,30 @@
+/**
+ * Permission key stubs for future RBAC enforcement.
+ * Not wired to routes or UI in Batch 1.
+ */
+
+const permissionsConfig = {
+  roles: {
+    SUPER_ADMIN: "SUPER_ADMIN",
+    ADMIN: "ADMIN",
+    TEACHER: "TEACHER",
+    ACCOUNTANT: "ACCOUNTANT",
+    STUDENT: "STUDENT",
+    GUARDIAN: "GUARDIAN",
+  },
+  permissions: {
+    DASHBOARD_VIEW: "dashboard.view",
+    STUDENTS_VIEW: "students.view",
+    STUDENTS_CREATE: "students.create",
+    STUDENTS_UPDATE: "students.update",
+    STUDENTS_DELETE: "students.delete",
+    TEACHERS_VIEW: "teachers.view",
+    FINANCE_VIEW: "finance.view",
+    REPORTS_VIEW: "reports.view",
+    SETTINGS_MANAGE: "settings.manage",
+    USERS_MANAGE: "users.manage",
+    ROLES_MANAGE: "roles.manage",
+  },
+};
+
+export default permissionsConfig;
