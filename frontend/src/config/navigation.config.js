@@ -18,9 +18,12 @@ import {
 } from "lucide-react";
 
 /**
- * Sidebar navigation configuration.
+ * Sidebar navigation configuration — single source of truth for AppShell nav.
  * Shape: { id, label, icon, path, roles, enabled }
- * `roles` is reserved for future RBAC — not enforced in Batch 1.
+ *
+ * `roles` is a placeholder for future RBAC only. Do not filter or enforce here.
+ * Adding a module: append an item (and register a page in routes/app.routes.jsx).
+ * AppShell itself must not be modified for new modules.
  */
 
 const navigationConfig = [

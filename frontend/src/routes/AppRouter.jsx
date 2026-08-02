@@ -1,65 +1,50 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import AuthLayout from "../layouts/AuthLayout";
-import DashboardLayout from "../layouts/DashboardLayout";
+import AppShell from "../layouts/AppShell";
 
 import Login from "../pages/auth/Login";
-import Dashboard from "../pages/dashboard/Dashboard";
+import NotFound from "../pages/common/NotFound";
 import UIShowcase from "../pages/ui/UIShowcase";
 
 import ProtectedRoute from "../components/common/ProtectedRoute";
+import { buildAppRoutes } from "./app.routes";
 
 export default function AppRouter() {
-    return (
-        <Routes>
+  const appRoutes = buildAppRoutes();
 
-            {/* ===========================
-                UI Showcase
-            =========================== */}
-            <Route
-                path="/ui"
-                element={<UIShowcase />}
-            />
+  return (
+    <Routes>
+      <Route path="/ui" element={<UIShowcase />} />
 
-            {/* ===========================
-                Login
-            =========================== */}
-            <Route
-                path="/login"
-                element={
-                    <AuthLayout>
-                        <Login />
-                    </AuthLayout>
-                }
-            />
+      <Route
+        path="/login"
+        element={
+          <AuthLayout>
+            <Login />
+          </AuthLayout>
+        }
+      />
 
-            {/* ===========================
-                Dashboard
-            =========================== */}
-            <Route
-                path="/"
-                element={
-                    <ProtectedRoute>
-                        <DashboardLayout>
-                            <Dashboard />
-                        </DashboardLayout>
-                    </ProtectedRoute>
-                }
-            />
+      <Route
+        element={
+          <ProtectedRoute>
+            <AppShell />
+          </ProtectedRoute>
+        }
+      >
+        {appRoutes.map((route) =>
+          route.index ? (
+            <Route key={route.id} index element={route.element} />
+          ) : (
+            <Route key={route.id} path={route.path} element={route.element} />
+          )
+        )}
 
-            {/* ===========================
-                404 Redirect
-            =========================== */}
-            <Route
-                path="*"
-                element={
-                    <Navigate
-                        to="/login"
-                        replace
-                    />
-                }
-            />
+        <Route path="*" element={<NotFound />} />
+      </Route>
 
-        </Routes>
-    );
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+  );
 }

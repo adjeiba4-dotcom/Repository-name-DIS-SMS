@@ -186,4 +186,10 @@
   --transition-fast: 150ms ease;
   --transition-normal: 200ms ease;
   --transition-slow: 300ms ease;
+
+  /* ---------- Layout shell ---------- */
+  --sidebar-width: 18rem;
+  --sidebar-width-collapsed: 5rem;
+  --header-height: 4.5rem;
+  --footer-height: 3rem;
 }

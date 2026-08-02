@@ -1,26 +1,26 @@
+import PageHeader from "../../components/ui/PageHeader";
+import { Body } from "../../components/ui/Typography";
+
+/**
+ * Dashboard 2.0 placeholder.
+ * Widgets and layout composition land in a dedicated Dashboard 2.0 batch —
+ * this page intentionally stays a stable shell entry point.
+ */
 export default function Dashboard() {
-    return (
-        <div className="min-h-screen bg-slate-100 p-8">
-            <div className="mx-auto max-w-7xl">
-                <h1 className="text-4xl font-bold text-slate-800">
-                    DIS-SMS Dashboard
-                </h1>
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Dashboard"
+        description="Dashboard 2.0 placeholder. Overview widgets and personalized layouts will be delivered in the Dashboard 2.0 batch."
+        variant="plain"
+        size="sm"
+        className="px-0"
+      />
 
-                <p className="mt-2 text-slate-600">
-                    Welcome to the DIS-SMS ERP System.
-                </p>
-
-                <div className="mt-8 rounded-xl bg-white p-6 shadow">
-                    <h2 className="text-xl font-semibold">
-                        Dashboard
-                    </h2>
-
-                    <p className="mt-2 text-gray-600">
-                        Authentication is almost complete. Dashboard
-                        modules will be added in the next phase.
-                    </p>
-                </div>
-            </div>
-        </div>
-    );
+      <Body variant="muted" size="sm">
+        The application shell is ready. This route remains reserved for Dashboard
+        2.0 — no temporary widget scaffolding is installed here.
+      </Body>
+    </div>
+  );
 }

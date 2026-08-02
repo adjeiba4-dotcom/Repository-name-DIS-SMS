@@ -1,6 +1,6 @@
 /**
- * Dashboard layout / widget stubs for future batches.
- * Not consumed by the Dashboard page in Batch 1.
+ * Dashboard 2.0 configuration stubs.
+ * Reserved for the Dashboard 2.0 batch — not consumed by the placeholder page.
  */
 
 const dashboardConfig = {
