@@ -1,31 +1,113 @@
-const { body } = require("express-validator");
+// validators/attendance.validator.js
 
-exports.createAttendanceValidator = [
+const { body, param, query } = require("express-validator");
+
+exports.createAttendance = [
     body("studentId")
-    .isInt()
-    .withMessage("Student ID is required."),
+    .notEmpty()
+    .withMessage("Student is required.")
+    .isInt({ min: 1 })
+    .withMessage("Student ID must be a positive integer."),
 
-    body("date")
+    body("academicYearId")
+    .notEmpty()
+    .withMessage("Academic year is required.")
+    .isInt({ min: 1 })
+    .withMessage("Academic Year ID must be a positive integer."),
+
+    body("termId")
+    .notEmpty()
+    .withMessage("Term is required.")
+    .isInt({ min: 1 })
+    .withMessage("Term ID must be a positive integer."),
+
+    body("attendanceDate")
+    .notEmpty()
+    .withMessage("Attendance date is required.")
     .isISO8601()
-    .withMessage("A valid attendance date is required."),
+    .withMessage("Attendance date must be a valid date."),
 
     body("status")
-    .isIn(["Present", "Absent", "Late", "Excused"])
+    .notEmpty()
+    .withMessage("Attendance status is required.")
+    .isIn([
+        "PRESENT",
+        "ABSENT",
+        "LATE",
+        "EXCUSED",
+    ])
     .withMessage(
-        "Status must be Present, Absent, Late or Excused."
+        "Attendance status must be PRESENT, ABSENT, LATE or EXCUSED."
+    ),
+
+    body("remarks")
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage(
+        "Remarks cannot exceed 500 characters."
     ),
 ];
 
-exports.updateAttendanceValidator = [
+exports.updateAttendance = [
     body("studentId")
     .optional()
-    .isInt(),
+    .isInt({ min: 1 })
+    .withMessage("Student ID must be a positive integer."),
 
-    body("date")
+    body("academicYearId")
     .optional()
-    .isISO8601(),
+    .isInt({ min: 1 })
+    .withMessage("Academic Year ID must be a positive integer."),
+
+    body("termId")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("Term ID must be a positive integer."),
+
+    body("attendanceDate")
+    .optional()
+    .isISO8601()
+    .withMessage("Attendance date must be a valid date."),
 
     body("status")
     .optional()
-    .isIn(["Present", "Absent", "Late", "Excused"]),
+    .isIn([
+        "PRESENT",
+        "ABSENT",
+        "LATE",
+        "EXCUSED",
+    ])
+    .withMessage(
+        "Attendance status must be PRESENT, ABSENT, LATE or EXCUSED."
+    ),
+
+    body("remarks")
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage(
+        "Remarks cannot exceed 500 characters."
+    ),
+];
+
+exports.validateAttendanceId = [
+    param("id")
+    .isInt({ min: 1 })
+    .withMessage(
+        "Attendance ID must be a positive integer."
+    ),
+];
+
+exports.searchAttendance = [
+    query("keyword")
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage(
+        "Search keyword must contain at least one character."
+    ),
 ];

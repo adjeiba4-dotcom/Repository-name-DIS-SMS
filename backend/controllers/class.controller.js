@@ -1,73 +1,148 @@
 const classService = require("../services/class.service");
+const ApiResponse = require("../utils/response");
 
+/**
+ * Get all classes
+ */
 exports.getClasses = async(req, res, next) => {
     try {
         const classes = await classService.getClasses();
 
-        res.status(200).json({
-            success: true,
-            message: "Classes retrieved successfully.",
-            data: classes,
-        });
+        return ApiResponse.success(
+            res,
+            "Classes retrieved successfully.",
+            classes
+        );
     } catch (error) {
         next(error);
     }
 };
 
+/**
+ * Get class by ID
+ */
 exports.getClassById = async(req, res, next) => {
     try {
-        const classData = await classService.getClassById(req.params.id);
+        const schoolClass = await classService.getClassById(
+            Number(req.params.id)
+        );
 
-        res.status(200).json({
-            success: true,
-            message: "Class retrieved successfully.",
-            data: classData,
-        });
+        return ApiResponse.success(
+            res,
+            "Class retrieved successfully.",
+            schoolClass
+        );
     } catch (error) {
         next(error);
     }
 };
 
+/**
+ * Search classes
+ */
+exports.searchClasses = async(req, res, next) => {
+    try {
+        const classes = await classService.searchClasses(
+            req.query.keyword
+        );
+
+        return ApiResponse.success(
+            res,
+            "Classes retrieved successfully.",
+            classes
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Get archived classes
+ */
+exports.getArchivedClasses = async(req, res, next) => {
+    try {
+        const classes = await classService.getArchivedClasses();
+
+        return ApiResponse.success(
+            res,
+            "Archived classes retrieved successfully.",
+            classes
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Create class
+ */
 exports.createClass = async(req, res, next) => {
     try {
-        const classData = await classService.createClass(req.body);
+        const schoolClass = await classService.createClass(req.body);
 
-        res.status(201).json({
-            success: true,
-            message: "Class created successfully.",
-            data: classData,
-        });
+        return ApiResponse.created(
+            res,
+            "Class created successfully.",
+            schoolClass
+        );
     } catch (error) {
         next(error);
     }
 };
 
+/**
+ * Update class
+ */
 exports.updateClass = async(req, res, next) => {
     try {
-        const classData = await classService.updateClass(
-            req.params.id,
+        const schoolClass = await classService.updateClass(
+            Number(req.params.id),
             req.body
         );
 
-        res.status(200).json({
-            success: true,
-            message: "Class updated successfully.",
-            data: classData,
-        });
+        return ApiResponse.success(
+            res,
+            "Class updated successfully.",
+            schoolClass
+        );
     } catch (error) {
         next(error);
     }
 };
 
+/**
+ * Archive class
+ */
 exports.deleteClass = async(req, res, next) => {
     try {
-        const result = await classService.deleteClass(req.params.id);
+        const schoolClass = await classService.deleteClass(
+            Number(req.params.id)
+        );
 
-        res.status(200).json({
-            success: true,
-            message: "Class deleted successfully.",
-            data: result,
-        });
+        return ApiResponse.success(
+            res,
+            "Class archived successfully.",
+            schoolClass
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Restore archived class
+ */
+exports.restoreClass = async(req, res, next) => {
+    try {
+        const schoolClass = await classService.restoreClass(
+            Number(req.params.id)
+        );
+
+        return ApiResponse.success(
+            res,
+            "Class restored successfully.",
+            schoolClass
+        );
     } catch (error) {
         next(error);
     }

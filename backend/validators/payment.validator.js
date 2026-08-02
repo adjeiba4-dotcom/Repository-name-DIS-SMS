@@ -1,66 +1,97 @@
-const { body } = require("express-validator");
+// validators/payment.validator.js
 
-exports.createPaymentValidator = [
+const { body, param, query } = require("express-validator");
+
+const createPayment = [
     body("studentId")
-    .isInt()
+    .isInt({ min: 1 })
     .withMessage("Student ID is required."),
 
-    body("feeId")
-    .isInt()
-    .withMessage("Fee ID is required."),
-
-    body("amountPaid")
-    .isFloat({ min: 0.01 })
-    .withMessage("Amount paid must be greater than zero."),
-
-    body("paymentDate")
-    .isISO8601()
-    .withMessage("A valid payment date is required."),
+    body("amount")
+    .notEmpty()
+    .withMessage("Payment amount is required.")
+    .isDecimal({ decimal_digits: "0,2" })
+    .withMessage("Payment amount must be a valid decimal number.")
+    .custom((value) => Number(value) > 0)
+    .withMessage("Payment amount must be greater than zero."),
 
     body("paymentMethod")
-    .trim()
     .notEmpty()
-    .withMessage("Payment method is required."),
+    .withMessage("Payment method is required.")
+    .isString()
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage("Payment method must be between 2 and 50 characters."),
 
     body("referenceNo")
     .optional()
-    .trim(),
+    .isString()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage("Reference number cannot exceed 100 characters."),
 
-    body("status")
+    body("remarks")
     .optional()
-    .isIn(["Completed", "Pending", "Cancelled"])
-    .withMessage(
-        "Status must be Completed, Pending or Cancelled."
-    ),
+    .isString()
+    .trim()
+    .isLength({ max: 255 })
+    .withMessage("Remarks cannot exceed 255 characters."),
 ];
 
-exports.updatePaymentValidator = [
+const updatePayment = [
+    param("id")
+    .isInt({ min: 1 })
+    .withMessage("Valid Payment ID is required."),
+
     body("studentId")
     .optional()
-    .isInt(),
+    .isInt({ min: 1 })
+    .withMessage("Student ID must be a positive integer."),
 
-    body("feeId")
+    body("amount")
     .optional()
-    .isInt(),
-
-    body("amountPaid")
-    .optional()
-    .isFloat({ min: 0.01 }),
-
-    body("paymentDate")
-    .optional()
-    .isISO8601(),
+    .isDecimal({ decimal_digits: "0,2" })
+    .withMessage("Payment amount must be a valid decimal number.")
+    .custom((value) => Number(value) > 0)
+    .withMessage("Payment amount must be greater than zero."),
 
     body("paymentMethod")
     .optional()
+    .isString()
     .trim()
-    .notEmpty(),
+    .isLength({ min: 2, max: 50 })
+    .withMessage("Payment method must be between 2 and 50 characters."),
 
     body("referenceNo")
     .optional()
-    .trim(),
+    .isString()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage("Reference number cannot exceed 100 characters."),
 
-    body("status")
+    body("remarks")
     .optional()
-    .isIn(["Completed", "Pending", "Cancelled"]),
+    .isString()
+    .trim()
+    .isLength({ max: 255 })
+    .withMessage("Remarks cannot exceed 255 characters."),
 ];
+
+const validatePaymentId = [
+    param("id")
+    .isInt({ min: 1 })
+    .withMessage("Valid Payment ID is required."),
+];
+
+const searchPayments = [
+    query("keyword")
+    .optional()
+    .trim(),
+];
+
+module.exports = {
+    createPayment,
+    updatePayment,
+    validatePaymentId,
+    searchPayments,
+};

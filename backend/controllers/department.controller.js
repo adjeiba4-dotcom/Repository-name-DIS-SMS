@@ -1,73 +1,126 @@
-const departmentRepository = require("../repositories/department.repository");
+const departmentService = require("../services/department.service");
+const ApiResponse = require("../utils/response");
 
-exports.getDepartments = async() => {
-    return await departmentRepository.findAllDepartments();
-};
+exports.getDepartments = async(req, res, next) => {
+    try {
+        const departments = await departmentService.getDepartments();
 
-exports.getDepartmentById = async(id) => {
-    const department = await departmentRepository.findDepartmentById(id);
-
-    if (!department) {
-        throw new Error("Department not found.");
+        return ApiResponse.success(
+            res,
+            "Departments retrieved successfully.",
+            departments
+        );
+    } catch (error) {
+        next(error);
     }
-
-    return department;
 };
 
-exports.createDepartment = async(departmentData) => {
-    const existingDepartment =
-        await departmentRepository.findDepartmentByName(
-            departmentData.name
+exports.getDepartmentById = async(req, res, next) => {
+    try {
+        const department = await departmentService.getDepartmentById(
+            req.params.id
         );
 
-    if (existingDepartment) {
-        throw new Error("Department already exists.");
+        return ApiResponse.success(
+            res,
+            "Department retrieved successfully.",
+            department
+        );
+    } catch (error) {
+        next(error);
     }
-
-    return await departmentRepository.createDepartment(
-        departmentData
-    );
 };
 
-exports.updateDepartment = async(id, departmentData) => {
-    const existingDepartment =
-        await departmentRepository.findDepartmentById(id);
+exports.searchDepartments = async(req, res, next) => {
+    try {
+        const departments = await departmentService.searchDepartments(
+            req.query.keyword
+        );
 
-    if (!existingDepartment) {
-        throw new Error("Department not found.");
+        return ApiResponse.success(
+            res,
+            "Departments retrieved successfully.",
+            departments
+        );
+    } catch (error) {
+        next(error);
     }
-
-    if (
-        departmentData.name &&
-        departmentData.name !== existingDepartment.name
-    ) {
-        const duplicate =
-            await departmentRepository.findDepartmentByName(
-                departmentData.name
-            );
-
-        if (duplicate) {
-            throw new Error("Department already exists.");
-        }
-    }
-
-    return await departmentRepository.updateDepartment(
-        id,
-        departmentData
-    );
 };
 
-exports.deleteDepartment = async(id) => {
-    const existingDepartment =
-        await departmentRepository.findDepartmentById(id);
+exports.getArchivedDepartments = async(req, res, next) => {
+    try {
+        const departments =
+            await departmentService.getArchivedDepartments();
 
-    if (!existingDepartment) {
-        throw new Error("Department not found.");
+        return ApiResponse.success(
+            res,
+            "Archived departments retrieved successfully.",
+            departments
+        );
+    } catch (error) {
+        next(error);
     }
+};
 
-    await departmentRepository.deleteDepartment(id);
+exports.createDepartment = async(req, res, next) => {
+    try {
+        const department = await departmentService.createDepartment(req.body);
 
-    return {
-        id: Number(id),
-    };
+        return ApiResponse.created(
+            res,
+            "Department created successfully.",
+            department
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.updateDepartment = async(req, res, next) => {
+    try {
+        const department = await departmentService.updateDepartment(
+            req.params.id,
+            req.body
+        );
+
+        return ApiResponse.success(
+            res,
+            "Department updated successfully.",
+            department
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.deleteDepartment = async(req, res, next) => {
+    try {
+        const department = await departmentService.deleteDepartment(
+            req.params.id
+        );
+
+        return ApiResponse.success(
+            res,
+            "Department archived successfully.",
+            department
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.restoreDepartment = async(req, res, next) => {
+    try {
+        const department = await departmentService.restoreDepartment(
+            req.params.id
+        );
+
+        return ApiResponse.success(
+            res,
+            "Department restored successfully.",
+            department
+        );
+    } catch (error) {
+        next(error);
+    }
 };

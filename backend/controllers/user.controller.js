@@ -1,6 +1,21 @@
+// controllers/user.controller.js
+
 const userService = require("../services/user.service");
 const ApiResponse = require("../utils/response");
 
+/**
+ * Remove sensitive fields before returning user data.
+ */
+const sanitizeUser = (user) => {
+    if (!user) return user;
+
+    const { password, refreshTokens, ...sanitized } = user;
+    return sanitized;
+};
+
+/**
+ * Get all users.
+ */
 exports.getUsers = async(req, res, next) => {
     try {
         const users = await userService.getUsers();
@@ -8,13 +23,16 @@ exports.getUsers = async(req, res, next) => {
         return ApiResponse.success(
             res,
             "Users retrieved successfully.",
-            users
+            users.map(sanitizeUser)
         );
     } catch (error) {
         next(error);
     }
 };
 
+/**
+ * Get user by ID.
+ */
 exports.getUserById = async(req, res, next) => {
     try {
         const user = await userService.getUserById(req.params.id);
@@ -22,13 +40,16 @@ exports.getUserById = async(req, res, next) => {
         return ApiResponse.success(
             res,
             "User retrieved successfully.",
-            user
+            sanitizeUser(user)
         );
     } catch (error) {
         next(error);
     }
 };
 
+/**
+ * Create a new user.
+ */
 exports.createUser = async(req, res, next) => {
     try {
         const user = await userService.createUser(req.body);
@@ -36,13 +57,16 @@ exports.createUser = async(req, res, next) => {
         return ApiResponse.created(
             res,
             "User created successfully.",
-            user
+            sanitizeUser(user)
         );
     } catch (error) {
         next(error);
     }
 };
 
+/**
+ * Update user.
+ */
 exports.updateUser = async(req, res, next) => {
     try {
         const user = await userService.updateUser(
@@ -53,21 +77,78 @@ exports.updateUser = async(req, res, next) => {
         return ApiResponse.success(
             res,
             "User updated successfully.",
-            user
+            sanitizeUser(user)
         );
     } catch (error) {
         next(error);
     }
 };
 
-exports.deleteUser = async(req, res, next) => {
+/**
+ * Activate user.
+ */
+exports.activateUser = async(req, res, next) => {
     try {
-        const result = await userService.deleteUser(req.params.id);
+        const user = await userService.activateUser(req.params.id);
 
         return ApiResponse.success(
             res,
-            "User archived successfully.",
-            result
+            "User activated successfully.",
+            sanitizeUser(user)
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Deactivate user.
+ */
+exports.deactivateUser = async(req, res, next) => {
+    try {
+        const user = await userService.deactivateUser(req.params.id);
+
+        return ApiResponse.success(
+            res,
+            "User deactivated successfully.",
+            sanitizeUser(user)
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Soft delete user.
+ */
+exports.deleteUser = async(req, res, next) => {
+    try {
+        await userService.deleteUser(req.params.id);
+
+        return ApiResponse.success(
+            res,
+            "User deleted successfully."
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Change user password.
+ */
+exports.changePassword = async(req, res, next) => {
+    try {
+        const { password } = req.body;
+
+        await userService.changePassword(
+            req.params.id,
+            password
+        );
+
+        return ApiResponse.success(
+            res,
+            "Password changed successfully."
         );
     } catch (error) {
         next(error);

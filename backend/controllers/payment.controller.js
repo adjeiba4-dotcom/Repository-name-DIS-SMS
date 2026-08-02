@@ -1,80 +1,105 @@
-const paymentService = require("../services/payment.service");
+// controllers/payment.controller.js
 
-exports.getPayments = async(req, res, next) => {
+const paymentService = require("../services/payment.service");
+const ApiResponse = require("../utils/response");
+
+const getPayments = async(req, res, next) => {
     try {
         const payments = await paymentService.getPayments();
 
-        res.status(200).json({
-            success: true,
-            message: "Payments retrieved successfully.",
-            data: payments,
-        });
+        return ApiResponse.success(
+            res,
+            "Payments retrieved successfully.",
+            payments
+        );
     } catch (error) {
         next(error);
     }
 };
 
-exports.getPaymentById = async(req, res, next) => {
+const getPaymentById = async(req, res, next) => {
     try {
         const payment = await paymentService.getPaymentById(
-            req.params.id
+            Number(req.params.id)
         );
 
-        res.status(200).json({
-            success: true,
-            message: "Payment retrieved successfully.",
-            data: payment,
-        });
+        return ApiResponse.success(
+            res,
+            "Payment retrieved successfully.",
+            payment
+        );
     } catch (error) {
         next(error);
     }
 };
 
-exports.createPayment = async(req, res, next) => {
+const searchPayments = async(req, res, next) => {
     try {
-        const payment = await paymentService.createPayment(
-            req.body
+        const payments = await paymentService.searchPayments(
+            req.query.keyword
         );
 
-        res.status(201).json({
-            success: true,
-            message: "Payment created successfully.",
-            data: payment,
-        });
+        return ApiResponse.success(
+            res,
+            "Payments retrieved successfully.",
+            payments
+        );
     } catch (error) {
         next(error);
     }
 };
 
-exports.updatePayment = async(req, res, next) => {
+const createPayment = async(req, res, next) => {
+    try {
+        const payment = await paymentService.createPayment(req.body);
+
+        return ApiResponse.created(
+            res,
+            "Payment created successfully.",
+            payment
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+const updatePayment = async(req, res, next) => {
     try {
         const payment = await paymentService.updatePayment(
-            req.params.id,
+            Number(req.params.id),
             req.body
         );
 
-        res.status(200).json({
-            success: true,
-            message: "Payment updated successfully.",
-            data: payment,
-        });
+        return ApiResponse.success(
+            res,
+            "Payment updated successfully.",
+            payment
+        );
     } catch (error) {
         next(error);
     }
 };
 
-exports.deletePayment = async(req, res, next) => {
+const deletePayment = async(req, res, next) => {
     try {
-        const result = await paymentService.deletePayment(
-            req.params.id
+        await paymentService.deletePayment(
+            Number(req.params.id)
         );
 
-        res.status(200).json({
-            success: true,
-            message: "Payment deleted successfully.",
-            data: result,
-        });
+        return ApiResponse.success(
+            res,
+            "Payment deleted successfully."
+        );
     } catch (error) {
         next(error);
     }
+};
+
+module.exports = {
+    getPayments,
+    getPaymentById,
+    searchPayments,
+    createPayment,
+    updatePayment,
+    deletePayment,
 };

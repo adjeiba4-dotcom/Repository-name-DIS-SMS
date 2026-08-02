@@ -1,48 +1,120 @@
-const db = require("../database/db");
+const classRepository = require("../repositories/class.repository");
 
-exports.findAllClasses = async() => {
-    return await db.class.findMany({
-        orderBy: {
-            className: "asc",
-        },
-    });
+/**
+ * Get all active classes
+ */
+exports.getClasses = async() => {
+    return await classRepository.findAllClasses();
 };
 
-exports.findClassById = async(id) => {
-    return await db.class.findUnique({
-        where: {
-            id: Number(id),
-        },
-    });
+/**
+ * Get class by ID
+ */
+exports.getClassById = async(id) => {
+    const schoolClass = await classRepository.findClassById(id);
+
+    if (!schoolClass) {
+        throw new Error("Class not found.");
+    }
+
+    return schoolClass;
 };
 
-exports.findClassByCode = async(classCode) => {
-    return await db.class.findUnique({
-        where: {
-            classCode,
-        },
-    });
+/**
+ * Search classes
+ */
+exports.searchClasses = async(keyword) => {
+    return await classRepository.searchClasses(keyword);
 };
 
-exports.createClass = async(classData) => {
-    return await db.class.create({
-        data: classData,
-    });
+/**
+ * Get archived classes
+ */
+exports.getArchivedClasses = async() => {
+    return await classRepository.findArchivedClasses();
 };
 
-exports.updateClass = async(id, classData) => {
-    return await db.class.update({
-        where: {
-            id: Number(id),
-        },
-        data: classData,
-    });
+/**
+ * Create class
+ */
+exports.createClass = async(data) => {
+    const existingCode = await classRepository.findClassByCode(data.code);
+
+    if (existingCode) {
+        throw new Error("Class code already exists.");
+    }
+
+    // Optional duplicate name check
+    if (data.name) {
+        const existingName = await classRepository.findClassByName(data.name);
+
+        if (existingName) {
+            throw new Error("Class name already exists.");
+        }
+    }
+
+    return await classRepository.createClass(data);
 };
 
+/**
+ * Update class
+ */
+exports.updateClass = async(id, data) => {
+    const schoolClass = await classRepository.findClassById(id);
+
+    if (!schoolClass) {
+        throw new Error("Class not found.");
+    }
+
+    if (data.code && data.code !== schoolClass.code) {
+        const existingCode = await classRepository.findClassByCode(data.code);
+
+        if (existingCode) {
+            throw new Error("Class code already exists.");
+        }
+    }
+
+    if (data.name && data.name !== schoolClass.name) {
+        const existingName = await classRepository.findClassByName(data.name);
+
+        if (existingName) {
+            throw new Error("Class name already exists.");
+        }
+    }
+
+    return await classRepository.updateClass(id, data);
+};
+
+/**
+ * Archive class
+ */
 exports.deleteClass = async(id) => {
-    return await db.class.delete({
-        where: {
-            id: Number(id),
-        },
-    });
+    const schoolClass = await classRepository.findClassById(id);
+
+    if (!schoolClass) {
+        throw new Error("Class not found.");
+    }
+
+    return await classRepository.softDeleteClass(id);
+};
+
+/**
+ * Restore archived class
+ */
+exports.restoreClass = async(id) => {
+    const archivedClasses = await classRepository.findArchivedClasses();
+
+    const schoolClass = archivedClasses.find(
+        (item) => item.id === id
+    );
+
+    if (!schoolClass) {
+        throw new Error("Archived class not found.");
+    }
+
+    if (schoolClass.deletedAt === null) {
+        throw new Error("Class is already active.");
+    }
+
+    return await classRepository.restoreClass(id);
 };

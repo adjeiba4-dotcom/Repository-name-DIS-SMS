@@ -1,10 +1,12 @@
+// services/examination.service.js
+
 const examinationRepository = require("../repositories/examination.repository");
 
-exports.getExaminations = async() => {
+const getExaminations = async() => {
     return await examinationRepository.findAllExaminations();
 };
 
-exports.getExaminationById = async(id) => {
+const getExaminationById = async(id) => {
     const examination =
         await examinationRepository.findExaminationById(id);
 
@@ -15,37 +17,151 @@ exports.getExaminationById = async(id) => {
     return examination;
 };
 
-exports.createExamination = async(examData) => {
-    return await examinationRepository.createExamination(
-        examData
-    );
+const searchExaminations = async(keyword) => {
+    return await examinationRepository.searchExaminations(keyword);
 };
 
-exports.updateExamination = async(id, examData) => {
+const createExamination = async(data) => {
+    const {
+        name,
+        subjectId,
+        teacherId,
+        academicYearId,
+        termId,
+    } = data;
+
+    const subject =
+        await examinationRepository.findSubjectById(subjectId);
+
+    if (!subject) {
+        throw new Error("Subject not found.");
+    }
+
+    const teacher =
+        await examinationRepository.findTeacherById(teacherId);
+
+    if (!teacher) {
+        throw new Error("Teacher not found.");
+    }
+
+    const academicYear =
+        await examinationRepository.findAcademicYearById(
+            academicYearId
+        );
+
+    if (!academicYear) {
+        throw new Error("Academic year not found.");
+    }
+
+    const term =
+        await examinationRepository.findTermById(termId);
+
+    if (!term) {
+        throw new Error("Term not found.");
+    }
+
     const existingExamination =
+        await examinationRepository.findExamination(
+            name,
+            subjectId,
+            academicYearId,
+            termId
+        );
+
+    if (existingExamination) {
+        throw new Error(
+            "An examination with the same name already exists for this subject, academic year, and term."
+        );
+    }
+
+    return await examinationRepository.createExamination(data);
+};
+
+const updateExamination = async(id, data) => {
+    const examination =
         await examinationRepository.findExaminationById(id);
 
-    if (!existingExamination) {
+    if (!examination) {
         throw new Error("Examination not found.");
+    }
+
+    const {
+        name = examination.name,
+            subjectId = examination.subjectId,
+            teacherId = examination.teacherId,
+            academicYearId = examination.academicYearId,
+            termId = examination.termId,
+    } = data;
+
+    const subject =
+        await examinationRepository.findSubjectById(subjectId);
+
+    if (!subject) {
+        throw new Error("Subject not found.");
+    }
+
+    const teacher =
+        await examinationRepository.findTeacherById(teacherId);
+
+    if (!teacher) {
+        throw new Error("Teacher not found.");
+    }
+
+    const academicYear =
+        await examinationRepository.findAcademicYearById(
+            academicYearId
+        );
+
+    if (!academicYear) {
+        throw new Error("Academic year not found.");
+    }
+
+    const term =
+        await examinationRepository.findTermById(termId);
+
+    if (!term) {
+        throw new Error("Term not found.");
+    }
+
+    const existingExamination =
+        await examinationRepository.findExamination(
+            name,
+            subjectId,
+            academicYearId,
+            termId
+        );
+
+    if (
+        existingExamination &&
+        existingExamination.id !== Number(id)
+    ) {
+        throw new Error(
+            "An examination with the same name already exists for this subject, academic year, and term."
+        );
     }
 
     return await examinationRepository.updateExamination(
         id,
-        examData
+        data
     );
 };
 
-exports.deleteExamination = async(id) => {
-    const existingExamination =
+const deleteExamination = async(id) => {
+    const examination =
         await examinationRepository.findExaminationById(id);
 
-    if (!existingExamination) {
+    if (!examination) {
         throw new Error("Examination not found.");
     }
 
-    await examinationRepository.deleteExamination(id);
+    return await examinationRepository.deleteExamination(id);
+};
 
-    return {
-        id: Number(id),
-    };
+module.exports = {
+    getExaminations,
+    getExaminationById,
+    searchExaminations,
+    createExamination,
+    updateExamination,
+    deleteExamination,
 };

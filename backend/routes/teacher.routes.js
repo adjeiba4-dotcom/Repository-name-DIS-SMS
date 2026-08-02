@@ -1,119 +1,33 @@
+// routes/teacher.routes.js
+
 const express = require("express");
+const router = express.Router();
+
+const teacherController = require("../controllers/teacher.controller");
 
 const {
-    getTeachers,
-    getTeacherById,
     createTeacher,
     updateTeacher,
-    deleteTeacher,
-} = require("../controllers/teacher.controller");
+    validateTeacherId,
+    searchTeacher,
+} = require("../validators/teacher.validator");
 
 const {
     authenticate,
     authorize,
 } = require("../middleware/auth.middleware");
 
-const { validate } = require("../middleware/validation.middleware");
+const {
+    validate,
+} = require("../middleware/validation.middleware");
 
 const ROLES = require("../constants/roles");
-
-const {
-    createTeacherValidator,
-    updateTeacherValidator,
-} = require("../validators/teacher.validator");
-
-const router = express.Router();
 
 /**
  * @swagger
  * tags:
- *   - name: Teachers
- *     description: Teacher management APIs
- */
-
-/**
- * @swagger
- * components:
- *   schemas:
- *     Teacher:
- *       type: object
- *       properties:
- *         id:
- *           type: integer
- *           example: 1
- *         employeeNumber:
- *           type: string
- *           example: TCH2026001
- *         firstName:
- *           type: string
- *           example: Akosua
- *         lastName:
- *           type: string
- *           example: Owusu
- *         gender:
- *           type: string
- *           example: Female
- *         email:
- *           type: string
- *           format: email
- *           example: akosua.owusu@dissms.edu.gh
- *         phone:
- *           type: string
- *           example: +233241234567
- *         department:
- *           type: string
- *           example: Mathematics
- *         status:
- *           type: string
- *           example: Active
- *
- *     CreateTeacherRequest:
- *       type: object
- *       required:
- *         - employeeNumber
- *         - firstName
- *         - lastName
- *       properties:
- *         employeeNumber:
- *           type: string
- *           example: TCH2026001
- *         firstName:
- *           type: string
- *           example: Akosua
- *         lastName:
- *           type: string
- *           example: Owusu
- *         gender:
- *           type: string
- *           example: Female
- *         email:
- *           type: string
- *           format: email
- *           example: akosua.owusu@dissms.edu.gh
- *         phone:
- *           type: string
- *           example: +233241234567
- *         department:
- *           type: string
- *           example: Mathematics
- *
- *     UpdateTeacherRequest:
- *       type: object
- *       properties:
- *         firstName:
- *           type: string
- *         lastName:
- *           type: string
- *         gender:
- *           type: string
- *         email:
- *           type: string
- *         phone:
- *           type: string
- *         department:
- *           type: string
- *         status:
- *           type: string
+ *   name: Teachers
+ *   description: Teacher Management APIs
  */
 
 /**
@@ -121,163 +35,142 @@ const router = express.Router();
  * /teachers:
  *   get:
  *     summary: Retrieve all teachers
- *     description: Returns a list of all teachers.
- *     tags:
- *       - Teachers
+ *     tags: [Teachers]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Teachers retrieved successfully.
- *       401:
- *         description: Unauthorized.
- *       403:
- *         description: Forbidden.
+ *         description: Teachers retrieved successfully
  */
 router.get(
     "/",
     authenticate,
-    authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.HEADMASTER,
-        ROLES.REGISTRAR
-    ),
-    getTeachers
-);
-
-/**
- * @swagger
- * /teachers/{id}:
- *   get:
- *     summary: Retrieve a teacher by ID
- *     tags:
- *       - Teachers
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: Teacher ID
- *     responses:
- *       200:
- *         description: Teacher retrieved successfully.
- *       404:
- *         description: Teacher not found.
- */
-router.get(
-    "/:id",
-    authenticate,
-    authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.HEADMASTER,
-        ROLES.REGISTRAR
-    ),
-    getTeacherById
+    authorize(ROLES.ADMIN),
+    teacherController.getTeachers
 );
 
 /**
  * @swagger
  * /teachers:
  *   post:
- *     summary: Register a new teacher
- *     description: Creates a new teacher record.
- *     tags:
- *       - Teachers
+ *     summary: Create a new teacher
+ *     tags: [Teachers]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/CreateTeacherRequest'
- *     responses:
- *       201:
- *         description: Teacher created successfully.
- *       400:
- *         description: Validation error.
  */
 router.post(
     "/",
     authenticate,
-    authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.HEADMASTER
-    ),
-    createTeacherValidator,
+    authorize(ROLES.ADMIN),
+    createTeacher,
     validate,
-    createTeacher
+    teacherController.createTeacher
+);
+
+/**
+ * @swagger
+ * /teachers/search:
+ *   get:
+ *     summary: Search teachers
+ *     tags: [Teachers]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+    "/search",
+    authenticate,
+    authorize(ROLES.ADMIN),
+    searchTeacher,
+    validate,
+    teacherController.searchTeachers
+);
+
+/**
+ * @swagger
+ * /teachers/archived:
+ *   get:
+ *     summary: Retrieve archived teachers
+ *     tags: [Teachers]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+    "/archived",
+    authenticate,
+    authorize(ROLES.ADMIN),
+    teacherController.getArchivedTeachers
+);
+
+/**
+ * @swagger
+ * /teachers/{id}:
+ *   get:
+ *     summary: Retrieve teacher by ID
+ *     tags: [Teachers]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+    "/:id",
+    authenticate,
+    authorize(ROLES.ADMIN),
+    validateTeacherId,
+    validate,
+    teacherController.getTeacherById
 );
 
 /**
  * @swagger
  * /teachers/{id}:
  *   put:
- *     summary: Update teacher information
- *     tags:
- *       - Teachers
+ *     summary: Update teacher
+ *     tags: [Teachers]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/UpdateTeacherRequest'
- *     responses:
- *       200:
- *         description: Teacher updated successfully.
- *       404:
- *         description: Teacher not found.
  */
 router.put(
     "/:id",
     authenticate,
-    authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.HEADMASTER
-    ),
-    updateTeacherValidator,
+    authorize(ROLES.ADMIN),
+    updateTeacher,
     validate,
-    updateTeacher
+    teacherController.updateTeacher
 );
 
 /**
  * @swagger
  * /teachers/{id}:
  *   delete:
- *     summary: Delete a teacher
- *     description: Permanently removes a teacher record.
- *     tags:
- *       - Teachers
+ *     summary: Archive teacher
+ *     tags: [Teachers]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Teacher deleted successfully.
- *       404:
- *         description: Teacher not found.
  */
 router.delete(
     "/:id",
     authenticate,
-    authorize(ROLES.ADMINISTRATOR),
-    deleteTeacher
+    authorize(ROLES.ADMIN),
+    validateTeacherId,
+    validate,
+    teacherController.deleteTeacher
+);
+
+/**
+ * @swagger
+ * /teachers/{id}/restore:
+ *   patch:
+ *     summary: Restore archived teacher
+ *     tags: [Teachers]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.patch(
+    "/:id/restore",
+    authenticate,
+    authorize(ROLES.ADMIN),
+    validateTeacherId,
+    validate,
+    teacherController.restoreTeacher
 );
 
 module.exports = router;

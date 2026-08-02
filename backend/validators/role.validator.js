@@ -1,6 +1,11 @@
-const { body, param } = require("express-validator");
+// validators/role.validator.js
 
-const createRoleValidator = [
+const { body } = require("express-validator");
+
+/**
+ * Create Role Validation
+ */
+exports.createRole = [
     body("name")
     .trim()
     .notEmpty()
@@ -13,18 +18,12 @@ const createRoleValidator = [
     .trim()
     .isLength({ max: 255 })
     .withMessage("Description cannot exceed 255 characters."),
-
-    body("status")
-    .optional()
-    .isIn(["ACTIVE", "INACTIVE"])
-    .withMessage("Status must be ACTIVE or INACTIVE."),
 ];
 
-const updateRoleValidator = [
-    param("id")
-    .isInt({ min: 1 })
-    .withMessage("Valid role ID is required."),
-
+/**
+ * Update Role Validation
+ */
+exports.updateRole = [
     body("name")
     .optional()
     .trim()
@@ -36,21 +35,4 @@ const updateRoleValidator = [
     .trim()
     .isLength({ max: 255 })
     .withMessage("Description cannot exceed 255 characters."),
-
-    body("status")
-    .optional()
-    .isIn(["ACTIVE", "INACTIVE", "ARCHIVED"])
-    .withMessage("Status must be ACTIVE, INACTIVE or ARCHIVED."),
 ];
-
-const roleIdValidator = [
-    param("id")
-    .isInt({ min: 1 })
-    .withMessage("Valid role ID is required."),
-];
-
-module.exports = {
-    createRoleValidator,
-    updateRoleValidator,
-    roleIdValidator,
-};

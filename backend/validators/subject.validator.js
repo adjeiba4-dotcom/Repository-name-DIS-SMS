@@ -1,61 +1,91 @@
-const { body } = require("express-validator");
+const { body, param, query } = require("express-validator");
 
-exports.createSubjectValidator = [
-    body("subjectName")
-    .trim()
-    .notEmpty()
-    .withMessage("Subject name is required."),
+/**
+ * Create Subject
+ */
+exports.createSubject = [
+    body("code")
+        .trim()
+        .notEmpty()
+        .withMessage("Subject code is required.")
+        .isLength({ max: 30 })
+        .withMessage("Subject code cannot exceed 30 characters."),
 
-    body("subjectCode")
-    .trim()
-    .notEmpty()
-    .withMessage("Subject code is required."),
-
-    body("description")
-    .optional()
-    .isString()
-    .withMessage("Description must be text."),
+    body("name")
+        .trim()
+        .notEmpty()
+        .withMessage("Subject name is required.")
+        .isLength({ max: 150 })
+        .withMessage("Subject name cannot exceed 150 characters."),
 
     body("departmentId")
-    .optional()
-    .isInt()
-    .withMessage("Department ID must be an integer."),
+        .isInt({ min: 1 })
+        .withMessage("Department is required."),
 
-    body("teacherId")
-    .optional()
-    .isInt()
-    .withMessage("Teacher ID must be an integer."),
+    body("schoolClassId")
+        .optional({ nullable: true })
+        .isInt({ min: 1 })
+        .withMessage("School class must be a positive integer."),
 
-    body("status")
-    .optional()
-    .isIn(["Active", "Inactive"])
-    .withMessage("Status must be Active or Inactive."),
+    body("creditHours")
+        .optional()
+        .isInt({ min: 1 })
+        .withMessage("Credit hours must be at least 1."),
+
+    body("description")
+        .optional()
+        .trim()
 ];
 
-exports.updateSubjectValidator = [
-    body("subjectName")
-    .optional()
-    .trim()
-    .notEmpty(),
+/**
+ * Update Subject
+ */
+exports.updateSubject = [
+    param("id")
+        .isInt({ min: 1 })
+        .withMessage("Subject ID must be a positive integer."),
 
-    body("subjectCode")
-    .optional()
-    .trim()
-    .notEmpty(),
+    body("code")
+        .optional()
+        .trim()
+        .notEmpty(),
 
-    body("description")
-    .optional()
-    .isString(),
+    body("name")
+        .optional()
+        .trim()
+        .notEmpty(),
 
     body("departmentId")
-    .optional()
-    .isInt(),
+        .optional()
+        .isInt({ min: 1 }),
 
-    body("teacherId")
-    .optional()
-    .isInt(),
+    body("schoolClassId")
+        .optional({ nullable: true })
+        .isInt({ min: 1 }),
 
-    body("status")
-    .optional()
-    .isIn(["Active", "Inactive"]),
+    body("creditHours")
+        .optional()
+        .isInt({ min: 1 }),
+
+    body("description")
+        .optional()
+        .trim()
+];
+
+/**
+ * Validate Subject ID
+ */
+exports.validateSubjectId = [
+    param("id")
+        .isInt({ min: 1 })
+        .withMessage("Subject ID must be a positive integer.")
+];
+
+/**
+ * Search Subject
+ */
+exports.searchSubject = [
+    query("keyword")
+        .optional()
+        .trim()
 ];

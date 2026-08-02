@@ -1,47 +1,82 @@
-const { body } = require("express-validator");
+// validators/enrollment.validator.js
 
-exports.createEnrollmentValidator = [
+const { body, param, query } = require("express-validator");
+
+exports.createEnrollment = [
     body("studentId")
-    .isInt()
-    .withMessage("Student ID is required."),
-
-    body("classId")
-    .isInt()
-    .withMessage("Class ID is required."),
+    .notEmpty()
+    .withMessage("Student is required.")
+    .isInt({ min: 1 })
+    .withMessage("Student ID must be a positive integer."),
 
     body("academicYearId")
-    .isInt()
-    .withMessage("Academic Year ID is required."),
+    .notEmpty()
+    .withMessage("Academic year is required.")
+    .isInt({ min: 1 })
+    .withMessage("Academic Year ID must be a positive integer."),
+
+    body("classId")
+    .notEmpty()
+    .withMessage("School class is required.")
+    .isInt({ min: 1 })
+    .withMessage("Class ID must be a positive integer."),
+
+    body("enrollmentDate")
+    .notEmpty()
+    .withMessage("Enrollment date is required.")
+    .isISO8601()
+    .withMessage("Enrollment date must be a valid date."),
+
+    body("status")
+    .optional()
+    .isIn(["ACTIVE", "INACTIVE", "ARCHIVED"])
+    .withMessage(
+        "Status must be ACTIVE, INACTIVE or ARCHIVED."
+    ),
+];
+
+exports.updateEnrollment = [
+    body("studentId")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("Student ID must be a positive integer."),
+
+    body("academicYearId")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("Academic Year ID must be a positive integer."),
+
+    body("classId")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("Class ID must be a positive integer."),
 
     body("enrollmentDate")
     .optional()
     .isISO8601()
-    .withMessage("Enrollment date must be valid."),
+    .withMessage("Enrollment date must be a valid date."),
 
     body("status")
     .optional()
-    .isIn(["Active", "Inactive"])
-    .withMessage("Status must be Active or Inactive."),
+    .isIn(["ACTIVE", "INACTIVE", "ARCHIVED"])
+    .withMessage(
+        "Status must be ACTIVE, INACTIVE or ARCHIVED."
+    ),
 ];
 
-exports.updateEnrollmentValidator = [
-    body("studentId")
-    .optional()
-    .isInt(),
+exports.validateEnrollmentId = [
+    param("id")
+    .isInt({ min: 1 })
+    .withMessage("Enrollment ID must be a positive integer."),
+];
 
-    body("classId")
+exports.searchEnrollment = [
+    query("keyword")
     .optional()
-    .isInt(),
-
-    body("academicYearId")
-    .optional()
-    .isInt(),
-
-    body("enrollmentDate")
-    .optional()
-    .isISO8601(),
-
-    body("status")
-    .optional()
-    .isIn(["Active", "Inactive"]),
+    .isString()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage(
+        "Search keyword must contain at least one character."
+    ),
 ];

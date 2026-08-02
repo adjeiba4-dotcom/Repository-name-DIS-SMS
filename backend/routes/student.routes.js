@@ -1,12 +1,17 @@
+// backend/routes/student.routes.js
+
 const express = require("express");
 
+const router = express.Router();
+
+const studentController = require("../controllers/student.controller");
+
 const {
-    getStudents,
-    getStudentById,
     createStudent,
     updateStudent,
-    deleteStudent,
-} = require("../controllers/student.controller");
+    validateStudentId,
+    searchStudent,
+} = require("../validators/student.validator");
 
 const {
     authenticate,
@@ -17,106 +22,84 @@ const { validate } = require("../middleware/validation.middleware");
 
 const ROLES = require("../constants/roles");
 
-const {
-    createStudentValidator,
-    updateStudentValidator,
-} = require("../validators/student.validator");
-
-const router = express.Router();
+/**
+ * -----------------------------------------------------
+ * Swagger Tags
+ * -----------------------------------------------------
+ */
 
 /**
  * @swagger
  * tags:
  *   - name: Students
- *     description: Student management APIs
+ *     description: Student Management APIs
  */
 
 /**
  * @swagger
  * components:
  *   schemas:
+ *
  *     Student:
  *       type: object
  *       properties:
  *         id:
  *           type: integer
  *           example: 1
- *         studentNumber:
+ *
+ *         admissionNo:
  *           type: string
  *           example: DIS2026001
+ *
  *         firstName:
  *           type: string
  *           example: Kwame
+ *
  *         lastName:
  *           type: string
  *           example: Mensah
+ *
+ *         otherName:
+ *           type: string
+ *           example: Kofi
+ *
  *         gender:
  *           type: string
- *           example: Male
+ *           enum:
+ *             - MALE
+ *             - FEMALE
+ *
  *         dateOfBirth:
  *           type: string
  *           format: date
- *           example: 2010-05-15
+ *
+ *         admissionDate:
+ *           type: string
+ *           format: date
+ *
+ *         guardianId:
+ *           type: integer
+ *           example: 3
+ *
+ *         classId:
+ *           type: integer
+ *           example: 8
+ *
  *         email:
  *           type: string
- *           format: email
- *           example: kwame.mensah@student.dissms.edu.gh
+ *
  *         phone:
  *           type: string
- *           example: +233241234567
+ *
+ *         address:
+ *           type: string
+ *
  *         status:
  *           type: string
- *           example: Active
- *
- *     CreateStudentRequest:
- *       type: object
- *       required:
- *         - studentNumber
- *         - firstName
- *         - lastName
- *       properties:
- *         studentNumber:
- *           type: string
- *           example: DIS2026001
- *         firstName:
- *           type: string
- *           example: Kwame
- *         lastName:
- *           type: string
- *           example: Mensah
- *         gender:
- *           type: string
- *           example: Male
- *         dateOfBirth:
- *           type: string
- *           format: date
- *           example: 2010-05-15
- *         email:
- *           type: string
- *           format: email
- *           example: kwame.mensah@student.dissms.edu.gh
- *         phone:
- *           type: string
- *           example: +233241234567
- *
- *     UpdateStudentRequest:
- *       type: object
- *       properties:
- *         firstName:
- *           type: string
- *         lastName:
- *           type: string
- *         gender:
- *           type: string
- *         dateOfBirth:
- *           type: string
- *           format: date
- *         email:
- *           type: string
- *         phone:
- *           type: string
- *         status:
- *           type: string
+ *           enum:
+ *             - ACTIVE
+ *             - INACTIVE
+ *             - ARCHIVED
  */
 
 /**
@@ -124,7 +107,6 @@ const router = express.Router();
  * /students:
  *   get:
  *     summary: Retrieve all students
- *     description: Returns a list of all students.
  *     tags:
  *       - Students
  *     security:
@@ -132,28 +114,61 @@ const router = express.Router();
  *     responses:
  *       200:
  *         description: Students retrieved successfully.
- *       401:
- *         description: Unauthorized.
- *       403:
- *         description: Forbidden.
  */
 router.get(
     "/",
     authenticate,
     authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.HEADMASTER,
-        ROLES.REGISTRAR,
-        ROLES.TEACHER
+        ROLES.ADMINISTRATOR
     ),
-    getStudents
+    studentController.getStudents
+);
+
+/**
+ * @swagger
+ * /students/search:
+ *   get:
+ *     summary: Search students
+ *     tags:
+ *       - Students
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+    "/search",
+    authenticate,
+    authorize(
+        ROLES.ADMINISTRATOR
+    ),
+    searchStudent,
+    validate,
+    studentController.searchStudents
+);
+
+/**
+ * @swagger
+ * /students/archived:
+ *   get:
+ *     summary: Retrieve archived students
+ *     tags:
+ *       - Students
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+    "/archived",
+    authenticate,
+    authorize(
+        ROLES.ADMINISTRATOR
+    ),
+    studentController.getArchivedStudents
 );
 
 /**
  * @swagger
  * /students/{id}:
  *   get:
- *     summary: Retrieve a student by ID
+ *     summary: Retrieve student by ID
  *     tags:
  *       - Students
  *     security:
@@ -164,25 +179,17 @@ router.get(
  *         required: true
  *         schema:
  *           type: integer
- *         description: Student ID
- *     responses:
- *       200:
- *         description: Student retrieved successfully.
- *       404:
- *         description: Student not found.
  */
 router.get(
     "/:id",
     authenticate,
     authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.HEADMASTER,
-        ROLES.REGISTRAR,
-        ROLES.TEACHER
+        ROLES.ADMINISTRATOR
     ),
-    getStudentById
+    validateStudentId,
+    validate,
+    studentController.getStudentById
 );
-
 /**
  * @swagger
  * /students:
@@ -198,7 +205,7 @@ router.get(
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/CreateStudentRequest'
+ *             $ref: '#/components/schemas/Student'
  *     responses:
  *       201:
  *         description: Student created successfully.
@@ -208,20 +215,18 @@ router.get(
 router.post(
     "/",
     authenticate,
-    authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.REGISTRAR
-    ),
-    createStudentValidator,
+    authorize(ROLES.ADMINISTRATOR),
+    createStudent,
     validate,
-    createStudent
+    studentController.createStudent
 );
 
 /**
  * @swagger
  * /students/{id}:
  *   put:
- *     summary: Update student information
+ *     summary: Update student
+ *     description: Updates an existing student's information.
  *     tags:
  *       - Students
  *     security:
@@ -237,31 +242,31 @@ router.post(
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/UpdateStudentRequest'
+ *             $ref: '#/components/schemas/Student'
  *     responses:
  *       200:
  *         description: Student updated successfully.
+ *       400:
+ *         description: Validation error.
  *       404:
  *         description: Student not found.
  */
 router.put(
     "/:id",
     authenticate,
-    authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.REGISTRAR
-    ),
-    updateStudentValidator,
+    authorize(ROLES.ADMINISTRATOR),
+    validateStudentId,
+    updateStudent,
     validate,
-    updateStudent
+    studentController.updateStudent
 );
 
 /**
  * @swagger
  * /students/{id}:
  *   delete:
- *     summary: Delete a student
- *     description: Permanently removes a student record.
+ *     summary: Archive student
+ *     description: Soft deletes (archives) a student.
  *     tags:
  *       - Students
  *     security:
@@ -274,7 +279,7 @@ router.put(
  *           type: integer
  *     responses:
  *       200:
- *         description: Student deleted successfully.
+ *         description: Student archived successfully.
  *       404:
  *         description: Student not found.
  */
@@ -282,7 +287,40 @@ router.delete(
     "/:id",
     authenticate,
     authorize(ROLES.ADMINISTRATOR),
-    deleteStudent
+    validateStudentId,
+    validate,
+    studentController.deleteStudent
+);
+
+/**
+ * @swagger
+ * /students/{id}/restore:
+ *   patch:
+ *     summary: Restore archived student
+ *     description: Restores an archived student.
+ *     tags:
+ *       - Students
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Student restored successfully.
+ *       404:
+ *         description: Archived student not found.
+ */
+router.patch(
+    "/:id/restore",
+    authenticate,
+    authorize(ROLES.ADMINISTRATOR),
+    validateStudentId,
+    validate,
+    studentController.restoreStudent
 );
 
 module.exports = router;

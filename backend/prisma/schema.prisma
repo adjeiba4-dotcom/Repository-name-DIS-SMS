@@ -1,3 +1,11 @@
+// =======================================================
+// DIS-SMS ENTERPRISE ERP
+// Prisma Schema
+// Version: 2.0
+// Database: MySQL
+// ORM: Prisma
+// =======================================================
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,513 +15,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Role {
-  id          Int              @id @default(autoincrement())
-  name        String           @unique
-  description String?
-  status      Status           @default(ACTIVE)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  deletedAt   DateTime?
-  permissions RolePermission[]
-  users       User[]
-
-  @@map("roles")
-}
-
-model Permission {
-  id          Int              @id @default(autoincrement())
-  module      String
-  name        String
-  description String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  roles       RolePermission[]
-
-  @@unique([module, name])
-  @@map("permissions")
-}
-
-model RolePermission {
-  id           Int        @id @default(autoincrement())
-  roleId       Int
-  permissionId Int
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-
-  @@unique([roleId, permissionId])
-  @@index([roleId])
-  @@index([permissionId])
-  @@map("role_permissions")
-}
-
-model User {
-  id            Int            @id @default(autoincrement())
-  firstName     String
-  lastName      String
-  email         String         @unique
-  password      String
-  roleId        Int
-  lastLogin     DateTime?
-  status        Status         @default(ACTIVE)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  deletedAt     DateTime?
-  auditLogs     AuditLog[]
-  notifications Notification[]
-  role          Role           @relation(fields: [roleId], references: [id])
-
-  @@index([roleId])
-  @@map("users")
-}
-
-model AuditLog {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  module      String
-  action      String
-  recordId    Int?
-  description String?
-  ipAddress   String?
-  createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@map("audit_logs")
-}
-
-model SystemSetting {
-  id           Int      @id @default(autoincrement())
-  settingKey   String   @unique
-  settingValue String
-  description  String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@map("system_settings")
-}
-
-model AcademicYear {
-  id            Int            @id @default(autoincrement())
-  name          String         @unique
-  startDate     DateTime
-  endDate       DateTime
-  isCurrent     Boolean        @default(false)
-  status        Status         @default(ACTIVE)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  deletedAt     DateTime?
-  attendance    Attendance[]
-  enrollments   Enrollment[]
-  examinations  Examination[]
-  feeStructures FeeStructure[]
-  terms         Term[]
-
-  @@map("academic_years")
-}
-
-model Term {
-  id             Int           @id @default(autoincrement())
-  academicYearId Int
-  name           String
-  startDate      DateTime
-  endDate        DateTime
-  isCurrent      Boolean       @default(false)
-  status         Status        @default(ACTIVE)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  deletedAt      DateTime?
-  attendance     Attendance[]
-  examinations   Examination[]
-  results        Result[]
-  academicYear   AcademicYear  @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-
-  @@unique([academicYearId, name])
-  @@index([academicYearId])
-  @@map("terms")
-}
-
-model Department {
-  id          Int       @id @default(autoincrement())
-  code        String    @unique
-  name        String    @unique
-  description String?
-  status      Status    @default(ACTIVE)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  subjects    Subject[]
-  teachers    Teacher[]
-
-  @@map("departments")
-}
-
-model SchoolClass {
-  id            Int            @id @default(autoincrement())
-  code          String         @unique
-  name          String
-  level         String
-  capacity      Int?
-  status        Status         @default(ACTIVE)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  deletedAt     DateTime?
-  enrollments   Enrollment[]
-  feeStructures FeeStructure[]
-  subjects      Subject[]
-
-  @@map("school_classes")
-}
-
-model Subject {
-  id              Int              @id @default(autoincrement())
-  code            String           @unique
-  name            String
-  departmentId    Int
-  description     String?
-  creditHours     Int              @default(1)
-  status          Status           @default(ACTIVE)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  deletedAt       DateTime?
-  schoolClassId   Int?
-  examinations    Examination[]
-  results         Result[]
-  department      Department       @relation(fields: [departmentId], references: [id])
-  SchoolClass     SchoolClass?     @relation(fields: [schoolClassId], references: [id])
-  teacherSubjects TeacherSubject[]
-
-  @@index([departmentId])
-  @@index([schoolClassId], map: "subjects_schoolClassId_fkey")
-  @@map("subjects")
-}
-
-model Teacher {
-  id              Int              @id @default(autoincrement())
-  staffNo         String           @unique
-  firstName       String
-  lastName        String
-  gender          Gender
-  email           String?          @unique
-  phone           String?
-  address         String?
-  qualification   String?
-  employmentDate  DateTime?
-  departmentId    Int
-  status          Status           @default(ACTIVE)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  deletedAt       DateTime?
-  examinations    Examination[]
-  teacherSubjects TeacherSubject[]
-  department      Department       @relation(fields: [departmentId], references: [id])
-
-  @@index([departmentId])
-  @@map("teachers")
-}
-
-model TeacherSubject {
-  id        Int     @id @default(autoincrement())
-  teacherId Int
-  subjectId Int
-  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-
-  @@unique([teacherId, subjectId])
-  @@index([teacherId])
-  @@index([subjectId])
-  @@map("teacher_subjects")
-}
-
-model Guardian {
-  id             Int       @id @default(autoincrement())
-  firstName      String
-  lastName       String
-  relationship   String
-  phone          String
-  alternatePhone String?
-  email          String?
-  occupation     String?
-  address        String?
-  status         Status    @default(ACTIVE)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  deletedAt      DateTime?
-  students       Student[]
-
-  @@map("guardians")
-}
-
-model Student {
-  id            Int              @id @default(autoincrement())
-  admissionNo   String           @unique
-  firstName     String
-  lastName      String
-  otherName     String?
-  gender        Gender
-  dateOfBirth   DateTime?
-  email         String?          @unique
-  phone         String?
-  address       String?
-  admissionDate DateTime
-  guardianId    Int?
-  status        Status           @default(ACTIVE)
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  deletedAt     DateTime?
-  attendance    Attendance[]
-  enrollments   Enrollment[]
-  payments      Payment[]
-  results       Result[]
-  invoices      StudentInvoice[]
-  guardian      Guardian?        @relation(fields: [guardianId], references: [id])
-
-  @@index([guardianId])
-  @@map("students")
-}
-
-model Enrollment {
-  id             Int          @id @default(autoincrement())
-  studentId      Int
-  academicYearId Int
-  schoolClassId  Int
-  enrollmentDate DateTime     @default(now())
-  status         Status       @default(ACTIVE)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  schoolClass    SchoolClass  @relation(fields: [schoolClassId], references: [id], onDelete: Cascade)
-  student        Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  @@unique([studentId, academicYearId])
-  @@index([studentId])
-  @@index([academicYearId])
-  @@index([schoolClassId])
-  @@map("enrollments")
-}
-
-model Attendance {
-  id             Int              @id @default(autoincrement())
-  studentId      Int
-  academicYearId Int
-  termId         Int
-  attendanceDate DateTime
-  status         AttendanceStatus
-  remarks        String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  academicYear   AcademicYear     @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  student        Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  term           Term             @relation(fields: [termId], references: [id], onDelete: Cascade)
-
-  @@unique([studentId, attendanceDate])
-  @@index([studentId])
-  @@index([academicYearId])
-  @@index([termId])
-  @@map("attendance")
-}
-
-model Examination {
-  id             Int          @id @default(autoincrement())
-  name           String
-  subjectId      Int
-  teacherId      Int
-  academicYearId Int
-  termId         Int
-  examDate       DateTime
-  totalMarks     Decimal      @db.Decimal(5, 2)
-  passMarks      Decimal      @db.Decimal(5, 2)
-  status         Status       @default(ACTIVE)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  deletedAt      DateTime?
-  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
-  subject        Subject      @relation(fields: [subjectId], references: [id])
-  teacher        Teacher      @relation(fields: [teacherId], references: [id])
-  term           Term         @relation(fields: [termId], references: [id])
-  results        Result[]
-
-  @@index([subjectId])
-  @@index([teacherId])
-  @@index([academicYearId])
-  @@index([termId])
-  @@map("examinations")
-}
-
-model Result {
-  id            Int         @id @default(autoincrement())
-  studentId     Int
-  examinationId Int
-  subjectId     Int
-  termId        Int
-  marksObtained Decimal     @db.Decimal(5, 2)
-  grade         String?
-  remarks       String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  examination   Examination @relation(fields: [examinationId], references: [id], onDelete: Cascade)
-  student       Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  subject       Subject     @relation(fields: [subjectId], references: [id])
-  term          Term        @relation(fields: [termId], references: [id])
-
-  @@unique([studentId, examinationId])
-  @@index([studentId])
-  @@index([examinationId])
-  @@index([subjectId])
-  @@index([termId])
-  @@map("results")
-}
-
-model FeeType {
-  id            Int            @id @default(autoincrement())
-  code          String         @unique
-  name          String
-  description   String?
-  status        Status         @default(ACTIVE)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  deletedAt     DateTime?
-  feeStructures FeeStructure[]
-
-  @@map("fee_types")
-}
-
-model FeeStructure {
-  id             Int              @id @default(autoincrement())
-  feeTypeId      Int
-  schoolClassId  Int
-  academicYearId Int
-  amount         Decimal          @db.Decimal(10, 2)
-  dueDate        DateTime?
-  status         Status           @default(ACTIVE)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  deletedAt      DateTime?
-  academicYear   AcademicYear     @relation(fields: [academicYearId], references: [id])
-  feeType        FeeType          @relation(fields: [feeTypeId], references: [id])
-  schoolClass    SchoolClass      @relation(fields: [schoolClassId], references: [id])
-  invoices       StudentInvoice[]
-
-  @@unique([feeTypeId, schoolClassId, academicYearId])
-  @@index([feeTypeId])
-  @@index([schoolClassId])
-  @@index([academicYearId])
-  @@map("fee_structures")
-}
-
-model StudentInvoice {
-  id                 Int                 @id @default(autoincrement())
-  studentId          Int
-  feeStructureId     Int
-  amount             Decimal             @db.Decimal(10, 2)
-  amountPaid         Decimal             @default(0.00) @db.Decimal(10, 2)
-  balance            Decimal             @db.Decimal(10, 2)
-  status             PaymentStatus       @default(PENDING)
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  paymentAllocations PaymentAllocation[]
-  feeStructure       FeeStructure        @relation(fields: [feeStructureId], references: [id])
-  student            Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  @@index([studentId])
-  @@index([feeStructureId])
-  @@map("student_invoices")
-}
-
-model Payment {
-  id             Int                 @id @default(autoincrement())
-  receiptNumber  String              @unique
-  studentId      Int
-  paymentDate    DateTime            @default(now())
-  paymentMethod  PaymentMethod
-  amount         Decimal             @db.Decimal(10, 2)
-  transactionRef String?
-  status         PaymentStatus       @default(COMPLETED)
-  remarks        String?
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  allocations    PaymentAllocation[]
-  student        Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  receipt        Receipt?
-
-  @@index([studentId])
-  @@map("payments")
-}
-
-model PaymentAllocation {
-  id               Int            @id @default(autoincrement())
-  paymentId        Int
-  studentInvoiceId Int
-  amountAllocated  Decimal        @db.Decimal(10, 2)
-  payment          Payment        @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  studentInvoice   StudentInvoice @relation(fields: [studentInvoiceId], references: [id], onDelete: Cascade)
-
-  @@unique([paymentId, studentInvoiceId])
-  @@index([paymentId])
-  @@index([studentInvoiceId])
-  @@map("payment_allocations")
-}
-
-model Receipt {
-  id            Int      @id @default(autoincrement())
-  paymentId     Int      @unique
-  receiptNumber String   @unique
-  issuedDate    DateTime @default(now())
-  printed       Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  payment       Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-
-  @@map("receipts")
-}
-
-model Announcement {
-  id          Int       @id @default(autoincrement())
-  title       String
-  content     String    @db.Text
-  publishDate DateTime  @default(now())
-  expiryDate  DateTime?
-  isPublished Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-
-  @@index([publishDate])
-  @@map("announcements")
-}
-
-model Event {
-  id          Int       @id @default(autoincrement())
-  title       String
-  description String?   @db.Text
-  eventDate   DateTime
-  location    String?
-  startTime   DateTime?
-  endTime     DateTime?
-  status      Status    @default(ACTIVE)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-
-  @@index([eventDate])
-  @@map("events")
-}
-
-model Notification {
-  id        Int              @id @default(autoincrement())
-  userId    Int
-  title     String
-  message   String           @db.Text
-  type      NotificationType @default(INFO)
-  isRead    Boolean          @default(false)
-  readAt    DateTime?
-  createdAt DateTime         @default(now())
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([isRead])
-  @@map("notifications")
-}
+//
+// =======================================================
+// GLOBAL ENUMS
+// =======================================================
+//
 
 enum Status {
   ACTIVE
@@ -526,6 +32,12 @@ enum Gender {
   FEMALE
 }
 
+//
+// =======================================================
+// SECURITY ENUMS
+// =======================================================
+//
+
 enum NotificationType {
   INFO
   SUCCESS
@@ -533,12 +45,41 @@ enum NotificationType {
   ERROR
 }
 
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  READ
+}
+
+//
+// =======================================================
+// ACADEMIC ENUMS
+// =======================================================
+//
+
 enum AttendanceStatus {
   PRESENT
   ABSENT
   LATE
   EXCUSED
 }
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+//
+// =======================================================
+// FINANCE ENUMS
+// =======================================================
+//
 
 enum PaymentMethod {
   CASH
@@ -553,4 +94,2764 @@ enum PaymentStatus {
   COMPLETED
   FAILED
   REVERSED
+}
+
+//
+// =======================================================
+// COMMUNICATION ENUMS
+// =======================================================
+//
+
+enum SmsStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+enum EmailStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+//
+// =======================================================
+// INVENTORY ENUMS
+// =======================================================
+//
+
+enum StockMovementType {
+  PURCHASE
+  ISSUE
+  RETURN
+  ADJUSTMENT
+  TRANSFER
+}
+
+//
+// =======================================================
+// HUMAN RESOURCE ENUMS
+// =======================================================
+//
+
+enum EmploymentType {
+  PERMANENT
+  CONTRACT
+  TEMPORARY
+  PART_TIME
+  INTERN
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum EmployeeAttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+  LEAVE
+}
+
+//
+// =======================================================
+// REPORT ENUMS
+// =======================================================
+//
+
+enum ReportExecutionStatus {
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+//
+// =======================================================
+// SECURITY MODULE
+// =======================================================
+//
+
+model Role {
+  id Int @id @default(autoincrement())
+
+  name        String @unique
+  description String?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // Relationships
+  users             User[]
+  rolePermissions   RolePermission[]
+
+  @@index([status])
+  @@map("roles")
+}
+
+model Permission {
+  id Int @id @default(autoincrement())
+
+  module      String
+  name        String
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  rolePermissions RolePermission[]
+
+  @@unique([module, name])
+
+  @@index([module])
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  id Int @id @default(autoincrement())
+
+  roleId Int
+  permissionId Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+
+  @@index([roleId])
+
+  @@index([permissionId])
+
+  @@map("role_permissions")
+}
+//
+// =======================================================
+// USERS
+// =======================================================
+//
+
+model User {
+  id Int @id @default(autoincrement())
+
+  firstName String
+  lastName String
+
+  email String @unique
+  password String
+
+  roleId Int
+
+  lastLogin DateTime?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // =====================================
+  // SECURITY
+  // =====================================
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  auditLogs AuditLog[]
+
+  loginHistory LoginHistory[]
+
+  systemLogs SystemLog[]
+
+  systemBackups SystemBackup[]
+
+  // =====================================
+  // COMMUNICATION
+  // =====================================
+
+  notifications Notification[]
+  publishedAnnouncements Announcement[]
+  organizedEvents Event[]
+
+  sentMessages Message[] @relation("MessageSender")
+
+  receivedMessages Message[] @relation("MessageReceiver")
+
+  receipts Receipt[]
+
+  // =====================================
+  // HUMAN RESOURCE
+  // =====================================
+
+  approvedLeaveRequests LeaveRequest[]
+
+  // =====================================
+  // HOSTEL
+  // =====================================
+
+  hostelInspections HostelInspection[]
+
+  // =====================================
+  // DASHBOARD
+  // =====================================
+
+  dashboards Dashboard[]
+
+  reports Report[]
+
+  reportExecutions ReportExecution[]
+
+  @@index([roleId])
+
+  @@index([status])
+
+  @@map("users")
+}
+//
+// =======================================================
+// AUDIT LOGS
+// =======================================================
+//
+
+model AuditLog {
+  id Int @id @default(autoincrement())
+
+  userId Int
+
+  module String
+  action String
+
+  recordId Int?
+
+  description String? @db.Text
+
+  ipAddress String?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+
+  @@index([module])
+
+  @@index([action])
+
+  @@index([createdAt])
+
+  @@map("audit_logs")
+}
+
+//
+// =======================================================
+// SYSTEM SETTINGS
+// =======================================================
+//
+
+model SystemSetting {
+  id Int @id @default(autoincrement())
+
+  settingKey String @unique
+
+  settingValue String @db.Text
+
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
+//
+// =======================================================
+// ACADEMIC YEARS
+// =======================================================
+//
+
+model AcademicYear {
+  id Int @id @default(autoincrement())
+
+  name String @unique
+
+  startDate DateTime
+  endDate   DateTime
+
+  isCurrent Boolean @default(false)
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // ==============================
+  // Academic
+  // ==============================
+  terms         Term[]
+  enrollments   Enrollment[]
+  attendance    Attendance[]
+  examinations  Examination[]
+  feeStructures FeeStructure[]
+  timetables    Timetable[]
+
+  // ==============================
+  // Hostel
+  // ==============================
+  bedAllocations BedAllocation[]
+
+  @@index([status])
+  @@index([isCurrent])
+
+  @@map("academic_years")
+}
+
+//
+// =======================================================
+// TERMS
+// =======================================================
+//
+
+model Term {
+  id Int @id @default(autoincrement())
+
+  academicYearId Int
+
+  name String
+
+  startDate DateTime
+  endDate   DateTime
+
+  isCurrent Boolean @default(false)
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  // ==============================
+  // Academic
+  // ==============================
+  attendance   Attendance[]
+  examinations Examination[]
+  results      Result[]
+  timetables   Timetable[]
+
+  @@unique([academicYearId, name])
+
+  @@index([academicYearId])
+  @@index([status])
+  @@index([isCurrent])
+
+  @@map("terms")
+}
+
+//
+// =======================================================
+// DEPARTMENTS
+// =======================================================
+//
+
+model Department {
+  id Int @id @default(autoincrement())
+
+  code String @unique
+
+  name String @unique
+
+  description String?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // ==============================
+  // Academic
+  // ==============================
+
+  teachers Teacher[]
+
+  subjects Subject[]
+
+  // ==============================
+  // Human Resources
+  // ==============================
+
+  employees Employee[]
+
+  // ==============================
+  // Inventory
+  // ==============================
+
+  stockIssues StockIssue[]
+
+  @@index([status])
+
+  @@map("departments")
+}
+
+//
+// =======================================================
+// SCHOOL CLASSES
+// =======================================================
+//
+
+model SchoolClass {
+  id Int @id @default(autoincrement())
+
+  code String @unique
+  name String
+  level String
+  capacity Int?
+  description String?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  subjects      Subject[]
+  enrollments   Enrollment[]
+  feeStructures FeeStructure[]
+  students      Student[]
+  timetables    Timetable[]
+
+  @@index([status])
+
+  @@map("school_classes")
+}
+
+//
+// =======================================================
+// TEACHERS
+// =======================================================
+//
+
+model Teacher {
+  id Int @id @default(autoincrement())
+
+  staffNo String @unique
+
+  firstName String
+  lastName String
+
+  gender Gender
+
+  email String? @unique
+  phone String?
+  address String?
+  qualification String?
+
+  employmentDate DateTime?
+
+  departmentId Int
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // ==============================
+  // Relationships
+  // ==============================
+
+  department Department @relation(fields: [departmentId], references: [id])
+
+  teacherSubjects TeacherSubject[]
+
+  examinations Examination[]
+
+  timetables Timetable[] @relation("TeacherTimetables")
+  timetableEntries TimetableEntry[] @relation("TeacherTimetableEntries")
+
+  @@index([departmentId])
+  @@index([status])
+
+  @@map("teachers")
+}
+
+//
+// =======================================================
+// SUBJECTS
+// =======================================================
+//
+
+model Subject {
+  id Int @id @default(autoincrement())
+
+  code String @unique
+
+  name String
+
+  departmentId Int
+
+  schoolClassId Int?
+
+  description String?
+
+  creditHours Int @default(1)
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // ==============================
+  // Relationships
+  // ==============================
+
+  department Department @relation(fields: [departmentId], references: [id])
+
+  schoolClass SchoolClass? @relation(fields: [schoolClassId], references: [id])
+
+  teacherSubjects TeacherSubject[]
+
+  examinations Examination[]
+
+  results Result[]
+
+  timetables Timetable[] @relation("SubjectTimetables")
+  timetableEntries TimetableEntry[] @relation("SubjectTimetableEntries")
+
+  @@index([departmentId])
+  @@index([schoolClassId])
+  @@index([status])
+
+  @@map("subjects")
+}
+
+//
+// =======================================================
+// TEACHER SUBJECT ASSIGNMENT
+// =======================================================
+//
+
+model TeacherSubject {
+  id Int @id @default(autoincrement())
+
+  teacherId Int
+
+  subjectId Int
+
+  assignedDate DateTime @default(now())
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, subjectId])
+
+  @@index([teacherId])
+
+  @@index([subjectId])
+
+  @@index([status])
+
+  @@map("teacher_subjects")
+}
+//
+// =======================================================
+// GUARDIANS
+// =======================================================
+//
+
+model Guardian {
+  id Int @id @default(autoincrement())
+
+  firstName String
+  lastName  String
+
+  relationship String
+
+  phone String
+  email String?
+
+  occupation String?
+  address String?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // ==============================
+  // Relationships
+  // ==============================
+  students Student[]
+
+  @@index([phone])
+  @@index([status])
+
+  @@map("guardians")
+}
+
+//
+// =======================================================
+// STUDENTS
+// =======================================================
+//
+
+model Student {
+  id Int @id @default(autoincrement())
+
+  admissionNo String @unique
+
+  firstName String
+  lastName String
+
+  otherName String?
+
+  gender Gender
+
+  dateOfBirth DateTime?
+
+  email String?
+  phone String?
+  address String?
+
+  admissionDate DateTime
+
+  guardianId Int?
+  classId Int
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  guardian Guardian? @relation(fields: [guardianId], references: [id], onDelete: SetNull)
+  schoolClass SchoolClass @relation(fields: [classId], references: [id])
+
+  enrollments Enrollment[]
+  attendance Attendance[]
+  results Result[]
+
+  invoices StudentInvoice[]
+  payments Payment[]
+  discounts StudentDiscount[]
+  financialTransactions FinancialTransaction[]
+
+  libraryMember LibraryMember?
+
+  transportAssignments StudentTransport[]
+
+  bedAllocations BedAllocation[]
+
+  @@index([guardianId])
+  @@index([classId])
+  @@index([status])
+
+  @@map("students")
+}
+
+//
+// =======================================================
+// ENROLLMENTS
+// =======================================================
+//
+
+model Enrollment {
+  id Int @id @default(autoincrement())
+
+  studentId Int
+
+  classId Int
+
+  academicYearId Int
+
+  enrollmentDate DateTime @default(now())
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  schoolClass SchoolClass @relation(fields: [classId], references: [id])
+
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  @@unique([studentId, academicYearId])
+
+  @@index([studentId])
+  @@index([classId])
+  @@index([academicYearId])
+
+  @@map("enrollments")
+}
+
+//
+// =======================================================
+// STUDENT ATTENDANCE
+// =======================================================
+//
+
+model Attendance {
+  id Int @id @default(autoincrement())
+
+  studentId Int
+
+  academicYearId Int
+
+  termId Int
+
+  attendanceDate DateTime
+
+  status AttendanceStatus
+
+  remarks String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  term Term @relation(fields: [termId], references: [id])
+
+  @@unique([studentId, attendanceDate])
+
+  @@index([studentId])
+  @@index([attendanceDate])
+  @@index([academicYearId])
+  @@index([termId])
+
+  @@map("attendance")
+}
+
+//
+// =======================================================
+// TIMETABLE
+// =======================================================
+//
+
+model Timetable {
+  id Int @id @default(autoincrement())
+
+  academicYearId Int
+  termId Int
+  classId Int
+  subjectId Int
+  teacherId Int
+
+  dayOfWeek String
+  startTime String
+  endTime String
+
+  room String?
+  remarks String?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  term Term @relation(fields: [termId], references: [id])
+  schoolClass SchoolClass @relation(fields: [classId], references: [id])
+  subject Subject @relation("SubjectTimetables", fields: [subjectId], references: [id])
+  teacher Teacher @relation("TeacherTimetables", fields: [teacherId], references: [id])
+
+  @@unique([academicYearId, termId, classId, dayOfWeek, startTime])
+  @@index([academicYearId])
+  @@index([termId])
+  @@index([classId])
+  @@index([subjectId])
+  @@index([teacherId])
+  @@index([status])
+
+  @@map("timetables")
+}
+
+model TimetableEntry {
+  id Int @id @default(autoincrement())
+
+  subjectId Int
+  teacherId Int
+
+  dayOfWeek String
+  startTime String
+  endTime String
+
+  room String?
+  remarks String?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subject Subject @relation("SubjectTimetableEntries", fields: [subjectId], references: [id])
+  teacher Teacher @relation("TeacherTimetableEntries", fields: [teacherId], references: [id])
+
+  @@index([subjectId])
+  @@index([teacherId])
+  @@index([status])
+
+  @@map("timetable_entries")
+}
+
+//
+// =======================================================
+// EXAMINATIONS
+// =======================================================
+//
+
+model Examination {
+  id Int @id @default(autoincrement())
+
+  name String
+
+  academicYearId Int
+  termId Int
+
+  subjectId Int
+  teacherId Int
+
+  examinationDate DateTime
+
+  totalMarks Decimal @db.Decimal(6,2)
+  passMarks  Decimal @db.Decimal(6,2)
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  term Term @relation(fields: [termId], references: [id])
+
+  subject Subject @relation(fields: [subjectId], references: [id])
+
+  teacher Teacher @relation(fields: [teacherId], references: [id])
+
+  results Result[]
+
+  @@index([academicYearId])
+  @@index([termId])
+  @@index([subjectId])
+  @@index([teacherId])
+  @@index([status])
+
+  @@map("examinations")
+}
+
+//
+// =======================================================
+// RESULTS
+// =======================================================
+//
+
+model Result {
+  id Int @id @default(autoincrement())
+
+  examinationId Int
+  studentId Int
+  subjectId Int
+  termId Int
+
+  marks Decimal @db.Decimal(6,2)
+
+  gradeId Int?
+
+  remarks String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  examination Examination @relation(fields: [examinationId], references: [id], onDelete: Cascade)
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  subject Subject @relation(fields: [subjectId], references: [id])
+
+  term Term @relation(fields: [termId], references: [id])
+
+  grade Grade? @relation(fields: [gradeId], references: [id], onDelete: SetNull)
+
+  @@unique([examinationId, studentId])
+
+  @@index([studentId])
+  @@index([subjectId])
+  @@index([termId])
+  @@index([gradeId])
+
+  @@map("results")
+}
+
+//
+// =======================================================
+// GRADES
+// =======================================================
+//
+
+model Grade {
+  id Int @id @default(autoincrement())
+
+  grade String
+
+  description String?
+
+  minimumScore Decimal @db.Decimal(6,2)
+
+  maximumScore Decimal @db.Decimal(6,2)
+
+  gradePoint Decimal? @db.Decimal(4,2)
+
+  remarks String?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  results Result[]
+
+  @@unique([grade])
+
+  @@index([status])
+
+  @@map("grades")
+}
+
+//
+// =======================================================
+// GRADE SCALES
+// =======================================================
+//
+
+model GradeScale {
+  id Int @id @default(autoincrement())
+
+  name String @unique
+
+  description String?
+
+  isDefault Boolean @default(false)
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([isDefault])
+
+  @@map("grade_scales")
+}
+//
+// =======================================================
+// FINANCE - FEE TYPES
+// =======================================================
+//
+
+model FeeType {
+  id Int @id @default(autoincrement())
+
+  code String @unique
+  name String
+
+  description String?
+
+  isOptional Boolean @default(false)
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  feeStructures FeeStructure[]
+
+  @@index([status])
+
+  @@map("fee_types")
+}
+
+//
+// =======================================================
+// FINANCE - FEE STRUCTURES
+// =======================================================
+//
+
+model FeeStructure {
+  id Int @id @default(autoincrement())
+
+  feeTypeId Int
+
+  classId Int
+
+  academicYearId Int
+
+  amount Decimal @db.Decimal(12,2)
+
+  dueDate DateTime?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  feeType FeeType @relation(fields: [feeTypeId], references: [id])
+
+  schoolClass SchoolClass @relation(fields: [classId], references: [id])
+
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  invoices StudentInvoice[]
+
+  @@unique([feeTypeId, classId, academicYearId])
+
+  @@index([feeTypeId])
+  @@index([classId])
+  @@index([academicYearId])
+  @@index([status])
+
+  @@map("fee_structures")
+}
+
+//
+// =======================================================
+// FINANCE - STUDENT INVOICES
+// =======================================================
+//
+
+model StudentInvoice {
+  id Int @id @default(autoincrement())
+
+  invoiceNumber String @unique
+
+  studentId Int
+
+  feeStructureId Int
+
+  amount Decimal @db.Decimal(12,2)
+
+  paidAmount Decimal @default(0) @db.Decimal(12,2)
+
+  balance Decimal @db.Decimal(12,2)
+
+  dueDate DateTime?
+
+  status PaymentStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  feeStructure FeeStructure @relation(fields: [feeStructureId], references: [id])
+
+  payments Payment[]
+
+  paymentAllocations PaymentAllocation[]
+
+  @@index([studentId])
+  @@index([feeStructureId])
+  @@index([status])
+
+  @@map("student_invoices")
+}
+
+//
+// =======================================================
+// FINANCE - PAYMENTS
+// =======================================================
+//
+
+model Payment {
+  id Int @id @default(autoincrement())
+
+  receiptNumber String @unique
+
+  studentId Int
+
+  invoiceId Int
+
+  amount Decimal @db.Decimal(12,2)
+
+  paymentDate DateTime @default(now())
+
+  paymentMethod PaymentMethod
+
+  status PaymentStatus @default(COMPLETED)
+
+  transactionReference String?
+
+  remarks String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id])
+
+  invoice StudentInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  paymentAllocations PaymentAllocation[]
+  receipt Receipt?
+  financialTransactions FinancialTransaction[]
+
+  @@index([studentId])
+  @@index([invoiceId])
+  @@index([paymentDate])
+  @@index([status])
+
+  @@map("payments")
+}
+//
+// =======================================================
+// PAYMENT ALLOCATIONS
+// =======================================================
+//
+
+model PaymentAllocation {
+  id Int @id @default(autoincrement())
+
+  paymentId Int
+  invoiceId Int
+
+  allocatedAmount Decimal @db.Decimal(12,2)
+
+  createdAt DateTime @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  invoice StudentInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@unique([paymentId, invoiceId])
+
+  @@index([paymentId])
+  @@index([invoiceId])
+
+  @@map("payment_allocations")
+}
+
+//
+// =======================================================
+// RECEIPTS
+// =======================================================
+//
+
+model Receipt {
+  id Int @id @default(autoincrement())
+
+  receiptNumber String @unique
+
+  paymentId Int @unique
+
+  issuedDate DateTime @default(now())
+
+  issuedById Int
+
+  remarks String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  issuedBy User @relation(fields: [issuedById], references: [id])
+
+  @@index([issuedDate])
+  @@index([issuedById])
+
+  @@map("receipts")
+}
+
+//
+// =======================================================
+// SCHOLARSHIPS
+// =======================================================
+//
+
+model Scholarship {
+  id Int @id @default(autoincrement())
+
+  name String @unique
+
+  sponsor String?
+
+  percentage Decimal? @db.Decimal(5,2)
+
+  fixedAmount Decimal? @db.Decimal(12,2)
+
+  description String?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  discounts StudentDiscount[]
+
+  @@index([status])
+
+  @@map("scholarships")
+}
+
+//
+// =======================================================
+// STUDENT DISCOUNTS
+// =======================================================
+//
+
+model StudentDiscount {
+  id Int @id @default(autoincrement())
+
+  studentId Int
+
+  scholarshipId Int?
+
+  amount Decimal @db.Decimal(12,2)
+
+  reason String?
+
+  effectiveDate DateTime
+
+  expiryDate DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  scholarship Scholarship? @relation(fields: [scholarshipId], references: [id], onDelete: SetNull)
+
+  @@index([studentId])
+  @@index([scholarshipId])
+
+  @@map("student_discounts")
+}
+
+//
+// =======================================================
+// FINANCIAL TRANSACTIONS
+// =======================================================
+//
+
+model FinancialTransaction {
+  id Int @id @default(autoincrement())
+
+  transactionNumber String @unique
+
+  paymentId Int?
+
+  studentId Int?
+
+  transactionDate DateTime @default(now())
+
+  debit Decimal @default(0) @db.Decimal(12,2)
+
+  credit Decimal @default(0) @db.Decimal(12,2)
+
+  balance Decimal @db.Decimal(12,2)
+
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  student Student? @relation(fields: [studentId], references: [id], onDelete: SetNull)
+
+  @@index([transactionDate])
+  @@index([paymentId])
+  @@index([studentId])
+
+  @@map("financial_transactions")
+}
+//
+// =======================================================
+// ANNOUNCEMENTS
+// =======================================================
+//
+
+model Announcement {
+  id Int @id @default(autoincrement())
+
+  title String
+
+  content String @db.Text
+
+  publishedById Int
+
+  publishDate DateTime @default(now())
+
+  expiryDate DateTime?
+
+  isPublished Boolean @default(true)
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  publishedBy User @relation(fields: [publishedById], references: [id])
+
+  @@index([publishedById])
+  @@index([publishDate])
+  @@index([status])
+
+  @@map("announcements")
+}
+
+//
+// =======================================================
+// NOTIFICATIONS
+// =======================================================
+//
+
+model Notification {
+  id Int @id @default(autoincrement())
+
+  title String
+
+  message String @db.Text
+
+  type NotificationType
+
+  status NotificationStatus @default(PENDING)
+
+  userId Int
+
+  isRead Boolean @default(false)
+
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+
+  @@map("notifications")
+}
+
+//
+// =======================================================
+// EVENTS
+// =======================================================
+//
+
+model Event {
+  id Int @id @default(autoincrement())
+
+  title String
+
+  description String? @db.Text
+
+  venue String?
+
+  startDate DateTime
+
+  endDate DateTime
+
+  organizedById Int
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizedBy User @relation(fields: [organizedById], references: [id])
+
+  @@index([organizedById])
+  @@index([startDate])
+  @@index([status])
+
+  @@map("events")
+}
+
+//
+// =======================================================
+// MESSAGES
+// =======================================================
+//
+
+model Message {
+  id Int @id @default(autoincrement())
+
+  subject String?
+
+  message String @db.Text
+
+  senderId Int
+
+  receiverId Int
+
+  isRead Boolean @default(false)
+
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sender User @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  receiver User @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([isRead])
+
+  @@map("messages")
+}
+
+//
+// =======================================================
+// SMS LOGS
+// =======================================================
+//
+
+model SmsLog {
+  id Int @id @default(autoincrement())
+
+  recipient String
+
+  message String @db.Text
+
+  status SmsStatus @default(QUEUED)
+
+  provider String?
+
+  providerReference String?
+
+  sentAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@index([recipient])
+
+  @@map("sms_logs")
+}
+
+//
+// =======================================================
+// EMAIL LOGS
+// =======================================================
+//
+
+model EmailLog {
+  id Int @id @default(autoincrement())
+
+  recipient String
+
+  subject String
+
+  message String @db.Text
+
+  status EmailStatus @default(QUEUED)
+
+  provider String?
+
+  providerReference String?
+
+  sentAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@index([recipient])
+
+  @@map("email_logs")
+}
+//
+// =======================================================
+// DASHBOARDS
+// =======================================================
+//
+
+model Dashboard {
+  id Int @id @default(autoincrement())
+
+  name String
+
+  description String?
+
+  userId Int
+
+  isDefault Boolean @default(false)
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  widgets DashboardWidget[]
+
+  @@index([userId])
+  @@index([status])
+
+  @@map("dashboards")
+}
+
+//
+// =======================================================
+// DASHBOARD WIDGETS
+// =======================================================
+//
+
+model DashboardWidget {
+  id Int @id @default(autoincrement())
+
+  dashboardId Int
+
+  title String
+
+  widgetType String
+
+  dataSource String?
+
+  positionX Int @default(0)
+  positionY Int @default(0)
+
+  width Int @default(4)
+  height Int @default(3)
+
+  settings Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dashboard Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+
+  @@index([dashboardId])
+
+  @@map("dashboard_widgets")
+}
+
+//
+// =======================================================
+// REPORTS
+// =======================================================
+//
+
+model Report {
+  id Int @id @default(autoincrement())
+
+  name String
+
+  description String?
+
+  reportType String
+
+  query Json?
+
+  createdById Int
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy User @relation(fields: [createdById], references: [id])
+
+  executions ReportExecution[]
+
+  @@index([createdById])
+  @@index([status])
+
+  @@map("reports")
+}
+
+//
+// =======================================================
+// REPORT EXECUTIONS
+// =======================================================
+//
+
+model ReportExecution {
+  id Int @id @default(autoincrement())
+
+  reportId Int
+
+  executedById Int
+
+  executionDate DateTime @default(now())
+
+  executionStatus ReportExecutionStatus @default(SUCCESS)
+
+  executionTimeMs Int?
+
+  outputFile String?
+
+  errorMessage String? @db.Text
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  executedBy User @relation(fields: [executedById], references: [id])
+
+  @@index([reportId])
+  @@index([executedById])
+  @@index([executionDate])
+
+  @@map("report_executions")
+}
+//
+// =======================================================
+// LIBRARY BOOK CATEGORIES
+// =======================================================
+//
+
+model BookCategory {
+  id Int @id @default(autoincrement())
+
+  name String @unique
+
+  description String?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  books Book[]
+
+  @@index([status])
+
+  @@map("book_categories")
+}
+
+//
+// =======================================================
+// BOOK AUTHORS
+// =======================================================
+//
+
+model BookAuthor {
+  id Int @id @default(autoincrement())
+
+  firstName String
+
+  lastName String
+
+  biography String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  books Book[]
+
+  @@map("book_authors")
+}
+
+//
+// =======================================================
+// BOOKS
+// =======================================================
+//
+
+model Book {
+  id Int @id @default(autoincrement())
+
+  isbn String @unique
+
+  title String
+
+  categoryId Int
+
+  authorId Int
+
+  publisher String?
+
+  edition String?
+
+  publicationYear Int?
+
+  totalCopies Int @default(1)
+
+  availableCopies Int @default(1)
+
+  shelfLocation String?
+
+  description String? @db.Text
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category BookCategory @relation(fields: [categoryId], references: [id])
+
+  author BookAuthor @relation(fields: [authorId], references: [id])
+
+  loans LibraryLoan[]
+
+  @@index([categoryId])
+  @@index([authorId])
+  @@index([status])
+
+  @@map("books")
+}
+
+//
+// =======================================================
+// LIBRARY MEMBERS
+// =======================================================
+//
+
+model LibraryMember {
+  id Int @id @default(autoincrement())
+
+  studentId Int @unique
+
+  membershipNumber String @unique
+
+  joinDate DateTime @default(now())
+
+  expiryDate DateTime?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  loans LibraryLoan[]
+
+  @@index([status])
+
+  @@map("library_members")
+}
+
+//
+// =======================================================
+// LIBRARY LOANS
+// =======================================================
+//
+
+model LibraryLoan {
+  id Int @id @default(autoincrement())
+
+  memberId Int
+
+  bookId Int
+
+  borrowedDate DateTime @default(now())
+
+  dueDate DateTime
+
+  returnedDate DateTime?
+
+  fineAmount Decimal @default(0) @db.Decimal(10,2)
+
+  remarks String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  member LibraryMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  book Book @relation(fields: [bookId], references: [id])
+
+  @@index([memberId])
+  @@index([bookId])
+  @@index([dueDate])
+
+  @@map("library_loans")
+}
+//
+// =======================================================
+// SUPPLIERS
+// =======================================================
+//
+
+model Supplier {
+  id Int @id @default(autoincrement())
+
+  supplierCode String @unique
+  companyName String
+  contactPerson String?
+
+  email String?
+  phone String?
+
+  address String? @db.Text
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchaseOrders PurchaseOrder[]
+
+  @@index([status])
+
+  @@map("suppliers")
+}
+
+//
+// =======================================================
+// PURCHASE ORDERS
+// =======================================================
+//
+
+model PurchaseOrder {
+  id Int @id @default(autoincrement())
+
+  orderNumber String @unique
+
+  supplierId Int
+
+  orderDate DateTime @default(now())
+
+  expectedDeliveryDate DateTime?
+
+  totalAmount Decimal @default(0) @db.Decimal(12,2)
+
+  remarks String? @db.Text
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+
+  items PurchaseOrderItem[]
+
+  @@index([supplierId])
+  @@index([status])
+
+  @@map("purchase_orders")
+}
+
+//
+// =======================================================
+// PURCHASE ORDER ITEMS
+// =======================================================
+//
+
+model PurchaseOrderItem {
+  id Int @id @default(autoincrement())
+
+  purchaseOrderId Int
+
+  stockItemId Int
+
+  quantity Int
+
+  unitPrice Decimal @db.Decimal(12,2)
+
+  totalPrice Decimal @db.Decimal(12,2)
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  stockItem StockItem @relation(fields: [stockItemId], references: [id])
+
+  @@index([purchaseOrderId])
+  @@index([stockItemId])
+
+  @@map("purchase_order_items")
+}
+
+//
+// =======================================================
+// STOCK ITEMS
+// =======================================================
+//
+
+model StockItem {
+  id Int @id @default(autoincrement())
+
+  itemCode String @unique
+
+  itemName String
+
+  unit String
+
+  minimumStock Int @default(0)
+
+  currentStock Int @default(0)
+
+  unitCost Decimal @default(0) @db.Decimal(12,2)
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchaseOrderItems PurchaseOrderItem[]
+
+  stockMovements StockMovement[]
+
+  stockIssues StockIssue[]
+
+  @@index([status])
+
+  @@map("stock_items")
+}
+
+//
+// =======================================================
+// STOCK MOVEMENTS
+// =======================================================
+//
+
+model StockMovement {
+  id Int @id @default(autoincrement())
+
+  stockItemId Int
+
+  movementType StockMovementType
+
+  quantity Int
+
+  balanceAfterMovement Int
+
+  referenceNumber String?
+
+  remarks String? @db.Text
+
+  movementDate DateTime @default(now())
+
+  stockItem StockItem @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
+
+  @@index([stockItemId])
+  @@index([movementDate])
+
+  @@map("stock_movements")
+}
+
+//
+// =======================================================
+// STOCK ISSUES
+// =======================================================
+//
+
+model StockIssue {
+  id Int @id @default(autoincrement())
+
+  stockItemId Int
+
+  departmentId Int
+
+  quantity Int
+
+  issueDate DateTime @default(now())
+
+  issuedTo String?
+
+  remarks String? @db.Text
+
+  stockItem StockItem @relation(fields: [stockItemId], references: [id])
+
+  department Department @relation(fields: [departmentId], references: [id])
+
+  @@index([stockItemId])
+  @@index([departmentId])
+
+  @@map("stock_issues")
+}
+//
+// =======================================================
+// EMPLOYEES
+// =======================================================
+//
+
+model Employee {
+  id Int @id @default(autoincrement())
+
+  employeeNo String @unique
+
+  firstName String
+  lastName String
+
+  gender Gender
+
+  email String? @unique
+  phone String?
+
+  address String? @db.Text
+
+  employmentType EmploymentType
+
+  hireDate DateTime
+
+  basicSalary Decimal @db.Decimal(12,2)
+
+  departmentId Int
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  department Department @relation(fields: [departmentId], references: [id])
+
+  attendances EmployeeAttendance[]
+
+  leaveRequests LeaveRequest[]
+
+  payrolls Payroll[]
+
+  assetAssignments AssetAssignment[]
+
+  @@index([departmentId])
+  @@index([status])
+
+  @@map("employees")
+}
+//
+// =======================================================
+// EMPLOYEE ATTENDANCE
+// =======================================================
+//
+
+model EmployeeAttendance {
+  id Int @id @default(autoincrement())
+
+  employeeId Int
+
+  attendanceDate DateTime
+
+  status EmployeeAttendanceStatus
+
+  checkIn DateTime?
+
+  checkOut DateTime?
+
+  remarks String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, attendanceDate])
+
+  @@index([employeeId])
+  @@index([attendanceDate])
+
+  @@map("employee_attendance")
+}
+
+//
+// =======================================================
+// LEAVE REQUESTS
+// =======================================================
+//
+
+model LeaveRequest {
+  id Int @id @default(autoincrement())
+
+  employeeId Int
+
+  leaveType String
+
+  startDate DateTime
+
+  endDate DateTime
+
+  numberOfDays Int
+
+  reason String? @db.Text
+
+  status LeaveStatus @default(PENDING)
+
+  approvedById Int?
+
+  approvedDate DateTime?
+
+  remarks String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  approvedBy User? @relation(fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@index([employeeId])
+  @@index([status])
+
+  @@map("leave_requests")
+}
+
+//
+// =======================================================
+// PAYROLL
+// =======================================================
+//
+
+model Payroll {
+  id Int @id @default(autoincrement())
+
+  employeeId Int
+
+  payrollMonth Int
+
+  payrollYear Int
+
+  basicSalary Decimal @db.Decimal(12,2)
+
+  allowances Decimal @default(0) @db.Decimal(12,2)
+
+  deductions Decimal @default(0) @db.Decimal(12,2)
+
+  netSalary Decimal @db.Decimal(12,2)
+
+  paymentDate DateTime?
+
+  remarks String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, payrollMonth, payrollYear])
+
+  @@index([employeeId])
+  @@index([payrollYear, payrollMonth])
+
+  @@map("payrolls")
+}
+//
+// =======================================================
+// TRANSPORT ROUTES
+// =======================================================
+//
+
+model TransportRoute {
+  id Int @id @default(autoincrement())
+
+  routeCode String @unique
+  routeName String
+
+  startLocation String
+  endLocation String
+
+  distance Decimal? @db.Decimal(8,2)
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vehicles Vehicle[]
+
+  studentAssignments StudentTransport[]
+
+  @@index([status])
+
+  @@map("transport_routes")
+}
+
+//
+// =======================================================
+// VEHICLES
+// =======================================================
+//
+
+model Vehicle {
+  id Int @id @default(autoincrement())
+
+  registrationNumber String @unique
+
+  vehicleName String?
+
+  make String?
+
+  model String?
+
+  capacity Int
+
+  routeId Int?
+
+  driverId Int?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  route TransportRoute? @relation(fields: [routeId], references: [id], onDelete: SetNull)
+
+  driver Driver? @relation(fields: [driverId], references: [id], onDelete: SetNull)
+
+  @@index([routeId])
+  @@index([driverId])
+  @@index([status])
+
+  @@map("vehicles")
+}
+
+//
+// =======================================================
+// DRIVERS
+// =======================================================
+//
+
+model Driver {
+  id Int @id @default(autoincrement())
+
+  firstName String
+  lastName String
+
+  phone String
+
+  licenseNumber String @unique
+
+  licenseExpiry DateTime?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vehicles Vehicle[]
+
+  @@index([status])
+
+  @@map("drivers")
+}
+
+//
+// =======================================================
+// STUDENT TRANSPORT
+// =======================================================
+//
+
+model StudentTransport {
+  id Int @id @default(autoincrement())
+
+  studentId Int
+
+  routeId Int
+
+  pickupPoint String?
+
+  assignedDate DateTime @default(now())
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  route TransportRoute @relation(fields: [routeId], references: [id])
+
+  @@unique([studentId, routeId])
+
+  @@index([studentId])
+  @@index([routeId])
+
+  @@map("student_transport")
+}
+
+//
+// =======================================================
+// HOSTELS
+// =======================================================
+//
+
+model Hostel {
+  id Int @id @default(autoincrement())
+
+  hostelCode String @unique
+
+  hostelName String
+
+  gender Gender
+
+  totalRooms Int @default(0)
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rooms HostelRoom[]
+
+  inspections HostelInspection[]
+
+  @@index([status])
+
+  @@map("hostels")
+}
+
+//
+// =======================================================
+// HOSTEL ROOMS
+// =======================================================
+//
+
+model HostelRoom {
+  id Int @id @default(autoincrement())
+
+  hostelId Int
+
+  roomNumber String
+
+  capacity Int
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  hostel Hostel @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+
+  beds Bed[]
+
+  @@unique([hostelId, roomNumber])
+
+  @@index([hostelId])
+
+  @@map("hostel_rooms")
+}
+
+//
+// =======================================================
+// BEDS
+// =======================================================
+//
+
+model Bed {
+  id Int @id @default(autoincrement())
+
+  roomId Int
+
+  bedNumber String
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  room HostelRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  allocations BedAllocation[]
+
+  @@unique([roomId, bedNumber])
+
+  @@index([roomId])
+
+  @@map("beds")
+}
+
+//
+// =======================================================
+// BED ALLOCATION
+// =======================================================
+//
+
+model BedAllocation {
+  id Int @id @default(autoincrement())
+
+  studentId Int
+
+  bedId Int
+
+  academicYearId Int
+
+  allocatedDate DateTime @default(now())
+
+  vacatedDate DateTime?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  bed Bed @relation(fields: [bedId], references: [id])
+
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  @@unique([studentId, academicYearId])
+
+  @@index([bedId])
+  @@index([academicYearId])
+
+  @@map("bed_allocations")
+}
+
+//
+// =======================================================
+// HOSTEL INSPECTIONS
+// =======================================================
+//
+
+model HostelInspection {
+  id Int @id @default(autoincrement())
+
+  hostelId Int
+
+  inspectedById Int
+
+  inspectionDate DateTime @default(now())
+
+  remarks String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  hostel Hostel @relation(fields: [hostelId], references: [id])
+
+  inspectedBy User @relation(fields: [inspectedById], references: [id])
+
+  @@index([hostelId])
+  @@index([inspectionDate])
+
+  @@map("hostel_inspections")
+}
+//
+// =======================================================
+// ASSET CATEGORIES
+// =======================================================
+//
+
+model AssetCategory {
+  id Int @id @default(autoincrement())
+
+  categoryCode String @unique
+  categoryName String
+
+  description String?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assets Asset[]
+
+  @@index([status])
+
+  @@map("asset_categories")
+}
+
+//
+// =======================================================
+// ASSETS
+// =======================================================
+//
+
+model Asset {
+  id Int @id @default(autoincrement())
+
+  assetCode String @unique
+
+  assetName String
+
+  categoryId Int
+
+  serialNumber String?
+
+  purchaseDate DateTime?
+
+  purchasePrice Decimal? @db.Decimal(12,2)
+
+  supplier String?
+
+  warrantyExpiry DateTime?
+
+  location String?
+
+  condition String?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category AssetCategory @relation(fields: [categoryId], references: [id])
+
+  assignments AssetAssignment[]
+
+  maintenances AssetMaintenance[]
+
+  disposals AssetDisposal[]
+
+  @@index([categoryId])
+  @@index([status])
+
+  @@map("assets")
+}
+
+//
+// =======================================================
+// ASSET ASSIGNMENTS
+// =======================================================
+//
+
+model AssetAssignment {
+  id Int @id @default(autoincrement())
+
+  assetId Int
+
+  employeeId Int?
+
+  assignedDate DateTime @default(now())
+
+  returnedDate DateTime?
+
+  assignedLocation String?
+
+  remarks String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  employee Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@index([assetId])
+  @@index([employeeId])
+
+  @@map("asset_assignments")
+}
+
+//
+// =======================================================
+// ASSET MAINTENANCE
+// =======================================================
+//
+
+model AssetMaintenance {
+  id Int @id @default(autoincrement())
+
+  assetId Int
+
+  maintenanceDate DateTime
+
+  maintenanceType String
+
+  serviceProvider String?
+
+  cost Decimal? @db.Decimal(12,2)
+
+  remarks String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+  @@index([maintenanceDate])
+
+  @@map("asset_maintenance")
+}
+
+//
+// =======================================================
+// ASSET DISPOSAL
+// =======================================================
+//
+
+model AssetDisposal {
+  id Int @id @default(autoincrement())
+
+  assetId Int
+
+  disposalDate DateTime
+
+  disposalMethod String
+
+  disposalValue Decimal? @db.Decimal(12,2)
+
+  reason String? @db.Text
+
+  approvedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+  @@index([disposalDate])
+
+  @@map("asset_disposals")
+}
+//
+// =======================================================
+// SYSTEM BACKUPS
+// =======================================================
+//
+
+model SystemBackup {
+  id Int @id @default(autoincrement())
+
+  backupName String
+
+  filePath String
+
+  fileSize BigInt?
+
+  backupDate DateTime @default(now())
+
+  createdById Int
+
+  remarks String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy User @relation(fields: [createdById], references: [id])
+
+  @@index([backupDate])
+  @@index([createdById])
+
+  @@map("system_backups")
+}
+
+//
+// =======================================================
+// SYSTEM LOGS
+// =======================================================
+//
+
+model SystemLog {
+  id Int @id @default(autoincrement())
+
+  logLevel String
+
+  module String
+
+  message String @db.Text
+
+  ipAddress String?
+
+  createdAt DateTime @default(now())
+
+  userId Int?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([module])
+  @@index([logLevel])
+  @@index([createdAt])
+  @@index([userId])
+
+  @@map("system_logs")
+}
+
+//
+// =======================================================
+// API KEYS
+// =======================================================
+//
+
+model ApiKey {
+  id Int @id @default(autoincrement())
+
+  name String
+
+  apiKey String @unique
+
+  description String?
+
+  isActive Boolean @default(true)
+
+  expiresAt DateTime?
+
+  lastUsedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+
+  @@map("api_keys")
+}
+
+//
+// =======================================================
+// LOGIN HISTORY
+// =======================================================
+//
+
+model LoginHistory {
+  id Int @id @default(autoincrement())
+
+  userId Int
+
+  loginTime DateTime @default(now())
+
+  logoutTime DateTime?
+
+  ipAddress String?
+
+  userAgent String? @db.Text
+
+  success Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([loginTime])
+
+  @@map("login_history")
+}
+
+//
+// =======================================================
+// PASSWORD RESET TOKENS
+// =======================================================
+//
+
+model PasswordResetToken {
+  id Int @id @default(autoincrement())
+
+  email String
+
+  token String @unique
+
+  expiresAt DateTime
+
+  usedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
+
+  @@map("password_reset_tokens")
 }

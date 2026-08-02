@@ -1,12 +1,10 @@
-const express = require("express");
+// routes/term.routes.js
 
-const {
-    getTerms,
-    getTermById,
-    createTerm,
-    updateTerm,
-    deleteTerm,
-} = require("../controllers/term.controller");
+const express = require("express");
+const router = express.Router();
+
+const termController = require("../controllers/term.controller");
+const termValidator = require("../validators/term.validator");
 
 const {
     authenticate,
@@ -17,96 +15,20 @@ const { validate } = require("../middleware/validation.middleware");
 
 const ROLES = require("../constants/roles");
 
-const {
-    createTermValidator,
-    updateTermValidator,
-} = require("../validators/term.validator");
-
-const router = express.Router();
-
 /**
  * @swagger
  * tags:
- *   - name: Terms
- *     description: Academic term management APIs
- */
-
-/**
- * @swagger
- * components:
- *   schemas:
- *     Term:
- *       type: object
- *       properties:
- *         id:
- *           type: integer
- *           example: 1
- *         name:
- *           type: string
- *           example: First Term
- *         academicYear:
- *           type: string
- *           example: 2026/2027
- *         startDate:
- *           type: string
- *           format: date
- *           example: 2026-09-01
- *         endDate:
- *           type: string
- *           format: date
- *           example: 2026-12-18
- *         status:
- *           type: string
- *           example: Active
- *
- *     CreateTermRequest:
- *       type: object
- *       required:
- *         - name
- *         - academicYear
- *         - startDate
- *         - endDate
- *       properties:
- *         name:
- *           type: string
- *           example: First Term
- *         academicYear:
- *           type: string
- *           example: 2026/2027
- *         startDate:
- *           type: string
- *           format: date
- *           example: 2026-09-01
- *         endDate:
- *           type: string
- *           format: date
- *           example: 2026-12-18
- *
- *     UpdateTermRequest:
- *       type: object
- *       properties:
- *         name:
- *           type: string
- *         academicYear:
- *           type: string
- *         startDate:
- *           type: string
- *           format: date
- *         endDate:
- *           type: string
- *           format: date
- *         status:
- *           type: string
+ *   name: Terms
+ *   description: Academic Term Management APIs
  */
 
 /**
  * @swagger
  * /terms:
  *   get:
- *     summary: Retrieve all academic terms
- *     description: Returns a list of all academic terms.
- *     tags:
- *       - Terms
+ *     summary: Retrieve all terms
+ *     description: Returns all active academic terms.
+ *     tags: [Terms]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -116,26 +38,136 @@ const router = express.Router();
  *         description: Unauthorized.
  *       403:
  *         description: Forbidden.
+ *       500:
+ *         description: Internal server error.
  */
 router.get(
     "/",
     authenticate,
-    authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.HEADMASTER,
-        ROLES.REGISTRAR,
-        ROLES.TEACHER
-    ),
-    getTerms
+    authorize(ROLES.ADMINISTRATOR),
+    termController.getTerms
+);
+
+/**
+ * @swagger
+ * /terms:
+ *   post:
+ *     summary: Create a new academic term
+ *     description: Creates a new academic term under an academic year.
+ *     tags: [Terms]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - academicYearId
+ *               - name
+ *               - startDate
+ *               - endDate
+ *             properties:
+ *               academicYearId:
+ *                 type: integer
+ *                 example: 1
+ *               name:
+ *                 type: string
+ *                 example: First Term
+ *               startDate:
+ *                 type: string
+ *                 format: date
+ *                 example: 2026-09-01
+ *               endDate:
+ *                 type: string
+ *                 format: date
+ *                 example: 2026-12-20
+ *               isCurrent:
+ *                 type: boolean
+ *                 example: true
+ *               status:
+ *                 type: string
+ *                 example: ACTIVE
+ *     responses:
+ *       201:
+ *         description: Term created successfully.
+ *       400:
+ *         description: Validation error.
+ *       401:
+ *         description: Unauthorized.
+ *       403:
+ *         description: Forbidden.
+ *       409:
+ *         description: Duplicate term.
+ *       500:
+ *         description: Internal server error.
+ */
+router.post(
+    "/",
+    authenticate,
+    authorize(ROLES.ADMINISTRATOR),
+    termValidator.createTerm,
+    validate,
+    termController.createTerm
+);
+
+/**
+ * @swagger
+ * /terms/search:
+ *   get:
+ *     summary: Search terms
+ *     description: Search terms by name.
+ *     tags: [Terms]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: keyword
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: First
+ *     responses:
+ *       200:
+ *         description: Search completed successfully.
+ */
+router.get(
+    "/search",
+    authenticate,
+    authorize(ROLES.ADMINISTRATOR),
+    termValidator.searchTerm,
+    validate,
+    termController.searchTerms
+);
+
+/**
+ * @swagger
+ * /terms/archived:
+ *   get:
+ *     summary: Retrieve archived terms
+ *     description: Returns all archived terms.
+ *     tags: [Terms]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Archived terms retrieved successfully.
+ */
+router.get(
+    "/archived",
+    authenticate,
+    authorize(ROLES.ADMINISTRATOR),
+    termController.getArchivedTerms
 );
 
 /**
  * @swagger
  * /terms/{id}:
  *   get:
- *     summary: Retrieve a term by ID
- *     tags:
- *       - Terms
+ *     summary: Retrieve term by ID
+ *     description: Returns a single academic term.
+ *     tags: [Terms]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -144,7 +176,7 @@ router.get(
  *         required: true
  *         schema:
  *           type: integer
- *         description: Term ID
+ *         example: 1
  *     responses:
  *       200:
  *         description: Term retrieved successfully.
@@ -154,56 +186,19 @@ router.get(
 router.get(
     "/:id",
     authenticate,
-    authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.HEADMASTER,
-        ROLES.REGISTRAR,
-        ROLES.TEACHER
-    ),
-    getTermById
-);
-
-/**
- * @swagger
- * /terms:
- *   post:
- *     summary: Create a new academic term
- *     description: Creates a new academic term.
- *     tags:
- *       - Terms
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/CreateTermRequest'
- *     responses:
- *       201:
- *         description: Term created successfully.
- *       400:
- *         description: Validation error.
- */
-router.post(
-    "/",
-    authenticate,
-    authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.HEADMASTER
-    ),
-    createTermValidator,
+    authorize(ROLES.ADMINISTRATOR),
+    termValidator.validateTermId,
     validate,
-    createTerm
+    termController.getTermById
 );
 
 /**
  * @swagger
  * /terms/{id}:
  *   put:
- *     summary: Update an academic term
- *     tags:
- *       - Terms
+ *     summary: Update term
+ *     description: Updates an academic term.
+ *     tags: [Terms]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -212,38 +207,27 @@ router.post(
  *         required: true
  *         schema:
  *           type: integer
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/UpdateTermRequest'
+ *         example: 1
  *     responses:
  *       200:
  *         description: Term updated successfully.
- *       404:
- *         description: Term not found.
  */
 router.put(
     "/:id",
     authenticate,
-    authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.HEADMASTER
-    ),
-    updateTermValidator,
+    authorize(ROLES.ADMINISTRATOR),
+    termValidator.updateTerm,
     validate,
-    updateTerm
+    termController.updateTerm
 );
 
 /**
  * @swagger
  * /terms/{id}:
  *   delete:
- *     summary: Delete an academic term
- *     description: Permanently removes an academic term.
- *     tags:
- *       - Terms
+ *     summary: Archive term
+ *     description: Soft deletes a term.
+ *     tags: [Terms]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -252,17 +236,47 @@ router.put(
  *         required: true
  *         schema:
  *           type: integer
+ *         example: 1
  *     responses:
  *       200:
- *         description: Term deleted successfully.
- *       404:
- *         description: Term not found.
+ *         description: Term archived successfully.
  */
 router.delete(
     "/:id",
     authenticate,
     authorize(ROLES.ADMINISTRATOR),
-    deleteTerm
+    termValidator.validateTermId,
+    validate,
+    termController.deleteTerm
+);
+
+/**
+ * @swagger
+ * /terms/{id}/restore:
+ *   patch:
+ *     summary: Restore archived term
+ *     description: Restores a previously archived term.
+ *     tags: [Terms]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Term restored successfully.
+ */
+router.patch(
+    "/:id/restore",
+    authenticate,
+    authorize(ROLES.ADMINISTRATOR),
+    termValidator.validateTermId,
+    validate,
+    termController.restoreTerm
 );
 
 module.exports = router;

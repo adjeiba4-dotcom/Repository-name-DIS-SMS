@@ -1,73 +1,106 @@
-const prisma = require("../config/prisma");
+// repositories/role.repository.js
 
-const roleSelect = {
-    id: true,
-    name: true,
-    description: true,
-    status: true,
-    createdAt: true,
-    updatedAt: true,
-};
+const { PrismaClient } = require("@prisma/client");
 
-const findAllRoles = () =>
-    prisma.role.findMany({
+const prisma = new PrismaClient();
+
+/**
+ * Get all active roles.
+ */
+exports.findAll = async() => {
+    return await prisma.role.findMany({
         where: {
             deletedAt: null,
         },
-        select: roleSelect,
         orderBy: {
             name: "asc",
         },
     });
+};
 
-const findRoleById = (id) =>
-    prisma.role.findFirst({
+/**
+ * Find role by ID.
+ */
+exports.findById = async(id) => {
+    return await prisma.role.findFirst({
         where: {
-            id: Number(id),
+            id: parseInt(id, 10),
             deletedAt: null,
         },
-        select: roleSelect,
     });
+};
 
-const findRoleByName = (name) =>
-    prisma.role.findFirst({
+/**
+ * Find role by name.
+ */
+exports.findByName = async(name) => {
+    return await prisma.role.findFirst({
         where: {
             name,
             deletedAt: null,
         },
     });
+};
 
-const createRole = (data) =>
-    prisma.role.create({
+/**
+ * Create role.
+ */
+exports.create = async(data) => {
+    return await prisma.role.create({
         data,
-        select: roleSelect,
     });
+};
 
-const updateRole = (id, data) =>
-    prisma.role.update({
+/**
+ * Update role.
+ */
+exports.update = async(id, data) => {
+    return await prisma.role.update({
         where: {
-            id: Number(id),
+            id: parseInt(id, 10),
         },
         data,
-        select: roleSelect,
     });
+};
 
-const softDeleteRole = (id) =>
-    prisma.role.update({
+/**
+ * Activate role.
+ */
+exports.activate = async(id) => {
+    return await prisma.role.update({
         where: {
-            id: Number(id),
+            id: parseInt(id, 10),
         },
         data: {
-            status: "ARCHIVED",
+            status: "ACTIVE",
+        },
+    });
+};
+
+/**
+ * Deactivate role.
+ */
+exports.deactivate = async(id) => {
+    return await prisma.role.update({
+        where: {
+            id: parseInt(id, 10),
+        },
+        data: {
+            status: "INACTIVE",
+        },
+    });
+};
+
+/**
+ * Soft delete role.
+ */
+exports.softDelete = async(id) => {
+    return await prisma.role.update({
+        where: {
+            id: parseInt(id, 10),
+        },
+        data: {
             deletedAt: new Date(),
         },
     });
-
-module.exports = {
-    findAllRoles,
-    findRoleById,
-    findRoleByName,
-    createRole,
-    updateRole,
-    softDeleteRole,
 };

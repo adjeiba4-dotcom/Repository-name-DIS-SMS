@@ -1,104 +1,28 @@
-const express = require("express");
+// routes/enrollment.routes.js
 
-const {
-    getEnrollments,
-    getEnrollmentById,
-    createEnrollment,
-    updateEnrollment,
-} = require("../controllers/enrollment.controller");
+const express = require("express");
+const router = express.Router();
+
+const enrollmentController = require("../controllers/enrollment.controller");
+
+const enrollmentValidator = require("../validators/enrollment.validator");
 
 const {
     authenticate,
     authorize,
 } = require("../middleware/auth.middleware");
 
-const { validate } = require("../middleware/validation.middleware");
+const {
+    validate,
+} = require("../middleware/validation.middleware");
 
 const ROLES = require("../constants/roles");
-
-const {
-    createEnrollmentValidator,
-    updateEnrollmentValidator,
-} = require("../validators/enrollment.validator");
-
-const router = express.Router();
 
 /**
  * @swagger
  * tags:
- *   - name: Enrollments
- *     description: Student enrollment management APIs
- */
-
-/**
- * @swagger
- * components:
- *   schemas:
- *     Enrollment:
- *       type: object
- *       properties:
- *         id:
- *           type: integer
- *           example: 1
- *         studentId:
- *           type: integer
- *           example: 25
- *         classId:
- *           type: integer
- *           example: 4
- *         academicYearId:
- *           type: integer
- *           example: 2
- *         termId:
- *           type: integer
- *           example: 1
- *         enrollmentDate:
- *           type: string
- *           format: date
- *           example: 2026-09-02
- *         status:
- *           type: string
- *           example: Active
- *
- *     CreateEnrollmentRequest:
- *       type: object
- *       required:
- *         - studentId
- *         - classId
- *         - academicYearId
- *         - termId
- *       properties:
- *         studentId:
- *           type: integer
- *           example: 25
- *         classId:
- *           type: integer
- *           example: 4
- *         academicYearId:
- *           type: integer
- *           example: 2
- *         termId:
- *           type: integer
- *           example: 1
- *         enrollmentDate:
- *           type: string
- *           format: date
- *           example: 2026-09-02
- *
- *     UpdateEnrollmentRequest:
- *       type: object
- *       properties:
- *         classId:
- *           type: integer
- *         academicYearId:
- *           type: integer
- *         termId:
- *           type: integer
- *         enrollmentDate:
- *           type: string
- *           format: date
- *         status:
- *           type: string
+ *   name: Enrollments
+ *   description: Student Enrollment Management APIs
  */
 
 /**
@@ -106,38 +30,52 @@ const router = express.Router();
  * /enrollments:
  *   get:
  *     summary: Retrieve all enrollments
- *     description: Returns all student enrollment records.
- *     tags:
- *       - Enrollments
+ *     tags: [Enrollments]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Enrollments retrieved successfully.
- *       401:
- *         description: Unauthorized.
- *       403:
- *         description: Forbidden.
+ *         description: Enrollments retrieved successfully
  */
 router.get(
     "/",
     authenticate,
-    authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.HEADMASTER,
-        ROLES.REGISTRAR,
-        ROLES.TEACHER
-    ),
-    getEnrollments
+    authorize(ROLES.ADMIN),
+    enrollmentController.getEnrollments
+);
+
+/**
+ * @swagger
+ * /enrollments/search:
+ *   get:
+ *     summary: Search enrollments
+ *     tags: [Enrollments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: keyword
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Search completed successfully
+ */
+router.get(
+    "/search",
+    authenticate,
+    authorize(ROLES.ADMIN),
+    enrollmentValidator.searchEnrollment,
+    validate,
+    enrollmentController.searchEnrollments
 );
 
 /**
  * @swagger
  * /enrollments/{id}:
  *   get:
- *     summary: Retrieve an enrollment by ID
- *     tags:
- *       - Enrollments
+ *     summary: Retrieve enrollment by ID
+ *     tags: [Enrollments]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -146,23 +84,17 @@ router.get(
  *         required: true
  *         schema:
  *           type: integer
- *         description: Enrollment ID
  *     responses:
  *       200:
- *         description: Enrollment retrieved successfully.
- *       404:
- *         description: Enrollment not found.
+ *         description: Enrollment retrieved successfully
  */
 router.get(
     "/:id",
     authenticate,
-    authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.HEADMASTER,
-        ROLES.REGISTRAR,
-        ROLES.TEACHER
-    ),
-    getEnrollmentById
+    authorize(ROLES.ADMIN),
+    enrollmentValidator.validateEnrollmentId,
+    validate,
+    enrollmentController.getEnrollmentById
 );
 
 /**
@@ -170,42 +102,28 @@ router.get(
  * /enrollments:
  *   post:
  *     summary: Enroll a student
- *     description: Creates a new student enrollment.
- *     tags:
- *       - Enrollments
+ *     tags: [Enrollments]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/CreateEnrollmentRequest'
  *     responses:
  *       201:
- *         description: Student enrolled successfully.
- *       400:
- *         description: Validation error.
+ *         description: Enrollment created successfully
  */
 router.post(
     "/",
     authenticate,
-    authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.REGISTRAR
-    ),
-    createEnrollmentValidator,
+    authorize(ROLES.ADMIN),
+    enrollmentValidator.createEnrollment,
     validate,
-    createEnrollment
+    enrollmentController.createEnrollment
 );
 
 /**
  * @swagger
  * /enrollments/{id}:
  *   put:
- *     summary: Update an enrollment
- *     tags:
- *       - Enrollments
+ *     summary: Update enrollment
+ *     tags: [Enrollments]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -214,28 +132,45 @@ router.post(
  *         required: true
  *         schema:
  *           type: integer
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/UpdateEnrollmentRequest'
  *     responses:
  *       200:
- *         description: Enrollment updated successfully.
- *       404:
- *         description: Enrollment not found.
+ *         description: Enrollment updated successfully
  */
 router.put(
     "/:id",
     authenticate,
-    authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.REGISTRAR
-    ),
-    updateEnrollmentValidator,
+    authorize(ROLES.ADMIN),
+    enrollmentValidator.validateEnrollmentId,
+    enrollmentValidator.updateEnrollment,
     validate,
-    updateEnrollment
+    enrollmentController.updateEnrollment
+);
+
+/**
+ * @swagger
+ * /enrollments/{id}:
+ *   delete:
+ *     summary: Delete enrollment
+ *     tags: [Enrollments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Enrollment deleted successfully
+ */
+router.delete(
+    "/:id",
+    authenticate,
+    authorize(ROLES.ADMIN),
+    enrollmentValidator.validateEnrollmentId,
+    validate,
+    enrollmentController.deleteEnrollment
 );
 
 module.exports = router;

@@ -1,74 +1,65 @@
+// services/role.service.js
+
 const roleRepository = require("../repositories/role.repository");
 
-const getRoles = async() => {
-    return await roleRepository.findAllRoles();
+exports.getRoles = async() => {
+    return await roleRepository.findAll();
 };
 
-const getRoleById = async(id) => {
-    const role = await roleRepository.findRoleById(id);
+exports.getRoleById = async(id) => {
+    const role = await roleRepository.findById(id);
 
     if (!role) {
-        throw new Error("Role not found.");
+        const error = new Error("Role not found.");
+        error.statusCode = 404;
+        throw error;
     }
 
     return role;
 };
 
-const createRole = async(roleData) => {
-    const existingRole = await roleRepository.findRoleByName(roleData.name);
+exports.createRole = async(data) => {
+    const existingRole = await roleRepository.findByName(data.name);
 
     if (existingRole) {
-        throw new Error("Role already exists.");
+        const error = new Error("Role already exists.");
+        error.statusCode = 409;
+        throw error;
     }
 
-    return await roleRepository.createRole({
-        name: roleData.name,
-        description: roleData.description,
-        status: roleData.status || "ACTIVE",
-    });
+    return await roleRepository.create(data);
 };
 
-const updateRole = async(id, roleData) => {
-    const role = await roleRepository.findRoleById(id);
+exports.updateRole = async(id, data) => {
+    const role = await roleRepository.findById(id);
 
     if (!role) {
-        throw new Error("Role not found.");
+        const error = new Error("Role not found.");
+        error.statusCode = 404;
+        throw error;
     }
 
-    if (roleData.name && roleData.name !== role.name) {
-        const existingRole = await roleRepository.findRoleByName(roleData.name);
+    if (data.name) {
+        const existingRole = await roleRepository.findByName(data.name);
 
-        if (existingRole) {
-            throw new Error("Role name already exists.");
+        if (existingRole && existingRole.id !== parseInt(id, 10)) {
+            const error = new Error("Role already exists.");
+            error.statusCode = 409;
+            throw error;
         }
     }
 
-    return await roleRepository.updateRole(id, {
-        name: roleData.name,
-        description: roleData.description,
-        status: roleData.status,
-    });
+    return await roleRepository.update(id, data);
 };
 
-const deleteRole = async(id) => {
-    const role = await roleRepository.findRoleById(id);
-
-    if (!role) {
-        throw new Error("Role not found.");
-    }
-
-    await roleRepository.softDeleteRole(id);
-
-    return {
-        id: Number(id),
-        message: "Role archived successfully.",
-    };
+exports.activateRole = async(id) => {
+    return await roleRepository.activate(id);
 };
 
-module.exports = {
-    getRoles,
-    getRoleById,
-    createRole,
-    updateRole,
-    deleteRole,
+exports.deactivateRole = async(id) => {
+    return await roleRepository.deactivate(id);
+};
+
+exports.deleteRole = async(id) => {
+    return await roleRepository.softDelete(id);
 };

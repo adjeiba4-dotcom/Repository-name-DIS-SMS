@@ -1,19 +1,16 @@
+// routes/auth.routes.js
+
 const express = require("express");
-
-const { login } = require("../controllers/auth.controller");
-
 const {
-    authenticate,
-    authorize,
-} = require("../middleware/auth.middleware");
+    login,
+    refreshToken,
+    logout,
+    getMe
+} = require("../controllers/auth.controller");
 
+const { authenticate } = require("../middleware/auth.middleware");
 const { validate } = require("../middleware/validation.middleware");
-
-const {
-    loginValidator,
-} = require("../validators/auth.validator");
-
-const ROLES = require("../constants/roles");
+const { loginValidator } = require("../validators/auth.validator");
 
 const router = express.Router();
 
@@ -43,42 +40,32 @@ const router = express.Router();
  *           format: password
  *           example: Password@123
  *
- *     LoginResponse:
+ *     RefreshTokenRequest:
  *       type: object
+ *       required:
+ *         - refreshToken
  *       properties:
- *         success:
- *           type: boolean
- *           example: true
- *         message:
- *           type: string
- *           example: Login successful.
- *         token:
+ *         refreshToken:
  *           type: string
  *           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  *
- *     UserProfile:
+ *     AuthTokensResponse:
  *       type: object
  *       properties:
- *         id:
- *           type: integer
- *           example: 1
- *         fullName:
+ *         accessToken:
  *           type: string
- *           example: Emmanuel Adjei Baffour
- *         email:
+ *         refreshToken:
  *           type: string
- *           example: admin@dissms.edu.gh
- *         role:
- *           type: string
- *           example: ADMINISTRATOR
+ *         user:
+ *           type: object
  */
 
 /**
  * @swagger
  * /auth/login:
  *   post:
- *     summary: Login into DIS-SMS
- *     description: Authenticates a registered user and returns an access token.
+ *     summary: User Login
+ *     description: Authenticate credentials and issue JWT Access & Refresh tokens.
  *     tags:
  *       - Authentication
  *     security: []
@@ -91,74 +78,71 @@ const router = express.Router();
  *     responses:
  *       200:
  *         description: Login successful.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/LoginResponse'
  *       400:
  *         description: Validation error.
  *       401:
- *         description: Invalid email or password.
- *       500:
- *         description: Internal server error.
+ *         description: Invalid credentials.
  */
-router.post(
-    "/login",
-    loginValidator,
-    validate,
-    login
-);
+router.post("/login", loginValidator, validate, login);
 
 /**
  * @swagger
- * /auth/profile:
- *   get:
- *     summary: Get logged-in user's profile
- *     description: Returns the authenticated user's profile information.
+ * /auth/refresh-token:
+ *   post:
+ *     summary: Refresh Access Token
+ *     description: Issue a new access token using a valid refresh token.
+ *     tags:
+ *       - Authentication
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RefreshTokenRequest'
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully.
+ *       401:
+ *         description: Invalid or expired refresh token.
+ */
+router.post("/refresh-token", refreshToken);
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: User Logout
+ *     description: Invalidate active refresh token and end session.
  *     tags:
  *       - Authentication
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Profile retrieved successfully.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Profile retrieved successfully.
- *                 data:
- *                   $ref: '#/components/schemas/UserProfile'
+ *         description: Logout successful.
+ */
+router.post("/logout", authenticate, logout);
+
+/**
+ * @swagger
+ * /auth/me:
+ *   get:
+ *     summary: Get Current User Profile
+ *     description: Retrieve profile details for the currently authenticated user.
+ *     tags:
+ *       - Authentication
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile retrieved.
  *       401:
  *         description: Unauthorized.
- *       403:
- *         description: Forbidden.
  */
-router.get(
-    "/profile",
-    authenticate,
-    authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.HEADMASTER,
-        ROLES.REGISTRAR,
-        ROLES.ACCOUNTANT,
-        ROLES.TEACHER,
-        ROLES.STUDENT,
-        ROLES.PARENT
-    ),
-    (req, res) => {
-        res.json({
-            success: true,
-            message: "Profile retrieved successfully.",
-            data: req.user,
-        });
-    }
-);
+router.get("/me", authenticate, getMe);
+
+// Backward-compatible alias for /profile
+router.get("/profile", authenticate, getMe);
 
 module.exports = router;

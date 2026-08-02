@@ -5,69 +5,101 @@ exports.getDepartments = async() => {
 };
 
 exports.getDepartmentById = async(id) => {
-    const department = await departmentRepository.findDepartmentById(id);
+    const department = await departmentRepository.findDepartmentById(Number(id));
 
-    if (!department) {
+    if (!department || department.deletedAt) {
         throw new Error("Department not found.");
     }
 
     return department;
 };
 
-exports.createDepartment = async(departmentData) => {
-    const existingDepartment =
-        await departmentRepository.findDepartmentByName(
-            departmentData.name
-        );
-
-    if (existingDepartment) {
-        throw new Error("Department already exists.");
-    }
-
-    return await departmentRepository.createDepartment(
-        departmentData
-    );
+exports.searchDepartments = async(keyword) => {
+    return await departmentRepository.searchDepartments(keyword);
 };
 
-exports.updateDepartment = async(id, departmentData) => {
-    const existingDepartment =
-        await departmentRepository.findDepartmentById(id);
+exports.getArchivedDepartments = async() => {
+    return await departmentRepository.findArchivedDepartments();
+};
 
-    if (!existingDepartment) {
+exports.createDepartment = async(data) => {
+
+    const existingCode =
+        await departmentRepository.findDepartmentByCode(data.code);
+
+    if (existingCode) {
+        throw new Error("Department code already exists.");
+    }
+
+    const existingName =
+        await departmentRepository.findDepartmentByName(data.name);
+
+    if (existingName) {
+        throw new Error("Department name already exists.");
+    }
+
+    return await departmentRepository.createDepartment(data);
+};
+
+exports.updateDepartment = async(id, data) => {
+
+    const department =
+        await departmentRepository.findDepartmentById(Number(id));
+
+    if (!department || department.deletedAt) {
         throw new Error("Department not found.");
     }
 
-    if (
-        departmentData.name &&
-        departmentData.name !== existingDepartment.name
-    ) {
-        const duplicate =
-            await departmentRepository.findDepartmentByName(
-                departmentData.name
-            );
+    if (data.code && data.code !== department.code) {
 
-        if (duplicate) {
-            throw new Error("Department already exists.");
+        const existingCode =
+            await departmentRepository.findDepartmentByCode(data.code);
+
+        if (existingCode) {
+            throw new Error("Department code already exists.");
+        }
+    }
+
+    if (data.name && data.name !== department.name) {
+
+        const existingName =
+            await departmentRepository.findDepartmentByName(data.name);
+
+        if (existingName) {
+            throw new Error("Department name already exists.");
         }
     }
 
     return await departmentRepository.updateDepartment(
-        id,
-        departmentData
+        Number(id),
+        data
     );
 };
 
 exports.deleteDepartment = async(id) => {
-    const existingDepartment =
-        await departmentRepository.findDepartmentById(id);
 
-    if (!existingDepartment) {
+    const department =
+        await departmentRepository.findDepartmentById(Number(id));
+
+    if (!department || department.deletedAt) {
         throw new Error("Department not found.");
     }
 
-    await departmentRepository.deleteDepartment(id);
+    return await departmentRepository.softDeleteDepartment(Number(id));
+};
 
-    return {
-        id: Number(id),
-    };
+exports.restoreDepartment = async(id) => {
+
+    const department =
+        await departmentRepository.findDepartmentById(Number(id));
+
+    if (!department) {
+        throw new Error("Department not found.");
+    }
+
+    if (!department.deletedAt) {
+        throw new Error("Department is already active.");
+    }
+
+    return await departmentRepository.restoreDepartment(Number(id));
 };

@@ -1,108 +1,28 @@
-const express = require("express");
+// routes/attendance.routes.js
 
-const {
-    getAttendance,
-    getAttendanceById,
-    createAttendance,
-    updateAttendance,
-    deleteAttendance,
-} = require("../controllers/attendance.controller");
+const express = require("express");
+const router = express.Router();
+
+const attendanceController = require("../controllers/attendance.controller");
+
+const attendanceValidator = require("../validators/attendance.validator");
 
 const {
     authenticate,
     authorize,
 } = require("../middleware/auth.middleware");
 
-const { validate } = require("../middleware/validation.middleware");
+const {
+    validate,
+} = require("../middleware/validation.middleware");
 
 const ROLES = require("../constants/roles");
-
-const {
-    createAttendanceValidator,
-    updateAttendanceValidator,
-} = require("../validators/attendance.validator");
-
-const router = express.Router();
 
 /**
  * @swagger
  * tags:
- *   - name: Attendance
- *     description: Student attendance management APIs
- */
-
-/**
- * @swagger
- * components:
- *   schemas:
- *     Attendance:
- *       type: object
- *       properties:
- *         id:
- *           type: integer
- *           example: 1
- *         studentId:
- *           type: integer
- *           example: 15
- *         classId:
- *           type: integer
- *           example: 3
- *         attendanceDate:
- *           type: string
- *           format: date
- *           example: 2026-09-15
- *         status:
- *           type: string
- *           example: Present
- *         remarks:
- *           type: string
- *           example: Arrived on time
- *
- *     CreateAttendanceRequest:
- *       type: object
- *       required:
- *         - studentId
- *         - classId
- *         - attendanceDate
- *         - status
- *       properties:
- *         studentId:
- *           type: integer
- *           example: 15
- *         classId:
- *           type: integer
- *           example: 3
- *         attendanceDate:
- *           type: string
- *           format: date
- *           example: 2026-09-15
- *         status:
- *           type: string
- *           enum:
- *             - Present
- *             - Absent
- *             - Late
- *             - Excused
- *           example: Present
- *         remarks:
- *           type: string
- *           example: Arrived on time
- *
- *     UpdateAttendanceRequest:
- *       type: object
- *       properties:
- *         attendanceDate:
- *           type: string
- *           format: date
- *         status:
- *           type: string
- *           enum:
- *             - Present
- *             - Absent
- *             - Late
- *             - Excused
- *         remarks:
- *           type: string
+ *   name: Attendance
+ *   description: Student Attendance Management APIs
  */
 
 /**
@@ -110,38 +30,52 @@ const router = express.Router();
  * /attendance:
  *   get:
  *     summary: Retrieve all attendance records
- *     description: Returns all student attendance records.
- *     tags:
- *       - Attendance
+ *     tags: [Attendance]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Attendance records retrieved successfully.
- *       401:
- *         description: Unauthorized.
- *       403:
- *         description: Forbidden.
+ *         description: Attendance records retrieved successfully
  */
 router.get(
     "/",
     authenticate,
-    authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.HEADMASTER,
-        ROLES.REGISTRAR,
-        ROLES.TEACHER
-    ),
-    getAttendance
+    authorize(ROLES.ADMIN),
+    attendanceController.getAttendance
+);
+
+/**
+ * @swagger
+ * /attendance/search:
+ *   get:
+ *     summary: Search attendance records
+ *     tags: [Attendance]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: keyword
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Attendance search completed successfully
+ */
+router.get(
+    "/search",
+    authenticate,
+    authorize(ROLES.ADMIN),
+    attendanceValidator.searchAttendance,
+    validate,
+    attendanceController.searchAttendance
 );
 
 /**
  * @swagger
  * /attendance/{id}:
  *   get:
- *     summary: Retrieve an attendance record by ID
- *     tags:
- *       - Attendance
+ *     summary: Retrieve attendance record by ID
+ *     tags: [Attendance]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -150,23 +84,17 @@ router.get(
  *         required: true
  *         schema:
  *           type: integer
- *         description: Attendance record ID
  *     responses:
  *       200:
- *         description: Attendance record retrieved successfully.
- *       404:
- *         description: Attendance record not found.
+ *         description: Attendance record retrieved successfully
  */
 router.get(
     "/:id",
     authenticate,
-    authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.HEADMASTER,
-        ROLES.REGISTRAR,
-        ROLES.TEACHER
-    ),
-    getAttendanceById
+    authorize(ROLES.ADMIN),
+    attendanceValidator.validateAttendanceId,
+    validate,
+    attendanceController.getAttendanceById
 );
 
 /**
@@ -174,42 +102,28 @@ router.get(
  * /attendance:
  *   post:
  *     summary: Record student attendance
- *     description: Creates a new attendance record.
- *     tags:
- *       - Attendance
+ *     tags: [Attendance]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/CreateAttendanceRequest'
  *     responses:
  *       201:
- *         description: Attendance recorded successfully.
- *       400:
- *         description: Validation error.
+ *         description: Attendance recorded successfully
  */
 router.post(
     "/",
     authenticate,
-    authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.TEACHER
-    ),
-    createAttendanceValidator,
+    authorize(ROLES.ADMIN),
+    attendanceValidator.createAttendance,
     validate,
-    createAttendance
+    attendanceController.createAttendance
 );
 
 /**
  * @swagger
  * /attendance/{id}:
  *   put:
- *     summary: Update an attendance record
- *     tags:
- *       - Attendance
+ *     summary: Update attendance record
+ *     tags: [Attendance]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -218,38 +132,26 @@ router.post(
  *         required: true
  *         schema:
  *           type: integer
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/UpdateAttendanceRequest'
  *     responses:
  *       200:
- *         description: Attendance updated successfully.
- *       404:
- *         description: Attendance record not found.
+ *         description: Attendance updated successfully
  */
 router.put(
     "/:id",
     authenticate,
-    authorize(
-        ROLES.ADMINISTRATOR,
-        ROLES.TEACHER
-    ),
-    updateAttendanceValidator,
+    authorize(ROLES.ADMIN),
+    attendanceValidator.validateAttendanceId,
+    attendanceValidator.updateAttendance,
     validate,
-    updateAttendance
+    attendanceController.updateAttendance
 );
 
 /**
  * @swagger
  * /attendance/{id}:
  *   delete:
- *     summary: Delete an attendance record
- *     description: Permanently removes an attendance record.
- *     tags:
- *       - Attendance
+ *     summary: Delete attendance record
+ *     tags: [Attendance]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -260,15 +162,15 @@ router.put(
  *           type: integer
  *     responses:
  *       200:
- *         description: Attendance deleted successfully.
- *       404:
- *         description: Attendance record not found.
+ *         description: Attendance deleted successfully
  */
 router.delete(
     "/:id",
     authenticate,
-    authorize(ROLES.ADMINISTRATOR),
-    deleteAttendance
+    authorize(ROLES.ADMIN),
+    attendanceValidator.validateAttendanceId,
+    validate,
+    attendanceController.deleteAttendance
 );
 
 module.exports = router;

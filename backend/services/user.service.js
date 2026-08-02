@@ -1,94 +1,125 @@
+// services/user.service.js
+
 const bcrypt = require("bcryptjs");
 const userRepository = require("../repositories/user.repository");
 
+/**
+ * Get all users.
+ */
 exports.getUsers = async() => {
-    return await userRepository.findAllUsers();
+    return await userRepository.findAll();
 };
 
+/**
+ * Get user by ID.
+ */
 exports.getUserById = async(id) => {
-    const user = await userRepository.findUserById(id);
+    const user = await userRepository.findById(id);
 
-    if (!user) {
-        throw new Error("User not found.");
+    if (!user || user.deletedAt) {
+        const error = new Error("User not found.");
+        error.statusCode = 404;
+        throw error;
     }
 
     return user;
 };
 
-exports.createUser = async(userData) => {
-    const existingUser = await userRepository.findUserByEmail(userData.email);
+/**
+ * Create a new user.
+ */
+exports.createUser = async(data) => {
+    // Check if email already exists
+    const existingUser = await userRepository.findByEmail(data.email);
 
     if (existingUser) {
-        throw new Error("Email already exists.");
+        const error = new Error("Email address is already in use.");
+        error.statusCode = 409;
+        throw error;
     }
 
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    // Hash password
+    data.password = await bcrypt.hash(data.password, 10);
 
-    return await userRepository.createUser({
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        email: userData.email,
-        password: hashedPassword,
-        role: {
-            connect: {
-                id: Number(userData.roleId),
-            },
-        },
-        status: userData.status || "ACTIVE",
-    });
+    return await userRepository.create(data);
 };
 
-exports.updateUser = async(id, userData) => {
-    const existingUser = await userRepository.findUserById(id);
+/**
+ * Update user.
+ */
+exports.updateUser = async(id, data) => {
+    const existingUser = await userRepository.findById(id);
 
-    if (!existingUser) {
-        throw new Error("User not found.");
+    if (!existingUser || existingUser.deletedAt) {
+        const error = new Error("User not found.");
+        error.statusCode = 404;
+        throw error;
     }
 
-    if (
-        userData.email &&
-        userData.email !== existingUser.email
-    ) {
-        const emailExists = await userRepository.findUserByEmail(userData.email);
+    // Prevent password updates here
+    delete data.password;
 
-        if (emailExists) {
-            throw new Error("Email already exists.");
-        }
-    }
-
-    const updateData = {};
-
-    if (userData.firstName) updateData.firstName = userData.firstName;
-    if (userData.lastName) updateData.lastName = userData.lastName;
-    if (userData.email) updateData.email = userData.email;
-    if (userData.status) updateData.status = userData.status;
-
-    if (userData.roleId) {
-        updateData.role = {
-            connect: {
-                id: Number(userData.roleId),
-            },
-        };
-    }
-
-    if (userData.password) {
-        updateData.password = await bcrypt.hash(userData.password, 10);
-    }
-
-    return await userRepository.updateUser(id, updateData);
+    return await userRepository.update(id, data);
 };
 
+/**
+ * Activate user.
+ */
+exports.activateUser = async(id) => {
+    const user = await userRepository.findById(id);
+
+    if (!user || user.deletedAt) {
+        const error = new Error("User not found.");
+        error.statusCode = 404;
+        throw error;
+    }
+
+    return await userRepository.activate(id);
+};
+
+/**
+ * Deactivate user.
+ */
+exports.deactivateUser = async(id) => {
+    const user = await userRepository.findById(id);
+
+    if (!user || user.deletedAt) {
+        const error = new Error("User not found.");
+        error.statusCode = 404;
+        throw error;
+    }
+
+    return await userRepository.deactivate(id);
+};
+
+/**
+ * Soft delete user.
+ */
 exports.deleteUser = async(id) => {
-    const existingUser = await userRepository.findUserById(id);
+    const user = await userRepository.findById(id);
 
-    if (!existingUser) {
-        throw new Error("User not found.");
+    if (!user || user.deletedAt) {
+        const error = new Error("User not found.");
+        error.statusCode = 404;
+        throw error;
     }
 
-    await userRepository.softDeleteUser(id);
+    return await userRepository.softDelete(id);
+};
 
-    return {
-        id: Number(id),
-        message: "User archived successfully.",
-    };
+/**
+ * Change user password.
+ */
+exports.changePassword = async(id, newPassword) => {
+    const user = await userRepository.findById(id);
+
+    if (!user || user.deletedAt) {
+        const error = new Error("User not found.");
+        error.statusCode = 404;
+        throw error;
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    return await userRepository.updatePassword(id, hashedPassword);
 };

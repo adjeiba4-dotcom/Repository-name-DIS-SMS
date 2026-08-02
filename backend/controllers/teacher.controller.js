@@ -1,16 +1,17 @@
+// controllers/teacher.controller.js
+
 const teacherService = require("../services/teacher.service");
+const ApiResponse = require("../utils/response");
 
 exports.getTeachers = async(req, res, next) => {
     try {
-        const { search = "" } = req.query;
+        const teachers = await teacherService.getTeachers();
 
-        const teachers = await teacherService.getTeachers(search);
-
-        res.status(200).json({
-            success: true,
-            message: "Teachers retrieved successfully.",
-            data: teachers,
-        });
+        return ApiResponse.success(
+            res,
+            "Teachers retrieved successfully.",
+            teachers
+        );
     } catch (error) {
         next(error);
     }
@@ -18,13 +19,31 @@ exports.getTeachers = async(req, res, next) => {
 
 exports.getTeacherById = async(req, res, next) => {
     try {
-        const teacher = await teacherService.getTeacherById(req.params.id);
+        const teacher = await teacherService.getTeacherById(
+            parseInt(req.params.id)
+        );
 
-        res.status(200).json({
-            success: true,
-            message: "Teacher retrieved successfully.",
-            data: teacher,
-        });
+        return ApiResponse.success(
+            res,
+            "Teacher retrieved successfully.",
+            teacher
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.searchTeachers = async(req, res, next) => {
+    try {
+        const { keyword = "" } = req.query;
+
+        const teachers = await teacherService.searchTeachers(keyword);
+
+        return ApiResponse.success(
+            res,
+            "Teachers retrieved successfully.",
+            teachers
+        );
     } catch (error) {
         next(error);
     }
@@ -34,11 +53,11 @@ exports.createTeacher = async(req, res, next) => {
     try {
         const teacher = await teacherService.createTeacher(req.body);
 
-        res.status(201).json({
-            success: true,
-            message: "Teacher created successfully.",
-            data: teacher,
-        });
+        return ApiResponse.created(
+            res,
+            "Teacher created successfully.",
+            teacher
+        );
     } catch (error) {
         next(error);
     }
@@ -47,15 +66,15 @@ exports.createTeacher = async(req, res, next) => {
 exports.updateTeacher = async(req, res, next) => {
     try {
         const teacher = await teacherService.updateTeacher(
-            req.params.id,
+            parseInt(req.params.id),
             req.body
         );
 
-        res.status(200).json({
-            success: true,
-            message: "Teacher updated successfully.",
-            data: teacher,
-        });
+        return ApiResponse.success(
+            res,
+            "Teacher updated successfully.",
+            teacher
+        );
     } catch (error) {
         next(error);
     }
@@ -63,12 +82,44 @@ exports.updateTeacher = async(req, res, next) => {
 
 exports.deleteTeacher = async(req, res, next) => {
     try {
-        await teacherService.deleteTeacher(req.params.id);
+        await teacherService.deleteTeacher(
+            parseInt(req.params.id)
+        );
 
-        res.status(200).json({
-            success: true,
-            message: "Teacher deleted successfully.",
-        });
+        return ApiResponse.success(
+            res,
+            "Teacher archived successfully."
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.restoreTeacher = async(req, res, next) => {
+    try {
+        const teacher = await teacherService.restoreTeacher(
+            parseInt(req.params.id)
+        );
+
+        return ApiResponse.success(
+            res,
+            "Teacher restored successfully.",
+            teacher
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getArchivedTeachers = async(req, res, next) => {
+    try {
+        const teachers = await teacherService.getArchivedTeachers();
+
+        return ApiResponse.success(
+            res,
+            "Archived teachers retrieved successfully.",
+            teachers
+        );
     } catch (error) {
         next(error);
     }

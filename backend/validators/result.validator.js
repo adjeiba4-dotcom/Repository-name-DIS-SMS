@@ -1,56 +1,102 @@
-const { body } = require("express-validator");
+// validators/result.validator.js
 
-exports.createResultValidator = [
+const { body, param, query } = require("express-validator");
+
+exports.createResult = [
     body("studentId")
-    .isInt()
-    .withMessage("Student ID is required."),
-
-    body("subjectId")
-    .isInt()
-    .withMessage("Subject ID is required."),
+    .notEmpty()
+    .withMessage("Student is required.")
+    .isInt({ min: 1 })
+    .withMessage("Student ID must be a positive integer."),
 
     body("examinationId")
-    .isInt()
-    .withMessage("Examination ID is required."),
+    .notEmpty()
+    .withMessage("Examination is required.")
+    .isInt({ min: 1 })
+    .withMessage("Examination ID must be a positive integer."),
 
-    body("marksObtained")
-    .isFloat({ min: 0 })
-    .withMessage("Marks obtained must be a valid number."),
+    body("subjectId")
+    .notEmpty()
+    .withMessage("Subject is required.")
+    .isInt({ min: 1 })
+    .withMessage("Subject ID must be a positive integer."),
+
+    body("termId")
+    .notEmpty()
+    .withMessage("Term is required.")
+    .isInt({ min: 1 })
+    .withMessage("Term ID must be a positive integer."),
+
+    body("marks")
+    .notEmpty()
+    .withMessage("Marks are required.")
+    .isFloat({ min: 0, max: 100 })
+    .withMessage("Marks must be between 0 and 100."),
 
     body("grade")
+    .optional()
     .trim()
-    .notEmpty()
-    .withMessage("Grade is required."),
+    .isLength({ max: 5 })
+    .withMessage("Grade cannot exceed 5 characters."),
 
     body("remarks")
     .optional()
-    .isString()
-    .withMessage("Remarks must be text."),
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage("Remarks cannot exceed 500 characters."),
 ];
 
-exports.updateResultValidator = [
+exports.updateResult = [
     body("studentId")
     .optional()
-    .isInt(),
-
-    body("subjectId")
-    .optional()
-    .isInt(),
+    .isInt({ min: 1 })
+    .withMessage("Student ID must be a positive integer."),
 
     body("examinationId")
     .optional()
-    .isInt(),
+    .isInt({ min: 1 })
+    .withMessage("Examination ID must be a positive integer."),
 
-    body("marksObtained")
+    body("subjectId")
     .optional()
-    .isFloat({ min: 0 }),
+    .isInt({ min: 1 })
+    .withMessage("Subject ID must be a positive integer."),
+
+    body("termId")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("Term ID must be a positive integer."),
+
+    body("marks")
+    .optional()
+    .isFloat({ min: 0, max: 100 })
+    .withMessage("Marks must be between 0 and 100."),
 
     body("grade")
     .optional()
     .trim()
-    .notEmpty(),
+    .isLength({ max: 5 })
+    .withMessage("Grade cannot exceed 5 characters."),
 
     body("remarks")
     .optional()
-    .isString(),
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage("Remarks cannot exceed 500 characters."),
+];
+
+exports.validateResultId = [
+    param("id")
+    .isInt({ min: 1 })
+    .withMessage("Result ID must be a positive integer."),
+];
+
+exports.searchResults = [
+    query("keyword")
+    .optional()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage(
+        "Search keyword must contain at least one character."
+    ),
 ];

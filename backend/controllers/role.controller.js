@@ -1,8 +1,10 @@
+// controllers/role.controller.js
+
 const roleService = require("../services/role.service");
 const ApiResponse = require("../utils/response");
 
 /**
- * Get all roles
+ * Get all roles.
  */
 exports.getRoles = async(req, res, next) => {
     try {
@@ -19,7 +21,7 @@ exports.getRoles = async(req, res, next) => {
 };
 
 /**
- * Get role by ID
+ * Get role by ID.
  */
 exports.getRoleById = async(req, res, next) => {
     try {
@@ -36,7 +38,7 @@ exports.getRoleById = async(req, res, next) => {
 };
 
 /**
- * Create role
+ * Create role.
  */
 exports.createRole = async(req, res, next) => {
     try {
@@ -53,7 +55,7 @@ exports.createRole = async(req, res, next) => {
 };
 
 /**
- * Update role
+ * Update role.
  */
 exports.updateRole = async(req, res, next) => {
     try {
@@ -73,16 +75,49 @@ exports.updateRole = async(req, res, next) => {
 };
 
 /**
- * Delete (Archive) role
+ * Activate role.
  */
-exports.deleteRole = async(req, res, next) => {
+exports.activateRole = async(req, res, next) => {
     try {
-        const result = await roleService.deleteRole(req.params.id);
+        const role = await roleService.activateRole(req.params.id);
 
         return ApiResponse.success(
             res,
-            "Role archived successfully.",
-            result
+            "Role activated successfully.",
+            role
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Deactivate role.
+ */
+exports.deactivateRole = async(req, res, next) => {
+    try {
+        const role = await roleService.deactivateRole(req.params.id);
+
+        return ApiResponse.success(
+            res,
+            "Role deactivated successfully.",
+            role
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Soft delete role.
+ */
+exports.deleteRole = async(req, res, next) => {
+    try {
+        await roleService.deleteRole(req.params.id);
+
+        return ApiResponse.success(
+            res,
+            "Role deleted successfully."
         );
     } catch (error) {
         next(error);

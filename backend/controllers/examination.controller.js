@@ -1,14 +1,18 @@
+// controllers/examination.controller.js
+
 const examinationService = require("../services/examination.service");
+const ApiResponse = require("../utils/response");
 
 exports.getExaminations = async(req, res, next) => {
     try {
-        const examinations = await examinationService.getExaminations();
+        const examinations =
+            await examinationService.getExaminations();
 
-        res.status(200).json({
-            success: true,
-            message: "Examinations retrieved successfully.",
-            data: examinations,
-        });
+        return ApiResponse.success(
+            res,
+            "Examinations retrieved successfully.",
+            examinations
+        );
     } catch (error) {
         next(error);
     }
@@ -17,13 +21,34 @@ exports.getExaminations = async(req, res, next) => {
 exports.getExaminationById = async(req, res, next) => {
     try {
         const examination =
-            await examinationService.getExaminationById(req.params.id);
+            await examinationService.getExaminationById(
+                req.params.id
+            );
 
-        res.status(200).json({
-            success: true,
-            message: "Examination retrieved successfully.",
-            data: examination,
-        });
+        return ApiResponse.success(
+            res,
+            "Examination retrieved successfully.",
+            examination
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.searchExaminations = async(req, res, next) => {
+    try {
+        const { keyword } = req.query;
+
+        const examinations =
+            await examinationService.searchExaminations(
+                keyword || ""
+            );
+
+        return ApiResponse.success(
+            res,
+            "Examination search completed successfully.",
+            examinations
+        );
     } catch (error) {
         next(error);
     }
@@ -32,13 +57,15 @@ exports.getExaminationById = async(req, res, next) => {
 exports.createExamination = async(req, res, next) => {
     try {
         const examination =
-            await examinationService.createExamination(req.body);
+            await examinationService.createExamination(
+                req.body
+            );
 
-        res.status(201).json({
-            success: true,
-            message: "Examination created successfully.",
-            data: examination,
-        });
+        return ApiResponse.created(
+            res,
+            "Examination created successfully.",
+            examination
+        );
     } catch (error) {
         next(error);
     }
@@ -52,11 +79,11 @@ exports.updateExamination = async(req, res, next) => {
                 req.body
             );
 
-        res.status(200).json({
-            success: true,
-            message: "Examination updated successfully.",
-            data: examination,
-        });
+        return ApiResponse.success(
+            res,
+            "Examination updated successfully.",
+            examination
+        );
     } catch (error) {
         next(error);
     }
@@ -64,16 +91,14 @@ exports.updateExamination = async(req, res, next) => {
 
 exports.deleteExamination = async(req, res, next) => {
     try {
-        const result =
-            await examinationService.deleteExamination(
-                req.params.id
-            );
+        await examinationService.deleteExamination(
+            req.params.id
+        );
 
-        res.status(200).json({
-            success: true,
-            message: "Examination deleted successfully.",
-            data: result,
-        });
+        return ApiResponse.success(
+            res,
+            "Examination deleted successfully."
+        );
     } catch (error) {
         next(error);
     }

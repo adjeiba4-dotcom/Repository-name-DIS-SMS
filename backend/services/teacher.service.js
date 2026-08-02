@@ -1,60 +1,160 @@
+// services/teacher.service.js
+
 const teacherRepository = require("../repositories/teacher.repository");
+const {
+    NotFoundError,
+    ConflictError,
+} = require("../errors");
 
-exports.getTeachers = async(search = "") => {
-    return await teacherRepository.findAllTeachers(search);
-};
-
-exports.getTeacherById = async(id) => {
-    const teacher = await teacherRepository.findTeacherById(id);
-
-    if (!teacher) {
-        throw new Error("Teacher not found.");
+class TeacherService {
+    async getTeachers() {
+        return await teacherRepository.findAllTeachers();
     }
 
-    return teacher;
-};
+    async getTeacherById(id) {
+        const teacher = await teacherRepository.findTeacherById(id);
 
-exports.createTeacher = async(teacherData) => {
-    const existingTeacher = await teacherRepository.findTeacherByEmail(
-        teacherData.email
-    );
+        if (!teacher) {
+            throw new NotFoundError("Teacher not found.");
+        }
 
-    if (existingTeacher) {
-        throw new Error("Email already exists.");
+        return teacher;
     }
 
-    return await teacherRepository.createTeacher(teacherData);
-};
-
-exports.updateTeacher = async(id, teacherData) => {
-    const existingTeacher = await teacherRepository.findTeacherById(id);
-
-    if (!existingTeacher) {
-        throw new Error("Teacher not found.");
+    async searchTeachers(keyword) {
+        return await teacherRepository.searchTeachers(keyword);
     }
 
-    if (
-        teacherData.email &&
-        teacherData.email !== existingTeacher.email
-    ) {
-        const duplicate = await teacherRepository.findTeacherByEmail(
-            teacherData.email
+    async getArchivedTeachers() {
+        return await teacherRepository.findArchivedTeachers();
+    }
+
+    async createTeacher(data) {
+        // Validate department
+        const department = await teacherRepository.findDepartmentById(
+            data.departmentId
         );
 
-        if (duplicate) {
-            throw new Error("Email already exists.");
+        if (!department) {
+            throw new NotFoundError("Department not found.");
         }
+
+        // Validate staff number
+        const existingStaffNo =
+            await teacherRepository.findTeacherByStaffNo(
+                data.staffNo
+            );
+
+        if (existingStaffNo) {
+            throw new ConflictError(
+                "Staff number already exists."
+            );
+        }
+
+        // Validate email
+        if (data.email) {
+            const existingEmail =
+                await teacherRepository.findTeacherByEmail(
+                    data.email
+                );
+
+            if (existingEmail) {
+                throw new ConflictError(
+                    "Email address already exists."
+                );
+            }
+        }
+
+        return await teacherRepository.createTeacher(data);
     }
 
-    return await teacherRepository.updateTeacher(id, teacherData);
-};
+    async updateTeacher(id, data) {
+        const teacher =
+            await teacherRepository.findTeacherById(id);
 
-exports.deleteTeacher = async(id) => {
-    const existingTeacher = await teacherRepository.findTeacherById(id);
+        if (!teacher) {
+            throw new NotFoundError("Teacher not found.");
+        }
 
-    if (!existingTeacher) {
-        throw new Error("Teacher not found.");
+        // Validate department
+        if (data.departmentId) {
+            const department =
+                await teacherRepository.findDepartmentById(
+                    data.departmentId
+                );
+
+            if (!department) {
+                throw new NotFoundError(
+                    "Department not found."
+                );
+            }
+        }
+
+        // Validate staff number
+        if (data.staffNo) {
+            const duplicateStaffNo =
+                await teacherRepository.findTeacherByStaffNo(
+                    data.staffNo
+                );
+
+            if (
+                duplicateStaffNo &&
+                duplicateStaffNo.id !== id
+            ) {
+                throw new ConflictError(
+                    "Staff number already exists."
+                );
+            }
+        }
+
+        // Validate email
+        if (data.email) {
+            const duplicateEmail =
+                await teacherRepository.findTeacherByEmail(
+                    data.email
+                );
+
+            if (
+                duplicateEmail &&
+                duplicateEmail.id !== id
+            ) {
+                throw new ConflictError(
+                    "Email address already exists."
+                );
+            }
+        }
+
+        return await teacherRepository.updateTeacher(
+            id,
+            data
+        );
     }
 
-    return await teacherRepository.deleteTeacher(id);
-};
+    async deleteTeacher(id) {
+        const teacher =
+            await teacherRepository.findTeacherById(id);
+
+        if (!teacher) {
+            throw new NotFoundError("Teacher not found.");
+        }
+
+        return await teacherRepository.softDeleteTeacher(id);
+    }
+
+    async restoreTeacher(id) {
+        const teacher =
+            await teacherRepository.findArchivedTeacherById(
+                id
+            );
+
+        if (!teacher) {
+            throw new NotFoundError(
+                "Archived teacher not found."
+            );
+        }
+
+        return await teacherRepository.restoreTeacher(id);
+    }
+}
+
+module.exports = new TeacherService();

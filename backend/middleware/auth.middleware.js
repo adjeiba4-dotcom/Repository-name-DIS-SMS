@@ -1,60 +1,103 @@
-const { verifyToken } = require("../helpers/jwt.helper");
+// middleware/auth.middleware.js
+
+const JwtHelper = require("../helpers/jwt.helper");
+const ApiResponse = require("../utils/response");
+const authService = require("../services/auth.service");
 
 /**
- * Authenticate JWT Token
+ * Authenticate JWT Access Token
  */
-const authenticate = (req, res, next) => {
+exports.authenticate = async(req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
 
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            return res.status(401).json({
-                success: false,
-                message: "Authentication required.",
-            });
+        if (!authHeader) {
+            return ApiResponse.error(
+                res,
+                "Access token is required.",
+                401
+            );
+        }
+
+        if (!authHeader.startsWith("Bearer ")) {
+            return ApiResponse.error(
+                res,
+                "Invalid authorization format.",
+                401
+            );
         }
 
         const token = authHeader.split(" ")[1];
 
-        const decoded = verifyToken(token);
+        const decoded = JwtHelper.verifyToken(token);
 
-        req.user = decoded;
+        if (!decoded) {
+            return ApiResponse.error(
+                res,
+                "Invalid or expired access token.",
+                401
+            );
+        }
+
+        const user = await authService.getUserById(decoded.id);
+
+        if (!user) {
+            return ApiResponse.error(
+                res,
+                "Authenticated user not found.",
+                401
+            );
+        }
+
+        if (user.status !== "ACTIVE") {
+            return ApiResponse.error(
+                res,
+                "Your account has been disabled.",
+                403
+            );
+        }
+
+        req.user = user;
 
         next();
+
     } catch (error) {
-        return res.status(401).json({
-            success: false,
-            message: "Invalid or expired authentication token.",
-        });
+        next(error);
     }
 };
 
 /**
  * Role-Based Authorization
+ *
+ * Example:
+ * router.get(
+ *     "/users",
+ *     authenticate,
+ *     authorize("Administrator"),
+ *     controller.getUsers
+ * );
  */
-const authorize = (...roles) => {
+exports.authorize = (...roles) => {
     return (req, res, next) => {
+
         if (!req.user) {
-            return res.status(401).json({
-                success: false,
-                message: "Authentication required.",
-            });
+            return ApiResponse.error(
+                res,
+                "Unauthorized.",
+                401
+            );
         }
 
-        const userRole = req.user.role && req.user.role.name;
+        const roleName = req.user.role?.name;
 
-        if (!roles.includes(userRole)) {
-            return res.status(403).json({
-                success: false,
-                message: "You do not have permission to perform this action.",
-            });
+        if (!roles.includes(roleName)) {
+            return ApiResponse.error(
+                res,
+                "You do not have permission to perform this action.",
+                403
+            );
         }
 
         next();
     };
-};
-
-module.exports = {
-    authenticate,
-    authorize,
 };

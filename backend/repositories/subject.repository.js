@@ -1,64 +1,180 @@
 const db = require("../database/db");
 
-exports.findAllSubjects = async() => {
-    return await db.subject.findMany({
-        include: {
-            department: true,
-            teacher: true,
+/**
+ * Fields returned for Subject queries
+ */
+const subjectSelect = {
+    id: true,
+    code: true,
+    name: true,
+    description: true,
+    creditHours: true,
+    status: true,
+    createdAt: true,
+    updatedAt: true,
+    deletedAt: true,
+
+    department: {
+        select: {
+            id: true,
+            name: true,
         },
+    },
+
+    schoolClass: {
+        select: {
+            id: true,
+            name: true,
+        },
+    },
+
+    teacherSubjects: {
+        select: {
+            id: true,
+            teacher: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                },
+            },
+        },
+    },
+};
+
+/**
+ * Get all active subjects
+ */
+exports.findAllSubjects = async () => {
+    return db.subject.findMany({
+        where: {
+            deletedAt: null,
+        },
+        select: subjectSelect,
         orderBy: {
-            subjectName: "asc",
+            name: "asc",
         },
     });
 };
 
-exports.findSubjectById = async(id) => {
-    return await db.subject.findUnique({
+/**
+ * Get subject by ID
+ */
+exports.findSubjectById = async (id) => {
+    return db.subject.findUnique({
         where: {
             id: Number(id),
         },
-        include: {
-            department: true,
-            teacher: true,
-        },
+        select: subjectSelect,
     });
 };
 
-exports.findSubjectByCode = async(subjectCode) => {
-    return await db.subject.findUnique({
+/**
+ * Get subject by code
+ */
+exports.findSubjectByCode = async (code) => {
+    return db.subject.findFirst({
         where: {
-            subjectCode,
+            code,
+            deletedAt: null,
         },
     });
 };
 
-exports.createSubject = async(subjectData) => {
-    return await db.subject.create({
-        data: subjectData,
-        include: {
-            department: true,
-            teacher: true,
+/**
+ * Search subjects
+ */
+exports.searchSubjects = async (keyword) => {
+    return db.subject.findMany({
+        where: {
+            deletedAt: null,
+            OR: [
+                {
+                    name: {
+                        contains: keyword,
+                        mode: "insensitive",
+                    },
+                },
+                {
+                    code: {
+                        contains: keyword,
+                        mode: "insensitive",
+                    },
+                },
+            ],
+        },
+        select: subjectSelect,
+        orderBy: {
+            name: "asc",
         },
     });
 };
 
-exports.updateSubject = async(id, subjectData) => {
-    return await db.subject.update({
+/**
+ * Create subject
+ */
+exports.createSubject = async (data) => {
+    return db.subject.create({
+        data,
+        select: subjectSelect,
+    });
+};
+
+/**
+ * Update subject
+ */
+exports.updateSubject = async (id, data) => {
+    return db.subject.update({
         where: {
             id: Number(id),
         },
-        data: subjectData,
-        include: {
-            department: true,
-            teacher: true,
+        data,
+        select: subjectSelect,
+    });
+};
+
+/**
+ * Archive subject
+ */
+exports.softDeleteSubject = async (id) => {
+    return db.subject.update({
+        where: {
+            id: Number(id),
+        },
+        data: {
+            status: "ARCHIVED",
+            deletedAt: new Date(),
         },
     });
 };
 
-exports.deleteSubject = async(id) => {
-    return await db.subject.delete({
+/**
+ * Restore subject
+ */
+exports.restoreSubject = async (id) => {
+    return db.subject.update({
         where: {
             id: Number(id),
+        },
+        data: {
+            status: "ACTIVE",
+            deletedAt: null,
+        },
+        select: subjectSelect,
+    });
+};
+
+/**
+ * Archived subjects
+ */
+exports.findArchivedSubjects = async () => {
+    return db.subject.findMany({
+        where: {
+            status: "ARCHIVED",
+        },
+        select: subjectSelect,
+        orderBy: {
+            updatedAt: "desc",
         },
     });
 };

@@ -1,58 +1,131 @@
-const db = require("../database/db");
+// repositories/dashboard.repository.js
 
-exports.getDashboardStatistics = async() => {
-    const [
-        totalStudents,
-        totalTeachers,
-        totalDepartments,
-        totalClasses,
-        totalSubjects,
-        totalAcademicYears,
-        totalTerms,
-        totalEnrollments,
-        totalAttendance,
-        totalExaminations,
-        totalResults,
-        totalFees,
-        totalPayments,
-        totalAnnouncements,
-        totalEvents,
-        totalNotifications,
-    ] = await Promise.all([
-        db.student.count(),
-        db.teacher.count(),
-        db.department.count(),
-        db.renamedclass.count(),
-        db.subject.count(),
-        db.academicyear.count(),
-        db.term.count(),
-        db.enrollment.count(),
-        db.attendance.count(),
-        db.examination.count(),
-        db.result.count(),
-        db.fee.count(),
-        db.payment.count(),
-        db.announcement.count(),
-        db.event.count(),
-        db.notification.count(),
-    ]);
+const prisma = require("../database/db");
 
-    return {
-        totalStudents,
-        totalTeachers,
-        totalDepartments,
-        totalClasses,
-        totalSubjects,
-        totalAcademicYears,
-        totalTerms,
-        totalEnrollments,
-        totalAttendance,
-        totalExaminations,
-        totalResults,
-        totalFees,
-        totalPayments,
-        totalAnnouncements,
-        totalEvents,
-        totalNotifications,
-    };
+const findAllDashboards = async() => {
+    return await prisma.dashboard.findMany({
+        include: {
+            creator: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    email: true,
+                },
+            },
+            widgets: true,
+        },
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
+};
+
+const findDashboardById = async(id) => {
+    return await prisma.dashboard.findUnique({
+        where: {
+            id,
+        },
+        include: {
+            creator: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    email: true,
+                },
+            },
+            widgets: true,
+        },
+    });
+};
+
+const findDashboardByName = async(name) => {
+    return await prisma.dashboard.findUnique({
+        where: {
+            name,
+        },
+    });
+};
+
+const findUserById = async(id) => {
+    return await prisma.user.findUnique({
+        where: {
+            id,
+        },
+    });
+};
+
+const searchDashboards = async(keyword) => {
+    return await prisma.dashboard.findMany({
+        where: {
+            OR: [{
+                    name: {
+                        contains: keyword,
+                    },
+                },
+                {
+                    description: {
+                        contains: keyword,
+                    },
+                },
+            ],
+        },
+        include: {
+            creator: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    email: true,
+                },
+            },
+            widgets: true,
+        },
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
+};
+
+const createDashboard = async(data) => {
+    return await prisma.dashboard.create({
+        data,
+        include: {
+            creator: true,
+            widgets: true,
+        },
+    });
+};
+
+const updateDashboard = async(id, data) => {
+    return await prisma.dashboard.update({
+        where: {
+            id,
+        },
+        data,
+        include: {
+            creator: true,
+            widgets: true,
+        },
+    });
+};
+
+const deleteDashboard = async(id) => {
+    return await prisma.dashboard.delete({
+        where: {
+            id,
+        },
+    });
+};
+
+module.exports = {
+    findAllDashboards,
+    findDashboardById,
+    findDashboardByName,
+    findUserById,
+    searchDashboards,
+    createDashboard,
+    updateDashboard,
+    deleteDashboard,
 };

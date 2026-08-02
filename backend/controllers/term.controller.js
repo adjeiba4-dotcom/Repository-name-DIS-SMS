@@ -1,14 +1,17 @@
+// controllers/term.controller.js
+
 const termService = require("../services/term.service");
+const ApiResponse = require("../utils/response");
 
 exports.getTerms = async(req, res, next) => {
     try {
         const terms = await termService.getTerms();
 
-        res.status(200).json({
-            success: true,
-            message: "Terms retrieved successfully.",
-            data: terms,
-        });
+        return ApiResponse.success(
+            res,
+            "Terms retrieved successfully.",
+            terms
+        );
     } catch (error) {
         next(error);
     }
@@ -16,13 +19,31 @@ exports.getTerms = async(req, res, next) => {
 
 exports.getTermById = async(req, res, next) => {
     try {
-        const term = await termService.getTermById(req.params.id);
+        const term = await termService.getTermById(
+            parseInt(req.params.id)
+        );
 
-        res.status(200).json({
-            success: true,
-            message: "Term retrieved successfully.",
-            data: term,
-        });
+        return ApiResponse.success(
+            res,
+            "Term retrieved successfully.",
+            term
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.searchTerms = async(req, res, next) => {
+    try {
+        const { search = "" } = req.query;
+
+        const terms = await termService.searchTerms(search);
+
+        return ApiResponse.success(
+            res,
+            "Search completed successfully.",
+            terms
+        );
     } catch (error) {
         next(error);
     }
@@ -32,11 +53,11 @@ exports.createTerm = async(req, res, next) => {
     try {
         const term = await termService.createTerm(req.body);
 
-        res.status(201).json({
-            success: true,
-            message: "Term created successfully.",
-            data: term,
-        });
+        return ApiResponse.created(
+            res,
+            "Term created successfully.",
+            term
+        );
     } catch (error) {
         next(error);
     }
@@ -45,15 +66,15 @@ exports.createTerm = async(req, res, next) => {
 exports.updateTerm = async(req, res, next) => {
     try {
         const term = await termService.updateTerm(
-            req.params.id,
+            parseInt(req.params.id),
             req.body
         );
 
-        res.status(200).json({
-            success: true,
-            message: "Term updated successfully.",
-            data: term,
-        });
+        return ApiResponse.success(
+            res,
+            "Term updated successfully.",
+            term
+        );
     } catch (error) {
         next(error);
     }
@@ -61,13 +82,44 @@ exports.updateTerm = async(req, res, next) => {
 
 exports.deleteTerm = async(req, res, next) => {
     try {
-        const result = await termService.deleteTerm(req.params.id);
+        await termService.deleteTerm(
+            parseInt(req.params.id)
+        );
 
-        res.status(200).json({
-            success: true,
-            message: "Term deleted successfully.",
-            data: result,
-        });
+        return ApiResponse.success(
+            res,
+            "Term archived successfully."
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.restoreTerm = async(req, res, next) => {
+    try {
+        const term = await termService.restoreTerm(
+            parseInt(req.params.id)
+        );
+
+        return ApiResponse.success(
+            res,
+            "Term restored successfully.",
+            term
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getArchivedTerms = async(req, res, next) => {
+    try {
+        const terms = await termService.getArchivedTerms();
+
+        return ApiResponse.success(
+            res,
+            "Archived terms retrieved successfully.",
+            terms
+        );
     } catch (error) {
         next(error);
     }

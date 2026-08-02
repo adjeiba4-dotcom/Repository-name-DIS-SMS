@@ -1,118 +1,194 @@
-const { body } = require("express-validator");
+// validators/student.validator.js
 
-const genderValues = ["MALE", "FEMALE"];
+const { body, param, query } = require("express-validator");
 
-exports.createStudentValidator = [
-
+/**
+ * Create Student Validation
+ */
+exports.createStudent = [
     body("admissionNo")
-    .trim()
-    .notEmpty()
-    .withMessage("Admission number is required."),
+        .trim()
+        .notEmpty()
+        .withMessage("Admission number is required.")
+        .isLength({ min: 3, max: 30 })
+        .withMessage("Admission number must be between 3 and 30 characters."),
 
     body("firstName")
-    .trim()
-    .notEmpty()
-    .withMessage("First name is required."),
+        .trim()
+        .notEmpty()
+        .withMessage("First name is required.")
+        .isLength({ min: 2, max: 100 })
+        .withMessage("First name must be between 2 and 100 characters."),
 
     body("lastName")
-    .trim()
-    .notEmpty()
-    .withMessage("Last name is required."),
+        .trim()
+        .notEmpty()
+        .withMessage("Last name is required.")
+        .isLength({ min: 2, max: 100 })
+        .withMessage("Last name must be between 2 and 100 characters."),
 
     body("otherName")
-    .optional()
-    .trim(),
+        .optional()
+        .trim()
+        .isLength({ max: 100 })
+        .withMessage("Other name cannot exceed 100 characters."),
 
     body("gender")
-    .notEmpty()
-    .withMessage("Gender is required.")
-    .isIn(genderValues)
-    .withMessage("Gender must be MALE or FEMALE."),
+        .trim()
+        .notEmpty()
+        .withMessage("Gender is required.")
+        .isIn(["MALE", "FEMALE"])
+        .withMessage("Gender must be either MALE or FEMALE."),
 
     body("dateOfBirth")
-    .optional()
-    .isISO8601()
-    .withMessage("Date of birth must be a valid date."),
+        .notEmpty()
+        .withMessage("Date of birth is required.")
+        .isISO8601()
+        .withMessage("Date of birth must be a valid date."),
 
     body("admissionDate")
-    .notEmpty()
-    .withMessage("Admission date is required.")
-    .isISO8601()
-    .withMessage("Admission date must be a valid date."),
+        .notEmpty()
+        .withMessage("Admission date is required.")
+        .isISO8601()
+        .withMessage("Admission date must be a valid date."),
 
     body("guardianId")
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage("Guardian ID must be a positive integer."),
+        .notEmpty()
+        .withMessage("Guardian is required.")
+        .isInt({ min: 1 })
+        .withMessage("Guardian ID must be a valid integer."),
+
+    body("classId")
+        .notEmpty()
+        .withMessage("Class is required.")
+        .isInt({ min: 1 })
+        .withMessage("Class ID must be a valid integer."),
 
     body("email")
-    .optional({ checkFalsy: true })
-    .isEmail()
-    .withMessage("Invalid email address."),
+        .optional()
+        .trim()
+        .isEmail()
+        .withMessage("Please enter a valid email address.")
+        .normalizeEmail(),
 
     body("phone")
-    .optional()
-    .trim(),
+        .optional()
+        .trim()
+        .isLength({ min: 7, max: 20 })
+        .withMessage("Phone number is invalid."),
 
     body("address")
-    .optional()
-    .trim(),
+        .optional()
+        .trim()
+        .isLength({ max: 255 })
+        .withMessage("Address cannot exceed 255 characters."),
+
+    body("status")
+        .optional()
+        .isIn(["ACTIVE", "INACTIVE", "ARCHIVED"])
+        .withMessage(
+            "Status must be ACTIVE, INACTIVE or ARCHIVED."
+        ),
 ];
 
-exports.updateStudentValidator = [
-
+/**
+ * Update Student Validation
+ */
+exports.updateStudent = [
     body("admissionNo")
-    .optional()
-    .trim()
-    .notEmpty()
-    .withMessage("Admission number cannot be empty."),
+        .optional()
+        .trim()
+        .isLength({ min: 3, max: 30 })
+        .withMessage("Admission number must be between 3 and 30 characters."),
 
     body("firstName")
-    .optional()
-    .trim()
-    .notEmpty()
-    .withMessage("First name cannot be empty."),
+        .optional()
+        .trim()
+        .isLength({ min: 2, max: 100 })
+        .withMessage("First name must be between 2 and 100 characters."),
 
     body("lastName")
-    .optional()
-    .trim()
-    .notEmpty()
-    .withMessage("Last name cannot be empty."),
+        .optional()
+        .trim()
+        .isLength({ min: 2, max: 100 })
+        .withMessage("Last name must be between 2 and 100 characters."),
 
     body("otherName")
-    .optional()
-    .trim(),
+        .optional()
+        .trim()
+        .isLength({ max: 100 })
+        .withMessage("Other name cannot exceed 100 characters."),
 
     body("gender")
-    .optional()
-    .isIn(genderValues)
-    .withMessage("Gender must be MALE or FEMALE."),
+        .optional()
+        .isIn(["MALE", "FEMALE"])
+        .withMessage("Gender must be either MALE or FEMALE."),
 
     body("dateOfBirth")
-    .optional()
-    .isISO8601()
-    .withMessage("Date of birth must be a valid date."),
+        .optional()
+        .isISO8601()
+        .withMessage("Date of birth must be a valid date."),
 
     body("admissionDate")
-    .optional()
-    .isISO8601()
-    .withMessage("Admission date must be a valid date."),
+        .optional()
+        .isISO8601()
+        .withMessage("Admission date must be a valid date."),
 
     body("guardianId")
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage("Guardian ID must be a positive integer."),
+        .optional()
+        .isInt({ min: 1 })
+        .withMessage("Guardian ID must be a valid integer."),
+
+    body("classId")
+        .optional()
+        .isInt({ min: 1 })
+        .withMessage("Class ID must be a valid integer."),
 
     body("email")
-    .optional({ checkFalsy: true })
-    .isEmail()
-    .withMessage("Invalid email address."),
+        .optional()
+        .trim()
+        .isEmail()
+        .withMessage("Please enter a valid email address.")
+        .normalizeEmail(),
 
     body("phone")
-    .optional()
-    .trim(),
+        .optional()
+        .trim()
+        .isLength({ min: 7, max: 20 })
+        .withMessage("Phone number is invalid."),
 
     body("address")
-    .optional()
-    .trim(),
+        .optional()
+        .trim()
+        .isLength({ max: 255 })
+        .withMessage("Address cannot exceed 255 characters."),
+
+    body("status")
+        .optional()
+        .isIn(["ACTIVE", "INACTIVE", "ARCHIVED"])
+        .withMessage(
+            "Status must be ACTIVE, INACTIVE or ARCHIVED."
+        ),
+];
+
+/**
+ * Student ID Validation
+ */
+exports.validateStudentId = [
+    param("id")
+        .isInt({ min: 1 })
+        .withMessage("Student ID must be a valid integer."),
+];
+
+/**
+ * Search Student Validation
+ */
+exports.searchStudent = [
+    query("search")
+        .optional()
+        .trim()
+        .isLength({ min: 1, max: 100 })
+        .withMessage(
+            "Search text must be between 1 and 100 characters."
+        ),
 ];

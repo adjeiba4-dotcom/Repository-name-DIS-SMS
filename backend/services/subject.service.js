@@ -1,71 +1,105 @@
 const subjectRepository = require("../repositories/subject.repository");
 
-exports.getSubjects = async() => {
-    return await subjectRepository.findAllSubjects();
+/**
+ * Get all subjects
+ */
+exports.getSubjects = async () => {
+    return subjectRepository.findAllSubjects();
 };
 
-exports.getSubjectById = async(id) => {
+/**
+ * Get subject by ID
+ */
+exports.getSubjectById = async (id) => {
     const subject = await subjectRepository.findSubjectById(id);
 
-    if (!subject) {
+    if (!subject || subject.deletedAt) {
         throw new Error("Subject not found.");
     }
 
     return subject;
 };
 
-exports.createSubject = async(subjectData) => {
-    const existingSubject =
-        await subjectRepository.findSubjectByCode(
-            subjectData.subjectCode
-        );
+/**
+ * Search subjects
+ */
+exports.searchSubjects = async (keyword) => {
+    return subjectRepository.searchSubjects(keyword);
+};
 
-    if (existingSubject) {
+/**
+ * Archived subjects
+ */
+exports.getArchivedSubjects = async () => {
+    return subjectRepository.findArchivedSubjects();
+};
+
+/**
+ * Create subject
+ */
+exports.createSubject = async (data) => {
+
+    const existing = await subjectRepository.findSubjectByCode(
+        data.code
+    );
+
+    if (existing) {
         throw new Error("Subject code already exists.");
     }
 
-    return await subjectRepository.createSubject(subjectData);
+    return subjectRepository.createSubject(data);
 };
 
-exports.updateSubject = async(id, subjectData) => {
-    const existingSubject =
-        await subjectRepository.findSubjectById(id);
+/**
+ * Update subject
+ */
+exports.updateSubject = async (id, data) => {
 
-    if (!existingSubject) {
+    const subject = await subjectRepository.findSubjectById(id);
+
+    if (!subject || subject.deletedAt) {
         throw new Error("Subject not found.");
     }
 
-    if (
-        subjectData.subjectCode &&
-        subjectData.subjectCode !== existingSubject.subjectCode
-    ) {
-        const duplicate =
+    if (data.code && data.code !== subject.code) {
+
+        const existing =
             await subjectRepository.findSubjectByCode(
-                subjectData.subjectCode
+                data.code
             );
 
-        if (duplicate) {
+        if (existing && existing.id !== Number(id)) {
             throw new Error("Subject code already exists.");
         }
     }
 
-    return await subjectRepository.updateSubject(
-        id,
-        subjectData
-    );
+    return subjectRepository.updateSubject(id, data);
 };
 
-exports.deleteSubject = async(id) => {
-    const existingSubject =
-        await subjectRepository.findSubjectById(id);
+/**
+ * Archive subject
+ */
+exports.deleteSubject = async (id) => {
 
-    if (!existingSubject) {
+    const subject = await subjectRepository.findSubjectById(id);
+
+    if (!subject || subject.deletedAt) {
         throw new Error("Subject not found.");
     }
 
-    await subjectRepository.deleteSubject(id);
+    return subjectRepository.softDeleteSubject(id);
+};
 
-    return {
-        id: Number(id),
-    };
+/**
+ * Restore subject
+ */
+exports.restoreSubject = async (id) => {
+
+    const subject = await subjectRepository.findSubjectById(id);
+
+    if (!subject) {
+        throw new Error("Subject not found.");
+    }
+
+    return subjectRepository.restoreSubject(id);
 };

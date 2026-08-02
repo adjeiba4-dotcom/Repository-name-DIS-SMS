@@ -1,12 +1,11 @@
+// backend/routes/role.routes.js
+
 const express = require("express");
 
-const {
-    getRoles,
-    getRoleById,
-    createRole,
-    updateRole,
-    deleteRole,
-} = require("../controllers/role.controller");
+const router = express.Router();
+
+const roleController = require("../controllers/role.controller");
+const roleValidator = require("../validators/role.validator");
 
 const {
     authenticate,
@@ -17,18 +16,11 @@ const { validate } = require("../middleware/validation.middleware");
 
 const ROLES = require("../constants/roles");
 
-const {
-    createRoleValidator,
-    updateRoleValidator,
-} = require("../validators/role.validator");
-
-const router = express.Router();
-
 /**
  * @swagger
  * tags:
  *   - name: Roles
- *     description: Role management APIs
+ *     description: Role and Permission Management APIs
  */
 
 /**
@@ -46,10 +38,20 @@ const router = express.Router();
  *           example: Administrator
  *         description:
  *           type: string
- *           example: System administrator role
+ *           example: Full access to the entire system.
  *         status:
  *           type: string
+ *           enum:
+ *             - ACTIVE
+ *             - INACTIVE
+ *             - ARCHIVED
  *           example: ACTIVE
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
  *
  *     CreateRoleRequest:
  *       type: object
@@ -58,20 +60,20 @@ const router = express.Router();
  *       properties:
  *         name:
  *           type: string
- *           example: Administrator
+ *           example: Accountant
  *         description:
  *           type: string
- *           example: System administrator role
+ *           example: Responsible for school financial management.
  *
  *     UpdateRoleRequest:
  *       type: object
  *       properties:
  *         name:
  *           type: string
+ *           example: Senior Accountant
  *         description:
  *           type: string
- *         status:
- *           type: string
+ *           example: Oversees accounting operations and financial reporting.
  */
 
 /**
@@ -79,7 +81,7 @@ const router = express.Router();
  * /roles:
  *   get:
  *     summary: Retrieve all roles
- *     description: Returns a list of all roles.
+ *     description: Returns all active system roles.
  *     tags:
  *       - Roles
  *     security:
@@ -96,7 +98,7 @@ router.get(
     "/",
     authenticate,
     authorize(ROLES.ADMINISTRATOR),
-    getRoles
+    roleController.getRoles
 );
 
 /**
@@ -104,6 +106,7 @@ router.get(
  * /roles/{id}:
  *   get:
  *     summary: Retrieve a role by ID
+ *     description: Returns details of a specific role.
  *     tags:
  *       - Roles
  *     security:
@@ -114,7 +117,6 @@ router.get(
  *         required: true
  *         schema:
  *           type: integer
- *         description: Role ID
  *     responses:
  *       200:
  *         description: Role retrieved successfully.
@@ -125,15 +127,14 @@ router.get(
     "/:id",
     authenticate,
     authorize(ROLES.ADMINISTRATOR),
-    getRoleById
+    roleController.getRoleById
 );
-
 /**
  * @swagger
  * /roles:
  *   post:
  *     summary: Create a new role
- *     description: Creates a new role.
+ *     description: Creates a new role in the system.
  *     tags:
  *       - Roles
  *     security:
@@ -149,21 +150,24 @@ router.get(
  *         description: Role created successfully.
  *       400:
  *         description: Validation error.
+ *       409:
+ *         description: Role already exists.
  */
 router.post(
     "/",
     authenticate,
     authorize(ROLES.ADMINISTRATOR),
-    createRoleValidator,
+    roleValidator.createRole,
     validate,
-    createRole
+    roleController.createRole
 );
 
 /**
  * @swagger
  * /roles/{id}:
  *   put:
- *     summary: Update role
+ *     summary: Update role information
+ *     description: Updates an existing system role.
  *     tags:
  *       - Roles
  *     security:
@@ -174,6 +178,7 @@ router.post(
  *         required: true
  *         schema:
  *           type: integer
+ *         description: Role ID
  *     requestBody:
  *       required: true
  *       content:
@@ -183,24 +188,27 @@ router.post(
  *     responses:
  *       200:
  *         description: Role updated successfully.
+ *       400:
+ *         description: Validation error.
  *       404:
  *         description: Role not found.
+ *       409:
+ *         description: Role already exists.
  */
 router.put(
     "/:id",
     authenticate,
     authorize(ROLES.ADMINISTRATOR),
-    updateRoleValidator,
+    roleValidator.updateRole,
     validate,
-    updateRole
+    roleController.updateRole
 );
-
 /**
  * @swagger
- * /roles/{id}:
- *   delete:
- *     summary: Archive role
- *     description: Archives an existing role.
+ * /roles/{id}/activate:
+ *   patch:
+ *     summary: Activate a role
+ *     description: Changes the role status to ACTIVE.
  *     tags:
  *       - Roles
  *     security:
@@ -211,17 +219,80 @@ router.put(
  *         required: true
  *         schema:
  *           type: integer
+ *         description: Role ID
  *     responses:
  *       200:
- *         description: Role archived successfully.
+ *         description: Role activated successfully.
  *       404:
  *         description: Role not found.
+ */
+router.patch(
+    "/:id/activate",
+    authenticate,
+    authorize(ROLES.ADMINISTRATOR),
+    roleController.activateRole
+);
+
+/**
+ * @swagger
+ * /roles/{id}/deactivate:
+ *   patch:
+ *     summary: Deactivate a role
+ *     description: Changes the role status to INACTIVE.
+ *     tags:
+ *       - Roles
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Role ID
+ *     responses:
+ *       200:
+ *         description: Role deactivated successfully.
+ *       404:
+ *         description: Role not found.
+ */
+router.patch(
+    "/:id/deactivate",
+    authenticate,
+    authorize(ROLES.ADMINISTRATOR),
+    roleController.deactivateRole
+);
+
+/**
+ * @swagger
+ * /roles/{id}:
+ *   delete:
+ *     summary: Delete (Archive) a role
+ *     description: Soft deletes a role by marking it as archived.
+ *     tags:
+ *       - Roles
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Role ID
+ *     responses:
+ *       200:
+ *         description: Role deleted successfully.
+ *       404:
+ *         description: Role not found.
+ *       409:
+ *         description: Role is assigned to one or more users.
  */
 router.delete(
     "/:id",
     authenticate,
     authorize(ROLES.ADMINISTRATOR),
-    deleteRole
+    roleController.deleteRole
 );
 
 module.exports = router;
