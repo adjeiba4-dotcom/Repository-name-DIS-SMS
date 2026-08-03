@@ -8,7 +8,7 @@ export default function Footer({ className = "" }) {
   return (
     <footer
       className={cn(
-        "flex h-[var(--footer-height)] shrink-0 items-center justify-between border-t border-[var(--color-footer-border)] bg-[var(--color-footer-bg)] px-6 text-[length:var(--font-size-xs)] text-[var(--color-footer-text)]",
+        "flex h-[var(--footer-height)] shrink-0 items-center justify-between gap-[var(--space-4)] border-t border-[var(--color-footer-border)] bg-[var(--color-footer-bg)] px-[var(--space-6)] text-[length:var(--font-size-xs)] leading-[var(--line-height-normal)] text-[var(--color-footer-text)]",
         className
       )}
     >

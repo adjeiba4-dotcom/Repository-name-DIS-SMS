@@ -15,19 +15,19 @@ const variants = {
 const sizes = {
   sm: "rounded-[var(--radius-lg)]",
   md: "rounded-[var(--radius-xl)]",
-  lg: "rounded-[32px]",
+  lg: "rounded-[var(--radius-2xl)]",
 };
 
 const paddings = {
-  sm: "p-4",
-  md: "p-6",
-  lg: "p-10",
+  sm: "p-[var(--space-4)]",
+  md: "p-[var(--space-6)]",
+  lg: "p-[var(--space-8)]",
 };
 
 export default function Card({
   children,
-  variant = "glass",
-  size = "lg",
+  variant = "default",
+  size = "md",
   className = "",
   disabled = false,
   ...props
@@ -38,9 +38,10 @@ export default function Card({
     <div
       aria-disabled={disabled || undefined}
       className={cn(
-        "relative w-full max-w-[500px] overflow-hidden",
-        sizes[size] ?? sizes.lg,
-        variants[variant] ?? variants.glass,
+        "relative w-full overflow-hidden",
+        isGlass && "max-w-[500px]",
+        sizes[size] ?? sizes.md,
+        variants[variant] ?? variants.default,
         disabled && "pointer-events-none opacity-60",
         className
       )}
@@ -63,7 +64,7 @@ export default function Card({
       <div
         className={cn(
           "relative z-10",
-          isGlass ? "p-10" : paddings[size] ?? paddings.md
+          isGlass ? "p-[var(--space-10)]" : paddings[size] ?? paddings.md
         )}
       >
         {children}

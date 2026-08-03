@@ -36,7 +36,24 @@ export const saveAuth = (data) => {
 export const getCurrentUser = () => {
     const user = localStorage.getItem("user");
 
-    return user ? JSON.parse(user) : null;
+    if (
+        user == null ||
+        user === "" ||
+        user === "undefined" ||
+        user === "null"
+    ) {
+        if (user === "undefined" || user === "null" || user === "") {
+            localStorage.removeItem("user");
+        }
+        return null;
+    }
+
+    try {
+        return JSON.parse(user);
+    } catch {
+        localStorage.removeItem("user");
+        return null;
+    }
 };
 
 export const isAuthenticated = () => {
