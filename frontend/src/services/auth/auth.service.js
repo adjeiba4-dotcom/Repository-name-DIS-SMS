@@ -1,61 +1,62 @@
 import api from "../../api/axios";
 import API from "../../constants/api";
 
-export const login = async(email, password) => {
-    const response = await api.post(API.AUTH.LOGIN, {
-        email,
-        password,
-    });
+/**
+ * Normalize login / refresh envelopes to the auth payload object.
+ */
+function unwrapAuthPayload(envelope) {
+  if (envelope?.data?.accessToken) {
+    return envelope.data;
+  }
+  return envelope;
+}
 
-    return response.data;
+export const login = async (email, password) => {
+  const response = await api.post(API.AUTH.LOGIN, {
+    email,
+    password,
+  });
+
+  return unwrapAuthPayload(response.data);
 };
 
 export const logout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
+  localStorage.removeItem("user");
 };
 
 export const saveAuth = (data) => {
-    localStorage.setItem(
-        "accessToken",
-        data.accessToken
-    );
+  const payload = unwrapAuthPayload(data);
 
-    localStorage.setItem(
-        "refreshToken",
-        data.refreshToken
-    );
-
-    localStorage.setItem(
-        "user",
-        JSON.stringify(data.user)
-    );
+  localStorage.setItem("accessToken", payload.accessToken);
+  localStorage.setItem("refreshToken", payload.refreshToken);
+  localStorage.setItem("user", JSON.stringify(payload.user));
 };
 
 export const getCurrentUser = () => {
-    const user = localStorage.getItem("user");
+  const user = localStorage.getItem("user");
 
-    if (
-        user == null ||
-        user === "" ||
-        user === "undefined" ||
-        user === "null"
-    ) {
-        if (user === "undefined" || user === "null" || user === "") {
-            localStorage.removeItem("user");
-        }
-        return null;
+  if (
+    user == null ||
+    user === "" ||
+    user === "undefined" ||
+    user === "null"
+  ) {
+    if (user === "undefined" || user === "null" || user === "") {
+      localStorage.removeItem("user");
     }
+    return null;
+  }
 
-    try {
-        return JSON.parse(user);
-    } catch {
-        localStorage.removeItem("user");
-        return null;
-    }
+  try {
+    return JSON.parse(user);
+  } catch {
+    localStorage.removeItem("user");
+    return null;
+  }
 };
 
 export const isAuthenticated = () => {
-    return !!localStorage.getItem("accessToken");
+  return !!localStorage.getItem("accessToken");
 };

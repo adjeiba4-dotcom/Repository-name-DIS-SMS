@@ -17,6 +17,8 @@
     "bootstrap": "^5.3.8",
     "clsx": "^2.1.1",
     "framer-motion": "^12.43.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.28.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
@@ -26,6 +28,7 @@
     "react-router-dom": "^7.18.1",
     "recharts": "^3.10.1",
     "tailwind-merge": "^3.6.0",
+    "xlsx": "^0.18.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {

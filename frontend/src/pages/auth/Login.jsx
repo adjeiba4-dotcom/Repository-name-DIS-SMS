@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import useAuth from "../../hooks/useAuth";
 
@@ -11,101 +11,101 @@ import Button from "../../components/ui/Button";
 import Alert from "../../components/ui/Alert";
 
 export default function Login() {
-    const navigate = useNavigate();
-    const { login } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { login } = useAuth();
 
-    const [email, setEmail] = useState("admin@dissms.com");
-    const [password, setPassword] = useState("");
-    const [remember, setRemember] = useState(true);
+  const [email, setEmail] = useState("admin@dissms.com");
+  const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(true);
 
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+  const sessionExpired = searchParams.get("reason") === "session-expired";
 
-        setError("");
-        setLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-        try {
-            await login(email, password);
-            navigate("/");
-        } catch (err) {
-            setError(
-                err?.response?.data?.message ||
-                "Invalid email or password."
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
+    setError("");
+    setLoading(true);
 
-    return (
-        <div className="w-full max-w-[400px]">
-            <div className="rounded-[var(--radius-xl)] border border-[var(--color-card-border)] bg-white p-10 shadow-[var(--shadow-sm)]">
-                <Logo />
+    try {
+      await login(email, password);
+      navigate("/", { replace: true });
+    } catch (err) {
+      setError(
+        err?.response?.data?.message || "Invalid email or password."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                {error && (
-                    <div className="mt-8">
-                        <Alert
-                            variant="error"
-                            message={error}
-                        />
-                    </div>
-                )}
+  return (
+    <div className="w-full max-w-[400px]">
+      <div className="rounded-[var(--radius-xl)] border border-[var(--color-card-border)] bg-white p-10 shadow-[var(--shadow-sm)]">
+        <Logo />
 
-                <form
-                    className="mt-10 flex flex-col gap-7"
-                    onSubmit={handleSubmit}
-                >
-                    <Input
-                        label="Email"
-                        type="email"
-                        value={email}
-                        placeholder="Enter your email"
-                        className="mb-0 w-full"
-                        onChange={(e) =>
-                            setEmail(e.target.value)
-                        }
-                    />
+        {sessionExpired && !error && (
+          <div className="mt-8">
+            <Alert
+              variant="warning"
+              title="Session expired"
+              message="Your session has expired. Please sign in again to continue."
+            />
+          </div>
+        )}
 
-                    <PasswordInput
-                        label="Password"
-                        value={password}
-                        className="mb-0 w-full"
-                        onChange={(e) =>
-                            setPassword(e.target.value)
-                        }
-                    />
+        {error && (
+          <div className="mt-8">
+            <Alert variant="error" message={error} />
+          </div>
+        )}
 
-                    <div className="pt-1">
-                        <Checkbox
-                            id="remember"
-                            label="Remember Me"
-                            checked={remember}
-                            onChange={(e) =>
-                                setRemember(e.target.checked)
-                            }
-                        />
-                    </div>
+        <form className="mt-10 flex flex-col gap-7" onSubmit={handleSubmit}>
+          <Input
+            label="Email"
+            type="email"
+            value={email}
+            placeholder="Enter your email"
+            className="mb-0 w-full"
+            onChange={(e) => setEmail(e.target.value)}
+          />
 
-                    <div className="pt-2">
-                        <Button
-                            type="submit"
-                            loading={loading}
-                            size="md"
-                            className="h-12 w-full rounded-[var(--radius-lg)] shadow-none hover:shadow-none active:scale-100"
-                        >
-                            Sign In
-                        </Button>
-                    </div>
-                </form>
-            </div>
+          <PasswordInput
+            label="Password"
+            value={password}
+            className="mb-0 w-full"
+            onChange={(e) => setPassword(e.target.value)}
+          />
 
-            <footer className="mt-8 space-y-1 text-center text-[var(--font-size-xs)] text-[var(--color-footer-text)]">
-                <p>Version 2.0</p>
-                <p>© Data Insight Studio</p>
-            </footer>
-        </div>
-    );
+          <div className="pt-1">
+            <Checkbox
+              id="remember"
+              label="Remember Me"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+            />
+          </div>
+
+          <div className="pt-2">
+            <Button
+              type="submit"
+              loading={loading}
+              size="md"
+              className="h-12 w-full rounded-[var(--radius-lg)] shadow-none hover:shadow-none active:scale-100"
+            >
+              Sign In
+            </Button>
+          </div>
+        </form>
+      </div>
+
+      <footer className="mt-8 space-y-1 text-center text-[var(--font-size-xs)] text-[var(--color-footer-text)]">
+        <p>Version 2.0</p>
+        <p>© Data Insight Studio</p>
+      </footer>
+    </div>
+  );
 }

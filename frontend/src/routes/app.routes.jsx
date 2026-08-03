@@ -1,4 +1,5 @@
 import Dashboard from "../pages/dashboard/Dashboard";
+import Students from "../pages/students/Students";
 import ModulePlaceholder from "../pages/common/ModulePlaceholder";
 import {
   getNavigationItems,
@@ -12,6 +13,7 @@ import {
  */
 const PAGE_REGISTRY = {
   dashboard: Dashboard,
+  students: Students,
 };
 
 /**

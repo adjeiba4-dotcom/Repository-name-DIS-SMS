@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { cn } from "../../utils/cn";
 
 const variants = {
@@ -20,6 +21,9 @@ function getInitials(name = "") {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
+/**
+ * Avatar with photo support and graceful initials fallback.
+ */
 export default function Avatar({
   src,
   alt = "",
@@ -30,7 +34,13 @@ export default function Avatar({
   className = "",
   ...props
 }) {
+  const [imageFailed, setImageFailed] = useState(false);
   const initials = getInitials(name || alt);
+  const showImage = Boolean(src) && !imageFailed;
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [src]);
 
   return (
     <span
@@ -48,12 +58,13 @@ export default function Avatar({
       )}
       {...props}
     >
-      {src ? (
+      {showImage ? (
         <img
           src={src}
           alt={alt || name || ""}
           className="h-full w-full object-cover"
           draggable={false}
+          onError={() => setImageFailed(true)}
         />
       ) : (
         <span aria-hidden="true">{initials}</span>
