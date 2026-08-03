@@ -9,7 +9,6 @@ const guardianSelect = {
     lastName: true,
     relationship: true,
     phone: true,
-    alternatePhone: true,
     email: true,
     occupation: true,
     address: true,

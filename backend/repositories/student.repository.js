@@ -28,6 +28,8 @@ const studentSelect = {
             firstName: true,
             lastName: true,
             phone: true,
+            email: true,
+            occupation: true,
             relationship: true,
         },
     },
@@ -35,8 +37,8 @@ const studentSelect = {
     schoolClass: {
         select: {
             id: true,
-            className: true,
-            classCode: true,
+            name: true,
+            code: true,
         },
     },
 };

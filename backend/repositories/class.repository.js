@@ -15,7 +15,7 @@ const classSelect = {
     students: {
         select: {
             id: true,
-            admissionNumber: true,
+            admissionNo: true,
             firstName: true,
             lastName: true,
         },
