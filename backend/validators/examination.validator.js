@@ -40,7 +40,7 @@ exports.createExamination = [
     .isInt({ min: 1 })
     .withMessage("Total marks must be greater than zero."),
 
-    body("examDate")
+    body("examinationDate")
     .notEmpty()
     .withMessage("Examination date is required.")
     .isISO8601()
@@ -79,7 +79,7 @@ exports.updateExamination = [
     .isInt({ min: 1 })
     .withMessage("Total marks must be greater than zero."),
 
-    body("examDate")
+    body("examinationDate")
     .optional()
     .isISO8601()
     .withMessage("Examination date must be a valid date."),

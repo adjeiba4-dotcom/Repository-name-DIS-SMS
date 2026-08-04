@@ -3,7 +3,84 @@ const studentRepository = require("../repositories/student.repository");
 const {
     NotFoundError,
     ConflictError,
+    BadRequestError,
 } = require("../errors");
+
+const STUDENT_FIELDS = [
+    "admissionNo",
+    "firstName",
+    "lastName",
+    "otherName",
+    "gender",
+    "dateOfBirth",
+    "admissionDate",
+    "email",
+    "phone",
+    "address",
+    "classId",
+    "status",
+];
+
+const RELATIONSHIP_FROM_UI = {
+    Father: "FATHER",
+    Mother: "MOTHER",
+    Guardian: "GUARDIAN",
+    Uncle: "UNCLE",
+    Aunt: "AUNT",
+    Sibling: "OTHER",
+    Other: "OTHER",
+    FATHER: "FATHER",
+    MOTHER: "MOTHER",
+    GUARDIAN: "GUARDIAN",
+    SPONSOR: "SPONSOR",
+    UNCLE: "UNCLE",
+    AUNT: "AUNT",
+    BROTHER: "BROTHER",
+    SISTER: "SISTER",
+    GRANDPARENT: "GRANDPARENT",
+    OTHER: "OTHER",
+};
+
+function sanitizeStudentData(data = {}) {
+    const payload = {};
+
+    for (const field of STUDENT_FIELDS) {
+        if (data[field] === undefined) continue;
+        payload[field] = data[field];
+    }
+
+    if (payload.classId != null) {
+        payload.classId = Number(payload.classId);
+    }
+
+    if (payload.dateOfBirth) {
+        payload.dateOfBirth = new Date(payload.dateOfBirth);
+    }
+
+    if (payload.admissionDate) {
+        payload.admissionDate = new Date(payload.admissionDate);
+    }
+
+    return payload;
+}
+
+function extractGuardianLink(data = {}) {
+    if (data.guardianId == null || data.guardianId === "") {
+        return null;
+    }
+
+    const guardianId = Number(data.guardianId);
+    if (Number.isNaN(guardianId) || guardianId < 1) {
+        throw new BadRequestError("Guardian ID must be a valid integer.");
+    }
+
+    const rawRelationship = data.relationship;
+    const relationship = rawRelationship
+        ? RELATIONSHIP_FROM_UI[rawRelationship] || String(rawRelationship).toUpperCase()
+        : "GUARDIAN";
+
+    return { guardianId, relationship };
+}
 
 /**
  * Get all active students
@@ -35,9 +112,14 @@ exports.searchStudents = async(keyword) => {
 /**
  * Register a new student
  */
-exports.createStudent = async(studentData) => {
+exports.createStudent = async(rawData) => {
+    const guardianLink = extractGuardianLink(rawData);
+    const studentData = sanitizeStudentData(rawData);
 
-    // Check duplicate admission number
+    if (!guardianLink) {
+        throw new BadRequestError("Guardian is required.");
+    }
+
     const existingStudent =
         await studentRepository.findStudentByAdmissionNo(
             studentData.admissionNo
@@ -49,10 +131,9 @@ exports.createStudent = async(studentData) => {
         );
     }
 
-    // Guardian validation
     const guardian =
         await studentRepository.guardianExists(
-            studentData.guardianId
+            guardianLink.guardianId
         );
 
     if (!guardian) {
@@ -61,7 +142,6 @@ exports.createStudent = async(studentData) => {
         );
     }
 
-    // Class validation
     const schoolClass =
         await studentRepository.classExists(
             studentData.classId
@@ -73,26 +153,16 @@ exports.createStudent = async(studentData) => {
         );
     }
 
-    // Convert dates
-    if (studentData.dateOfBirth) {
-        studentData.dateOfBirth =
-            new Date(studentData.dateOfBirth);
-    }
-
-    if (studentData.admissionDate) {
-        studentData.admissionDate =
-            new Date(studentData.admissionDate);
-    }
-
-    return await studentRepository.createStudent(studentData);
+    return await studentRepository.createStudent(
+        studentData,
+        guardianLink
+    );
 };
 
 /**
  * Update student
  */
-exports.updateStudent = async(id, studentData) => {
-
-    // Check student exists
+exports.updateStudent = async(id, rawData) => {
     const existingStudent =
         await studentRepository.findStudentById(id);
 
@@ -102,12 +172,13 @@ exports.updateStudent = async(id, studentData) => {
         );
     }
 
-    // Check duplicate admission number
+    const guardianLink = extractGuardianLink(rawData);
+    const studentData = sanitizeStudentData(rawData);
+
     if (
         studentData.admissionNo &&
         studentData.admissionNo !== existingStudent.admissionNo
     ) {
-
         const duplicate =
             await studentRepository.findStudentByAdmissionNo(
                 studentData.admissionNo
@@ -120,12 +191,10 @@ exports.updateStudent = async(id, studentData) => {
         }
     }
 
-    // Validate guardian if supplied
-    if (studentData.guardianId) {
-
+    if (guardianLink) {
         const guardian =
             await studentRepository.guardianExists(
-                studentData.guardianId
+                guardianLink.guardianId
             );
 
         if (!guardian) {
@@ -135,9 +204,7 @@ exports.updateStudent = async(id, studentData) => {
         }
     }
 
-    // Validate class if supplied
     if (studentData.classId) {
-
         const schoolClass =
             await studentRepository.classExists(
                 studentData.classId
@@ -150,20 +217,10 @@ exports.updateStudent = async(id, studentData) => {
         }
     }
 
-    // Convert dates
-    if (studentData.dateOfBirth) {
-        studentData.dateOfBirth =
-            new Date(studentData.dateOfBirth);
-    }
-
-    if (studentData.admissionDate) {
-        studentData.admissionDate =
-            new Date(studentData.admissionDate);
-    }
-
     return await studentRepository.updateStudent(
         id,
-        studentData
+        studentData,
+        guardianLink
     );
 };
 
@@ -171,7 +228,6 @@ exports.updateStudent = async(id, studentData) => {
  * Archive student
  */
 exports.deleteStudent = async(id) => {
-
     const student =
         await studentRepository.findStudentById(id);
 
@@ -192,7 +248,6 @@ exports.deleteStudent = async(id) => {
  * Restore archived student
  */
 exports.restoreStudent = async(id) => {
-
     const students =
         await studentRepository.findArchivedStudents();
 

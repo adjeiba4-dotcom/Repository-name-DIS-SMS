@@ -33,7 +33,9 @@ const academicYearDetailSelect = {
         where: { deletedAt: null },
         select: {
             id: true,
+            code: true,
             name: true,
+            description: true,
             startDate: true,
             endDate: true,
             isCurrent: true,

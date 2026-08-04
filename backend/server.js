@@ -119,9 +119,13 @@ app.use(errorHandler);
 // Server Startup
 // ==========================================
 
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
-app.listen(PORT, () => {
+// Do not pass a listen callback: Express 5 invokes it on both
+// "listening" and "error", which can falsely report a successful start.
+const server = app.listen(PORT);
+
+server.on("listening", () => {
     console.log("========================================");
     console.log("🚀 DIS-SMS Backend Started Successfully");
     console.log("========================================");
@@ -131,3 +135,47 @@ app.listen(PORT, () => {
     console.log(`📦 API Version : ${process.env.API_VERSION}`);
     console.log("========================================");
 });
+
+server.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+        console.error(
+            `❌ Port ${PORT} is already in use. Stop the other process or set a different PORT.`
+        );
+    } else {
+        console.error("❌ Failed to start server:", err.message);
+    }
+    process.exit(1);
+});
+
+// ==========================================
+// Graceful Shutdown
+// ==========================================
+
+let isShuttingDown = false;
+
+function shutdown(signal) {
+    if (isShuttingDown) {
+        return;
+    }
+    isShuttingDown = true;
+
+    console.log(`\n${signal} received. Shutting down gracefully...`);
+
+    server.close((closeErr) => {
+        if (closeErr) {
+            console.error("❌ Error during server shutdown:", closeErr.message);
+            process.exit(1);
+        }
+
+        console.log("HTTP server closed.");
+        process.exit(0);
+    });
+
+    setTimeout(() => {
+        console.error("❌ Forced shutdown after timeout.");
+        process.exit(1);
+    }, 10000).unref();
+}
+
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));

@@ -16,22 +16,30 @@ const studentSelect = {
     email: true,
     phone: true,
     address: true,
-    guardianId: true,
     classId: true,
     status: true,
     createdAt: true,
     updatedAt: true,
 
-    guardian: {
+    studentGuardians: {
         select: {
             id: true,
-            firstName: true,
-            lastName: true,
-            phone: true,
-            email: true,
-            occupation: true,
+            guardianId: true,
             relationship: true,
+            isPrimary: true,
+            emergencyContact: true,
+            guardian: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    phone: true,
+                    email: true,
+                    occupation: true,
+                },
+            },
         },
+        orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
     },
 
     schoolClass: {
@@ -176,25 +184,79 @@ exports.classExists = async(classId) => {
 };
 
 /**
- * Create a new student
+ * Create a new student, optionally linking a primary guardian.
  */
-exports.createStudent = async(studentData) => {
+exports.createStudent = async(studentData, guardianLink = null) => {
+    const data = { ...studentData };
+
+    if (guardianLink?.guardianId) {
+        data.studentGuardians = {
+            create: {
+                guardianId: Number(guardianLink.guardianId),
+                relationship: guardianLink.relationship || "GUARDIAN",
+                isPrimary: true,
+            },
+        };
+    }
+
     return await db.student.create({
-        data: studentData,
+        data,
         select: studentSelect,
     });
 };
 
 /**
- * Update an existing student
+ * Update an existing student. Optional guardianLink upserts the primary link.
  */
-exports.updateStudent = async(id, studentData) => {
-    return await db.student.update({
-        where: {
-            id: Number(id),
-        },
-        data: studentData,
-        select: studentSelect,
+exports.updateStudent = async(id, studentData, guardianLink = null) => {
+    const studentId = Number(id);
+
+    return await db.$transaction(async (tx) => {
+        const student = await tx.student.update({
+            where: {
+                id: studentId,
+            },
+            data: studentData,
+            select: { id: true },
+        });
+
+        if (guardianLink?.guardianId) {
+            const guardianId = Number(guardianLink.guardianId);
+            const relationship = guardianLink.relationship || "GUARDIAN";
+
+            await tx.studentGuardian.updateMany({
+                where: {
+                    studentId,
+                    isPrimary: true,
+                    NOT: { guardianId },
+                },
+                data: { isPrimary: false },
+            });
+
+            await tx.studentGuardian.upsert({
+                where: {
+                    studentId_guardianId: {
+                        studentId,
+                        guardianId,
+                    },
+                },
+                create: {
+                    studentId,
+                    guardianId,
+                    relationship,
+                    isPrimary: true,
+                },
+                update: {
+                    relationship,
+                    isPrimary: true,
+                },
+            });
+        }
+
+        return tx.student.findFirst({
+            where: { id: student.id },
+            select: studentSelect,
+        });
     });
 };
 

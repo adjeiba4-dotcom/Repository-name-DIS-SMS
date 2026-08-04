@@ -74,7 +74,17 @@ const createExamination = async(data) => {
         );
     }
 
-    return await examinationRepository.createExamination(data);
+    const { examDate, ...rest } = data;
+    const payload = {
+        ...rest,
+        examinationDate: data.examinationDate || examDate,
+    };
+
+    if (payload.examinationDate) {
+        payload.examinationDate = new Date(payload.examinationDate);
+    }
+
+    return await examinationRepository.createExamination(payload);
 };
 
 const updateExamination = async(id, data) => {
@@ -140,9 +150,18 @@ const updateExamination = async(id, data) => {
         );
     }
 
+    const { examDate, ...rest } = data;
+    const payload = { ...rest };
+
+    if (data.examinationDate || examDate) {
+        payload.examinationDate = new Date(
+            data.examinationDate || examDate
+        );
+    }
+
     return await examinationRepository.updateExamination(
         id,
-        data
+        payload
     );
 };
 

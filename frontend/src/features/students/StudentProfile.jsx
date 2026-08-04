@@ -21,7 +21,9 @@ import { getStudentById } from "../../services/students/student.service";
 import {
   formatStudentGender,
   formatStudentStatus,
+  formatRelationship,
   getApiErrorMessage,
+  getPrimaryGuardianLink,
 } from "./student.mappers";
 
 const STATUS_BADGE = {
@@ -136,8 +138,10 @@ export default function StudentProfile({
     : "Student Profile";
 
   const statusLabel = formatStudentStatus(student?.status);
-  const guardianName = student?.guardian
-    ? [student.guardian.firstName, student.guardian.lastName]
+  const primaryLink = getPrimaryGuardianLink(student);
+  const primaryGuardian = primaryLink?.guardian;
+  const guardianName = primaryGuardian
+    ? [primaryGuardian.firstName, primaryGuardian.lastName]
         .filter(Boolean)
         .join(" ")
     : "";
@@ -256,17 +260,17 @@ export default function StudentProfile({
               <DetailItem
                 icon={Users}
                 label="Relationship"
-                value={student.guardian?.relationship}
+                value={formatRelationship(primaryLink?.relationship)}
               />
               <DetailItem
                 icon={Phone}
                 label="Phone"
-                value={student.guardian?.phone}
+                value={primaryGuardian?.phone}
               />
               <DetailItem
                 icon={Mail}
                 label="Email"
-                value={student.guardian?.email}
+                value={primaryGuardian?.email}
               />
             </ProfileSection>
 

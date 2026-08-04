@@ -12,7 +12,7 @@ const findAllExaminations = async() => {
             results: true,
         },
         orderBy: {
-            examDate: "desc",
+            examinationDate: "desc",
         },
     });
 };
@@ -155,7 +155,7 @@ const searchExaminations = async(keyword) => {
             results: true,
         },
         orderBy: {
-            examDate: "desc",
+            examinationDate: "desc",
         },
     });
 };

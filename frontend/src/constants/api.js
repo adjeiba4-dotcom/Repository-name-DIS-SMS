@@ -61,6 +61,17 @@ const API = {
         DELETE: (id) => `/academic-years/${id}`,
         RESTORE: (id) => `/academic-years/${id}/restore`,
     },
+
+    TERMS: {
+        LIST: "/terms",
+        CREATE: "/terms",
+        ARCHIVED: "/terms/archived",
+        DETAIL: (id) => `/terms/${id}`,
+        UPDATE: (id) => `/terms/${id}`,
+        DELETE: (id) => `/terms/${id}`,
+        ACTIVATE: (id) => `/terms/${id}/activate`,
+        RESTORE: (id) => `/terms/${id}/restore`,
+    },
 };
 
 export default API;

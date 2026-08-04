@@ -41,8 +41,8 @@ const teacherSelect = {
     examinations: {
         select: {
             id: true,
-            title: true,
-            examDate: true,
+            name: true,
+            examinationDate: true,
         },
     },
 };

@@ -8,7 +8,11 @@ class EnrollmentRepository {
             include: {
                 student: {
                     include: {
-                        guardian: true,
+                        studentGuardians: {
+                            include: {
+                                guardian: true,
+                            },
+                        },
                     },
                 },
                 academicYear: true,
@@ -28,7 +32,11 @@ class EnrollmentRepository {
             include: {
                 student: {
                     include: {
-                        guardian: true,
+                        studentGuardians: {
+                            include: {
+                                guardian: true,
+                            },
+                        },
                     },
                 },
                 academicYear: true,

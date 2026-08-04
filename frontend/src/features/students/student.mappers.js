@@ -28,6 +28,29 @@ const GENDER_FROM_API = {
   FEMALE: "Female",
 };
 
+const RELATIONSHIP_TO_API = {
+  Father: "FATHER",
+  Mother: "MOTHER",
+  Guardian: "GUARDIAN",
+  Uncle: "UNCLE",
+  Aunt: "AUNT",
+  Sibling: "OTHER",
+  Other: "OTHER",
+};
+
+const RELATIONSHIP_FROM_API = {
+  FATHER: "Father",
+  MOTHER: "Mother",
+  GUARDIAN: "Guardian",
+  SPONSOR: "Guardian",
+  UNCLE: "Uncle",
+  AUNT: "Aunt",
+  BROTHER: "Sibling",
+  SISTER: "Sibling",
+  GRANDPARENT: "Other",
+  OTHER: "Other",
+};
+
 export function formatStudentStatus(status) {
   return STATUS_FROM_API[status] ?? status ?? "—";
 }
@@ -42,6 +65,25 @@ export function toApiStatus(status) {
 
 export function toApiGender(gender) {
   return GENDER_TO_API[gender] ?? null;
+}
+
+export function toApiRelationship(relationship) {
+  return RELATIONSHIP_TO_API[relationship] ?? "GUARDIAN";
+}
+
+export function formatRelationship(relationship) {
+  return RELATIONSHIP_FROM_API[relationship] ?? relationship ?? "—";
+}
+
+/**
+ * Resolve primary (or first) guardian link from studentGuardians.
+ */
+export function getPrimaryGuardianLink(student) {
+  const links = student?.studentGuardians;
+  if (!Array.isArray(links) || links.length === 0) {
+    return null;
+  }
+  return links.find((link) => link.isPrimary) || links[0] || null;
 }
 
 export function splitFullName(fullName = "") {
@@ -59,10 +101,10 @@ export function splitFullName(fullName = "") {
 }
 
 export function mapStudentToRow(student) {
-  const guardianName = student?.guardian
-    ? [student.guardian.firstName, student.guardian.lastName]
-        .filter(Boolean)
-        .join(" ")
+  const link = getPrimaryGuardianLink(student);
+  const guardian = link?.guardian;
+  const guardianName = guardian
+    ? [guardian.firstName, guardian.lastName].filter(Boolean).join(" ")
     : "";
 
   return {
@@ -96,10 +138,10 @@ function toDateInputValue(value) {
  * Map API student detail into the registration/edit form shape.
  */
 export function mapStudentToForm(student) {
-  const guardianName = student?.guardian
-    ? [student.guardian.firstName, student.guardian.lastName]
-        .filter(Boolean)
-        .join(" ")
+  const link = getPrimaryGuardianLink(student);
+  const guardian = link?.guardian;
+  const guardianName = guardian
+    ? [guardian.firstName, guardian.lastName].filter(Boolean).join(" ")
     : "";
 
   return {
@@ -114,12 +156,17 @@ export function mapStudentToForm(student) {
     admissionDate: toDateInputValue(student.admissionDate),
     status: formatStudentStatus(student.status) || "Active",
     previousSchool: "",
-    guardianId: student.guardianId != null ? String(student.guardianId) : "",
+    guardianId:
+      link?.guardianId != null
+        ? String(link.guardianId)
+        : guardian?.id != null
+          ? String(guardian.id)
+          : "",
     guardianName,
-    relationship: student.guardian?.relationship ?? "",
-    guardianPhone: student.guardian?.phone ?? "",
-    guardianEmail: student.guardian?.email ?? "",
-    guardianOccupation: student.guardian?.occupation ?? "",
+    relationship: formatRelationship(link?.relationship),
+    guardianPhone: guardian?.phone ?? "",
+    guardianEmail: guardian?.email ?? "",
+    guardianOccupation: guardian?.occupation ?? "",
     phone: student.phone ?? "",
     email: student.email ?? "",
     address: student.address ?? "",
@@ -151,7 +198,7 @@ export function buildGuardianPayload(form) {
   const payload = {
     firstName,
     lastName,
-    relationship: form.relationship,
+    gender: "MALE",
     phone: form.guardianPhone.trim(),
   };
 
@@ -162,7 +209,7 @@ export function buildGuardianPayload(form) {
     payload.occupation = form.guardianOccupation.trim();
   }
   if (form.address?.trim()) {
-    payload.address = form.address.trim();
+    payload.residentialAddress = form.address.trim();
   }
 
   return payload;
@@ -177,6 +224,7 @@ export function buildStudentPayload(form, guardianId) {
     dateOfBirth: form.dateOfBirth,
     admissionDate: form.admissionDate,
     guardianId: Number(guardianId),
+    relationship: toApiRelationship(form.relationship),
     classId: Number(form.classId),
     status: toApiStatus(form.status),
   };

@@ -183,7 +183,7 @@ export default function GuardianForm({
     onClose?.();
   };
 
-  const handleSave = async (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const nextErrors = validateGuardianForm(form);
     setErrors(nextErrors);
@@ -234,32 +234,11 @@ export default function GuardianForm({
       }
       size="xl"
       disabled={saving}
-      footer={
-        <>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="w-auto"
-            onClick={handleCancel}
-            disabled={saving}
-          >
-            Cancel
-          </Button>
-          <SubmitButton
-            form={formId}
-            loading={saving}
-            size="sm"
-          >
-            {isEdit ? "Save Changes" : "Create Guardian"}
-          </SubmitButton>
-        </>
-      }
     >
       <form
         id={formId}
         className="space-y-[var(--space-6)]"
-        onSubmit={handleSave}
+        onSubmit={handleSubmit}
         noValidate
       >
         {submitError ? (
@@ -445,6 +424,22 @@ export default function GuardianForm({
             className="sm:col-span-2 mb-0"
           />
         </FormSection>
+
+        <div className="flex flex-wrap justify-end gap-[var(--space-2)] border-t border-[var(--color-border-muted)] pt-[var(--space-4)]">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="w-auto"
+            onClick={handleCancel}
+            disabled={saving}
+          >
+            Cancel
+          </Button>
+          <SubmitButton loading={saving} size="sm">
+            {isEdit ? "Save Changes" : "Create Guardian"}
+          </SubmitButton>
+        </div>
       </form>
     </Drawer>
   );

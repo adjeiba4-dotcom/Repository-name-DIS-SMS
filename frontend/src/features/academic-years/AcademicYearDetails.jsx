@@ -139,6 +139,7 @@ export default function AcademicYearDetails({ academicYear, className = "" }) {
                     {term.name}
                   </Body>
                   <Caption variant="muted" size="sm" className="m-0">
+                    {term.code ? `${term.code} · ` : ""}
                     {formatDisplayDate(term.startDate)} –{" "}
                     {formatDisplayDate(term.endDate)}
                   </Caption>

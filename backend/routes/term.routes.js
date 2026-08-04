@@ -26,25 +26,37 @@ const ROLES = require("../constants/roles");
  * @swagger
  * /terms:
  *   get:
- *     summary: Retrieve all terms
- *     description: Returns all active academic terms.
+ *     summary: Retrieve terms (paginated + search)
  *     tags: [Terms]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: academicYearId
+ *         schema:
+ *           type: integer
  *     responses:
  *       200:
  *         description: Terms retrieved successfully.
- *       401:
- *         description: Unauthorized.
- *       403:
- *         description: Forbidden.
- *       500:
- *         description: Internal server error.
  */
 router.get(
     "/",
     authenticate,
     authorize(ROLES.ADMINISTRATOR),
+    termValidator.listTerms,
+    validate,
     termController.getTerms
 );
 
@@ -53,55 +65,12 @@ router.get(
  * /terms:
  *   post:
  *     summary: Create a new academic term
- *     description: Creates a new academic term under an academic year.
  *     tags: [Terms]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - academicYearId
- *               - name
- *               - startDate
- *               - endDate
- *             properties:
- *               academicYearId:
- *                 type: integer
- *                 example: 1
- *               name:
- *                 type: string
- *                 example: First Term
- *               startDate:
- *                 type: string
- *                 format: date
- *                 example: 2026-09-01
- *               endDate:
- *                 type: string
- *                 format: date
- *                 example: 2026-12-20
- *               isCurrent:
- *                 type: boolean
- *                 example: true
- *               status:
- *                 type: string
- *                 example: ACTIVE
  *     responses:
  *       201:
  *         description: Term created successfully.
- *       400:
- *         description: Validation error.
- *       401:
- *         description: Unauthorized.
- *       403:
- *         description: Forbidden.
- *       409:
- *         description: Duplicate term.
- *       500:
- *         description: Internal server error.
  */
 router.post(
     "/",
@@ -114,39 +83,9 @@ router.post(
 
 /**
  * @swagger
- * /terms/search:
- *   get:
- *     summary: Search terms
- *     description: Search terms by name.
- *     tags: [Terms]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: keyword
- *         required: true
- *         schema:
- *           type: string
- *         example: First
- *     responses:
- *       200:
- *         description: Search completed successfully.
- */
-router.get(
-    "/search",
-    authenticate,
-    authorize(ROLES.ADMINISTRATOR),
-    termValidator.searchTerm,
-    validate,
-    termController.searchTerms
-);
-
-/**
- * @swagger
  * /terms/archived:
  *   get:
  *     summary: Retrieve archived terms
- *     description: Returns all archived terms.
  *     tags: [Terms]
  *     security:
  *       - bearerAuth: []
@@ -166,22 +105,12 @@ router.get(
  * /terms/{id}:
  *   get:
  *     summary: Retrieve term by ID
- *     description: Returns a single academic term.
  *     tags: [Terms]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         example: 1
  *     responses:
  *       200:
  *         description: Term retrieved successfully.
- *       404:
- *         description: Term not found.
  */
 router.get(
     "/:id",
@@ -197,17 +126,9 @@ router.get(
  * /terms/{id}:
  *   put:
  *     summary: Update term
- *     description: Updates an academic term.
  *     tags: [Terms]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         example: 1
  *     responses:
  *       200:
  *         description: Term updated successfully.
@@ -223,20 +144,34 @@ router.put(
 
 /**
  * @swagger
- * /terms/{id}:
- *   delete:
- *     summary: Archive term
- *     description: Soft deletes a term.
+ * /terms/{id}/activate:
+ *   patch:
+ *     summary: Activate term
+ *     description: Sets the term to ACTIVE and demotes any other active term.
  *     tags: [Terms]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         example: 1
+ *     responses:
+ *       200:
+ *         description: Term activated successfully.
+ */
+router.patch(
+    "/:id/activate",
+    authenticate,
+    authorize(ROLES.ADMINISTRATOR),
+    termValidator.validateTermId,
+    validate,
+    termController.activateTerm
+);
+
+/**
+ * @swagger
+ * /terms/{id}:
+ *   delete:
+ *     summary: Archive term
+ *     tags: [Terms]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Term archived successfully.
@@ -255,17 +190,9 @@ router.delete(
  * /terms/{id}/restore:
  *   patch:
  *     summary: Restore archived term
- *     description: Restores a previously archived term.
  *     tags: [Terms]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         example: 1
  *     responses:
  *       200:
  *         description: Term restored successfully.
@@ -274,7 +201,7 @@ router.patch(
     "/:id/restore",
     authenticate,
     authorize(ROLES.ADMINISTRATOR),
-    termValidator.validateTermId,
+    termValidator.restoreTerm,
     validate,
     termController.restoreTerm
 );

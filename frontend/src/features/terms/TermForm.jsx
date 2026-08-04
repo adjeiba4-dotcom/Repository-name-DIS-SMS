@@ -1,4 +1,5 @@
 import { useId, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import {
   DatePickerField,
@@ -10,28 +11,31 @@ import Alert from "../../components/ui/Alert";
 import Button from "../../components/ui/Button";
 import Drawer from "../../components/ui/Drawer";
 import { Body, Caption, H3 } from "../../components/ui/Typography";
+import { getAcademicYears } from "../../services/academic-years/academicYear.service";
 import {
-  createAcademicYear,
-  updateAcademicYear,
-} from "../../services/academic-years/academicYear.service";
+  createTerm,
+  updateTerm,
+} from "../../services/terms/term.service";
 import {
-  ACADEMIC_YEAR_STATUS_OPTIONS,
-  buildAcademicYearPayload,
+  TERM_STATUS_OPTIONS,
+  buildTermPayload,
   getApiErrorMessage,
-  mapAcademicYearToForm,
-  validateAcademicYearForm,
-} from "./academicYear.mappers";
+  mapTermToForm,
+  validateTermForm,
+} from "./term.mappers";
 
 const INITIAL_FORM = {
+  academicYearId: "",
+  code: "",
   name: "",
+  description: "",
   startDate: "",
   endDate: "",
   status: "Active",
 };
 
-function buildInitialForm(isEdit, academicYear) {
-  const mapped =
-    isEdit && academicYear ? mapAcademicYearToForm(academicYear) : null;
+function buildInitialForm(isEdit, term) {
+  const mapped = isEdit && term ? mapTermToForm(term) : null;
   return mapped ? { ...INITIAL_FORM, ...mapped } : { ...INITIAL_FORM };
 }
 
@@ -53,19 +57,24 @@ function FormSection({ title, description, children }) {
   );
 }
 
-function AcademicYearFormBody({
-  formId,
-  isEdit,
-  academicYear,
-  onClose,
-  onSuccess,
-}) {
-  const [form, setForm] = useState(() =>
-    buildInitialForm(isEdit, academicYear)
-  );
+function TermFormBody({ formId, isEdit, term, onClose, onSuccess }) {
+  const [form, setForm] = useState(() => buildInitialForm(isEdit, term));
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const yearsQuery = useQuery({
+    queryKey: ["academic-years", "term-form-options"],
+    queryFn: async () => {
+      const response = await getAcademicYears({ page: 1, limit: 100 });
+      return response?.data ?? [];
+    },
+  });
+
+  const yearOptions = (yearsQuery.data ?? []).map((year) => ({
+    value: String(year.id),
+    label: year.name,
+  }));
 
   const updateField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -80,7 +89,7 @@ function AcademicYearFormBody({
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const nextErrors = validateAcademicYearForm(form);
+    const nextErrors = validateTermForm(form);
     setErrors(nextErrors);
     setSubmitError("");
 
@@ -88,10 +97,10 @@ function AcademicYearFormBody({
 
     setSaving(true);
     try {
-      const payload = buildAcademicYearPayload(form);
+      const payload = buildTermPayload(form);
       const response = isEdit
-        ? await updateAcademicYear(academicYear.id, payload)
-        : await createAcademicYear(payload);
+        ? await updateTerm(term.id, payload)
+        : await createTerm(payload);
 
       onSuccess?.(
         response?.data,
@@ -103,9 +112,7 @@ function AcademicYearFormBody({
       setSubmitError(
         getApiErrorMessage(
           error,
-          isEdit
-            ? "Unable to update academic year."
-            : "Unable to create academic year."
+          isEdit ? "Unable to update term." : "Unable to create term."
         )
       );
     } finally {
@@ -127,17 +134,52 @@ function AcademicYearFormBody({
       ) : null}
 
       <FormSection
-        title="Year details"
-        description="Name must be unique across all academic years."
+        title="Term details"
+        description="Code and name must be unique within the selected academic year."
       >
+        <SelectField
+          label="Academic year"
+          name="academicYearId"
+          value={form.academicYearId}
+          onChange={(event) =>
+            updateField("academicYearId", event.target.value)
+          }
+          options={[
+            { value: "", label: "Select academic year" },
+            ...yearOptions,
+          ]}
+          error={errors.academicYearId}
+          required
+          className="sm:col-span-2"
+          disabled={yearsQuery.isLoading}
+        />
+        <TextField
+          label="Code"
+          name="code"
+          value={form.code}
+          onChange={(event) => updateField("code", event.target.value)}
+          placeholder="e.g. T1"
+          error={errors.code}
+          required
+        />
         <TextField
           label="Name"
           name="name"
           value={form.name}
           onChange={(event) => updateField("name", event.target.value)}
-          placeholder="e.g. 2026/2027"
+          placeholder="e.g. First Term"
           error={errors.name}
           required
+        />
+        <TextField
+          label="Description"
+          name="description"
+          value={form.description}
+          onChange={(event) =>
+            updateField("description", event.target.value)
+          }
+          placeholder="Optional notes"
+          error={errors.description}
           className="sm:col-span-2"
         />
         <DatePickerField
@@ -161,7 +203,7 @@ function AcademicYearFormBody({
           name="status"
           value={form.status}
           onChange={(event) => updateField("status", event.target.value)}
-          options={ACADEMIC_YEAR_STATUS_OPTIONS.map((item) => ({
+          options={TERM_STATUS_OPTIONS.map((item) => ({
             value: item,
             label: item,
           }))}
@@ -170,8 +212,9 @@ function AcademicYearFormBody({
           className="sm:col-span-2"
         />
         <Caption variant="muted" size="sm" className="m-0 sm:col-span-2">
-          Selecting Active automatically marks this as the current academic
-          year and sets any other Active year to Inactive.
+          Selecting Active marks this as the current term and sets any other
+          Active term to Inactive. Dates must fall within the academic year
+          and must not overlap other terms in that year.
         </Caption>
       </FormSection>
 
@@ -187,7 +230,7 @@ function AcademicYearFormBody({
           Cancel
         </Button>
         <SubmitButton loading={saving} size="sm">
-          {isEdit ? "Save Changes" : "Create Academic Year"}
+          {isEdit ? "Save Changes" : "Create Term"}
         </SubmitButton>
       </div>
     </form>
@@ -195,38 +238,38 @@ function AcademicYearFormBody({
 }
 
 /**
- * Add / Edit academic year drawer form.
- * Exported aliases: AddAcademicYear, EditAcademicYear
+ * Add / Edit term drawer form.
+ * Exported aliases: AddTerm, EditTerm
  */
-export default function AcademicYearForm({
+export default function TermForm({
   open,
   onClose,
   onSuccess,
   mode = "create",
-  academicYear = null,
+  term = null,
 }) {
   const isEdit = mode === "edit";
   const formId = useId();
-  const instanceKey = `${mode}:${academicYear?.id ?? "new"}:${open ? "open" : "closed"}`;
+  const instanceKey = `${mode}:${term?.id ?? "new"}:${open ? "open" : "closed"}`;
 
   return (
     <Drawer
       open={open}
       onClose={onClose}
-      title={isEdit ? "Edit Academic Year" : "Add Academic Year"}
+      title={isEdit ? "Edit Term" : "Add Term"}
       description={
         isEdit
-          ? "Update academic year dates and status. Setting status to Active demotes any other active year."
-          : "Create a new academic year. Only one Active academic year is allowed."
+          ? "Update term dates and status. Setting status to Active demotes any other active term."
+          : "Create a new term under an academic year. Only one Active term is allowed."
       }
       size="md"
     >
       {open ? (
-        <AcademicYearFormBody
+        <TermFormBody
           key={instanceKey}
           formId={formId}
           isEdit={isEdit}
-          academicYear={academicYear}
+          term={term}
           onClose={onClose}
           onSuccess={onSuccess}
         />
@@ -235,10 +278,10 @@ export default function AcademicYearForm({
   );
 }
 
-export function AddAcademicYear(props) {
-  return <AcademicYearForm mode="create" {...props} />;
+export function AddTerm(props) {
+  return <TermForm mode="create" {...props} />;
 }
 
-export function EditAcademicYear(props) {
-  return <AcademicYearForm mode="edit" {...props} />;
+export function EditTerm(props) {
+  return <TermForm mode="edit" {...props} />;
 }

@@ -161,30 +161,8 @@ export default function GuardianLinkStudentDialog({
       title="Add Student"
       size="md"
       disabled={saving}
-      footer={
-        <>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="w-auto"
-            onClick={onClose}
-            disabled={saving}
-          >
-            Cancel
-          </Button>
-          <SubmitButton
-            form="guardian-link-student-form"
-            loading={saving}
-            size="sm"
-          >
-            Link Student
-          </SubmitButton>
-        </>
-      }
     >
       <form
-        id="guardian-link-student-form"
         className="space-y-[var(--space-4)]"
         onSubmit={handleSubmit}
         noValidate
@@ -287,6 +265,22 @@ export default function GuardianLinkStudentDialog({
           disabled={saving}
           className="mb-0"
         />
+
+        <div className="flex flex-wrap justify-end gap-[var(--space-2)] border-t border-[var(--color-border-muted)] pt-[var(--space-4)]">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="w-auto"
+            onClick={onClose}
+            disabled={saving}
+          >
+            Cancel
+          </Button>
+          <SubmitButton loading={saving} size="sm">
+            Link Student
+          </SubmitButton>
+        </div>
       </form>
     </Modal>
   );

@@ -8,7 +8,11 @@ const prisma = require("../database/db");
 const promotionInclude = {
     student: {
         include: {
-            guardian: true,
+            studentGuardians: {
+                include: {
+                    guardian: true,
+                },
+            },
             schoolClass: true,
         },
     },

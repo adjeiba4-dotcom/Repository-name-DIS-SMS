@@ -3,24 +3,30 @@
 const termService = require("../services/term.service");
 const ApiResponse = require("../utils/response");
 
-exports.getTerms = async(req, res, next) => {
+exports.getTerms = async (req, res, next) => {
     try {
-        const terms = await termService.getTerms();
+        const result = await termService.getTerms(req.query);
 
-        return ApiResponse.success(
+        return ApiResponse.paginated(
             res,
             "Terms retrieved successfully.",
-            terms
+            result.data,
+            {
+                page: result.page,
+                limit: result.limit,
+                total: result.total,
+                totalPages: result.totalPages,
+            }
         );
     } catch (error) {
         next(error);
     }
 };
 
-exports.getTermById = async(req, res, next) => {
+exports.getTermById = async (req, res, next) => {
     try {
         const term = await termService.getTermById(
-            parseInt(req.params.id)
+            parseInt(req.params.id, 10)
         );
 
         return ApiResponse.success(
@@ -33,15 +39,13 @@ exports.getTermById = async(req, res, next) => {
     }
 };
 
-exports.searchTerms = async(req, res, next) => {
+exports.getArchivedTerms = async (req, res, next) => {
     try {
-        const { search = "" } = req.query;
-
-        const terms = await termService.searchTerms(search);
+        const terms = await termService.getArchivedTerms();
 
         return ApiResponse.success(
             res,
-            "Search completed successfully.",
+            "Archived terms retrieved successfully.",
             terms
         );
     } catch (error) {
@@ -49,7 +53,7 @@ exports.searchTerms = async(req, res, next) => {
     }
 };
 
-exports.createTerm = async(req, res, next) => {
+exports.createTerm = async (req, res, next) => {
     try {
         const term = await termService.createTerm(req.body);
 
@@ -63,10 +67,10 @@ exports.createTerm = async(req, res, next) => {
     }
 };
 
-exports.updateTerm = async(req, res, next) => {
+exports.updateTerm = async (req, res, next) => {
     try {
         const term = await termService.updateTerm(
-            parseInt(req.params.id),
+            parseInt(req.params.id, 10),
             req.body
         );
 
@@ -80,30 +84,15 @@ exports.updateTerm = async(req, res, next) => {
     }
 };
 
-exports.deleteTerm = async(req, res, next) => {
+exports.activateTerm = async (req, res, next) => {
     try {
-        await termService.deleteTerm(
-            parseInt(req.params.id)
+        const term = await termService.activateTerm(
+            parseInt(req.params.id, 10)
         );
 
         return ApiResponse.success(
             res,
-            "Term archived successfully."
-        );
-    } catch (error) {
-        next(error);
-    }
-};
-
-exports.restoreTerm = async(req, res, next) => {
-    try {
-        const term = await termService.restoreTerm(
-            parseInt(req.params.id)
-        );
-
-        return ApiResponse.success(
-            res,
-            "Term restored successfully.",
+            "Term activated successfully.",
             term
         );
     } catch (error) {
@@ -111,14 +100,36 @@ exports.restoreTerm = async(req, res, next) => {
     }
 };
 
-exports.getArchivedTerms = async(req, res, next) => {
+exports.deleteTerm = async (req, res, next) => {
     try {
-        const terms = await termService.getArchivedTerms();
+        const term = await termService.deleteTerm(
+            parseInt(req.params.id, 10)
+        );
 
         return ApiResponse.success(
             res,
-            "Archived terms retrieved successfully.",
-            terms
+            "Term archived successfully.",
+            term
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.restoreTerm = async (req, res, next) => {
+    try {
+        const activate =
+            req.body?.activate === true || req.query?.activate === "true";
+
+        const term = await termService.restoreTerm(
+            parseInt(req.params.id, 10),
+            { activate }
+        );
+
+        return ApiResponse.success(
+            res,
+            "Term restored successfully.",
+            term
         );
     } catch (error) {
         next(error);

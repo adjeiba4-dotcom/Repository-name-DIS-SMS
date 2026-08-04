@@ -444,7 +444,9 @@ model Term {
 
   academicYearId Int
 
+  code String
   name String
+  description String?
 
   startDate DateTime
   endDate   DateTime
@@ -468,10 +470,12 @@ model Term {
   timetables   Timetable[]
 
   @@unique([academicYearId, name])
+  @@unique([academicYearId, code])
 
   @@index([academicYearId])
   @@index([status])
   @@index([isCurrent])
+  @@index([code])
 
   @@map("terms")
 }

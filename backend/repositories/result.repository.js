@@ -6,7 +6,11 @@ const prisma = require("../database/db");
 const resultInclude = {
     student: {
         include: {
-            guardian: true,
+            studentGuardians: {
+                include: {
+                    guardian: true,
+                },
+            },
             schoolClass: true,
         },
     },

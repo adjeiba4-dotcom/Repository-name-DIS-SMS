@@ -8,7 +8,11 @@ class AttendanceRepository {
             include: {
                 student: {
                     include: {
-                        guardian: true,
+                        studentGuardians: {
+                            include: {
+                                guardian: true,
+                            },
+                        },
                         schoolClass: true,
                     },
                 },
@@ -33,7 +37,11 @@ class AttendanceRepository {
             include: {
                 student: {
                     include: {
-                        guardian: true,
+                        studentGuardians: {
+                            include: {
+                                guardian: true,
+                            },
+                        },
                         schoolClass: true,
                     },
                 },

@@ -10,7 +10,11 @@ const findAllReportCards = async() => {
         include: {
             student: {
                 include: {
-                    guardian: true,
+                    studentGuardians: {
+                        include: {
+                            guardian: true,
+                        },
+                    },
                     schoolClass: true,
                 },
             },
@@ -53,7 +57,11 @@ const findReportCardById = async(id) => {
         include: {
             student: {
                 include: {
-                    guardian: true,
+                    studentGuardians: {
+                        include: {
+                            guardian: true,
+                        },
+                    },
                     schoolClass: true,
                 },
             },

@@ -58,6 +58,12 @@ exports.createStudent = [
         .isInt({ min: 1 })
         .withMessage("Guardian ID must be a valid integer."),
 
+    body("relationship")
+        .optional()
+        .trim()
+        .isLength({ min: 1, max: 50 })
+        .withMessage("Relationship is invalid."),
+
     body("classId")
         .notEmpty()
         .withMessage("Class is required.")
@@ -138,6 +144,12 @@ exports.updateStudent = [
         .optional()
         .isInt({ min: 1 })
         .withMessage("Guardian ID must be a valid integer."),
+
+    body("relationship")
+        .optional()
+        .trim()
+        .isLength({ min: 1, max: 50 })
+        .withMessage("Relationship is invalid."),
 
     body("classId")
         .optional()
