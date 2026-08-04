@@ -48,11 +48,14 @@ export function StatCardsSkeleton({ count = 4 }) {
   );
 }
 
-export function StudentTableSkeleton({ rows = 6 }) {
+export function DataTableSkeleton({
+  rows = 6,
+  label = "Loading directory",
+} = {}) {
   return (
     <div
       aria-busy="true"
-      aria-label="Loading student directory"
+      aria-label={label}
       className="space-y-[var(--space-4)]"
     >
       <div className="-mx-[var(--space-6)] overflow-hidden">
@@ -92,11 +95,11 @@ export function StudentTableSkeleton({ rows = 6 }) {
   );
 }
 
-export function StudentProfileSkeleton() {
+export function ProfileSkeleton({ label = "Loading profile" } = {}) {
   return (
     <div
       aria-busy="true"
-      aria-label="Loading student profile"
+      aria-label={label}
       className="space-y-[var(--space-6)]"
     >
       <div className="flex items-center gap-[var(--space-3)] rounded-[var(--radius-xl)] border border-[var(--color-border-default)] bg-[var(--color-surface-muted)] p-[var(--space-4)]">
@@ -126,4 +129,15 @@ export function StudentProfileSkeleton() {
       ))}
     </div>
   );
+}
+
+/** Aliases kept for Students module compatibility. */
+export function StudentTableSkeleton({ rows = 6 } = {}) {
+  return (
+    <DataTableSkeleton rows={rows} label="Loading student directory" />
+  );
+}
+
+export function StudentProfileSkeleton(props) {
+  return <ProfileSkeleton label="Loading student profile" {...props} />;
 }

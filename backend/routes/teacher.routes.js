@@ -45,7 +45,7 @@ const ROLES = require("../constants/roles");
 router.get(
     "/",
     authenticate,
-    authorize(ROLES.ADMIN),
+    authorize(ROLES.ADMINISTRATOR),
     teacherController.getTeachers
 );
 
@@ -61,7 +61,7 @@ router.get(
 router.post(
     "/",
     authenticate,
-    authorize(ROLES.ADMIN),
+    authorize(ROLES.ADMINISTRATOR),
     createTeacher,
     validate,
     teacherController.createTeacher
@@ -79,7 +79,7 @@ router.post(
 router.get(
     "/search",
     authenticate,
-    authorize(ROLES.ADMIN),
+    authorize(ROLES.ADMINISTRATOR),
     searchTeacher,
     validate,
     teacherController.searchTeachers
@@ -97,7 +97,7 @@ router.get(
 router.get(
     "/archived",
     authenticate,
-    authorize(ROLES.ADMIN),
+    authorize(ROLES.ADMINISTRATOR),
     teacherController.getArchivedTeachers
 );
 
@@ -113,7 +113,7 @@ router.get(
 router.get(
     "/:id",
     authenticate,
-    authorize(ROLES.ADMIN),
+    authorize(ROLES.ADMINISTRATOR),
     validateTeacherId,
     validate,
     teacherController.getTeacherById
@@ -131,7 +131,7 @@ router.get(
 router.put(
     "/:id",
     authenticate,
-    authorize(ROLES.ADMIN),
+    authorize(ROLES.ADMINISTRATOR),
     updateTeacher,
     validate,
     teacherController.updateTeacher
@@ -149,7 +149,7 @@ router.put(
 router.delete(
     "/:id",
     authenticate,
-    authorize(ROLES.ADMIN),
+    authorize(ROLES.ADMINISTRATOR),
     validateTeacherId,
     validate,
     teacherController.deleteTeacher
@@ -167,7 +167,7 @@ router.delete(
 router.patch(
     "/:id/restore",
     authenticate,
-    authorize(ROLES.ADMIN),
+    authorize(ROLES.ADMINISTRATOR),
     validateTeacherId,
     validate,
     teacherController.restoreTeacher

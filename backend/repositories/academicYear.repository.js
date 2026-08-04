@@ -1,6 +1,9 @@
+// repositories/academicYear.repository.js
+
 const prisma = require("../database/db");
 
-const academicYearSelect = {
+/** Slim fields for list / search / archive directory. */
+const academicYearListSelect = {
     id: true,
     name: true,
     startDate: true,
@@ -10,210 +13,248 @@ const academicYearSelect = {
     createdAt: true,
     updatedAt: true,
     deletedAt: true,
+    _count: {
+        select: {
+            terms: true,
+            enrollments: true,
+            attendance: true,
+            examinations: true,
+            feeStructures: true,
+            timetables: true,
+            bedAllocations: true,
+        },
+    },
+};
 
+/** Full detail for profile / edit. */
+const academicYearDetailSelect = {
+    ...academicYearListSelect,
     terms: {
+        where: { deletedAt: null },
         select: {
             id: true,
             name: true,
             startDate: true,
             endDate: true,
-            status: true,
-        },
-    },
-
-    enrollments: {
-        select: {
-            id: true,
-            enrollmentDate: true,
-            status: true,
-        },
-    },
-
-    attendance: {
-        select: {
-            id: true,
-            attendanceDate: true,
-            status: true,
-        },
-    },
-
-    examinations: {
-        select: {
-            id: true,
-            title: true,
-            status: true,
-        },
-    },
-
-    feeStructures: {
-        select: {
-            id: true,
-            amount: true,
-            status: true,
-        },
-    },
-
-    bedAllocations: {
-        select: {
-            id: true,
-            allocatedAt: true,
-        },
-    },
-};
-
-/**
- * Get all active academic years
- */
-exports.findAllAcademicYears = () => {
-    return prisma.academicYear.findMany({
-        where: {
-            deletedAt: null,
-        },
-        select: academicYearSelect,
-        orderBy: {
-            startDate: "desc",
-        },
-    });
-};
-
-/**
- * Get academic year by ID
- */
-exports.findAcademicYearById = (id) => {
-    return prisma.academicYear.findFirst({
-        where: {
-            id,
-            deletedAt: null,
-        },
-        select: academicYearSelect,
-    });
-};
-
-/**
- * Find academic year by name
- */
-exports.findAcademicYearByName = (name) => {
-    return prisma.academicYear.findFirst({
-        where: {
-            name,
-            deletedAt: null,
-        },
-        select: academicYearSelect,
-    });
-};
-
-/**
- * Find current academic year
- */
-exports.findCurrentAcademicYear = () => {
-    return prisma.academicYear.findFirst({
-        where: {
-            deletedAt: null,
             isCurrent: true,
+            status: true,
         },
-        select: academicYearSelect,
-    });
+        orderBy: { startDate: "asc" },
+    },
 };
 
-/**
- * Search academic years
- */
-exports.searchAcademicYears = (keyword) => {
-    return prisma.academicYear.findMany({
-        where: {
+class AcademicYearRepository {
+    async findAcademicYears({ page = 1, limit = 20, search = "" } = {}) {
+        const where = {
             deletedAt: null,
-            name: {
-                contains: keyword,
+        };
+
+        if (search) {
+            where.name = { contains: search };
+        }
+
+        const skip = (page - 1) * limit;
+
+        const [data, total] = await Promise.all([
+            prisma.academicYear.findMany({
+                where,
+                select: academicYearListSelect,
+                orderBy: [{ startDate: "desc" }, { name: "asc" }],
+                skip,
+                take: limit,
+            }),
+            prisma.academicYear.count({ where }),
+        ]);
+
+        return {
+            data,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit) || 0,
+        };
+    }
+
+    async findAcademicYearById(id) {
+        return prisma.academicYear.findFirst({
+            where: {
+                id,
+                deletedAt: null,
             },
-        },
-        select: academicYearSelect,
-        orderBy: {
-            startDate: "desc",
-        },
-    });
-};
+            select: academicYearDetailSelect,
+        });
+    }
 
-/**
- * Create academic year
- */
-exports.createAcademicYear = (data) => {
-    return prisma.academicYear.create({
-        data,
-        select: academicYearSelect,
-    });
-};
+    async findAcademicYearByIdIncludingDeleted(id) {
+        return prisma.academicYear.findFirst({
+            where: { id },
+            select: academicYearDetailSelect,
+        });
+    }
 
-/**
- * Update academic year
- */
-exports.updateAcademicYear = (id, data) => {
-    return prisma.academicYear.update({
-        where: {
-            id,
-        },
-        data,
-        select: academicYearSelect,
-    });
-};
+    async findAcademicYearByName(name, { excludeId = null } = {}) {
+        if (!name) return null;
 
-/**
- * Clear current academic year
- */
-exports.clearCurrentAcademicYear = () => {
-    return prisma.academicYear.updateMany({
-        where: {
-            isCurrent: true,
-            deletedAt: null,
-        },
-        data: {
-            isCurrent: false,
-        },
-    });
-};
-
-/**
- * Soft delete academic year
- */
-exports.softDeleteAcademicYear = (id) => {
-    return prisma.academicYear.update({
-        where: {
-            id,
-        },
-        data: {
-            deletedAt: new Date(),
-        },
-        select: academicYearSelect,
-    });
-};
-
-/**
- * Restore academic year
- */
-exports.restoreAcademicYear = (id) => {
-    return prisma.academicYear.update({
-        where: {
-            id,
-        },
-        data: {
-            deletedAt: null,
-        },
-        select: academicYearSelect,
-    });
-};
-
-/**
- * Get archived academic years
- */
-exports.findArchivedAcademicYears = () => {
-    return prisma.academicYear.findMany({
-        where: {
-            deletedAt: {
-                not: null,
+        return prisma.academicYear.findFirst({
+            where: {
+                name,
+                ...(excludeId ? { id: { not: excludeId } } : {}),
             },
-        },
-        select: academicYearSelect,
-        orderBy: {
-            startDate: "desc",
-        },
-    });
-};
+            select: {
+                id: true,
+                name: true,
+                deletedAt: true,
+                status: true,
+            },
+        });
+    }
+
+    async findActiveAcademicYear({ excludeId = null } = {}) {
+        return prisma.academicYear.findFirst({
+            where: {
+                deletedAt: null,
+                status: "ACTIVE",
+                ...(excludeId ? { id: { not: excludeId } } : {}),
+            },
+            select: academicYearListSelect,
+        });
+    }
+
+    async countReferences(id) {
+        const [terms, enrollments, attendance, examinations, feeStructures, timetables, bedAllocations] =
+            await Promise.all([
+                prisma.term.count({ where: { academicYearId: id } }),
+                prisma.enrollment.count({ where: { academicYearId: id } }),
+                prisma.attendance.count({ where: { academicYearId: id } }),
+                prisma.examination.count({ where: { academicYearId: id } }),
+                prisma.feeStructure.count({ where: { academicYearId: id } }),
+                prisma.timetable.count({ where: { academicYearId: id } }),
+                prisma.bedAllocation.count({ where: { academicYearId: id } }),
+            ]);
+
+        const total =
+            terms +
+            enrollments +
+            attendance +
+            examinations +
+            feeStructures +
+            timetables +
+            bedAllocations;
+
+        return {
+            total,
+            terms,
+            enrollments,
+            attendance,
+            examinations,
+            feeStructures,
+            timetables,
+            bedAllocations,
+        };
+    }
+
+    async createAcademicYear(data) {
+        return prisma.$transaction(async (tx) => {
+            if (data.status === "ACTIVE") {
+                await tx.academicYear.updateMany({
+                    where: {
+                        deletedAt: null,
+                        status: "ACTIVE",
+                    },
+                    data: {
+                        status: "INACTIVE",
+                        isCurrent: false,
+                    },
+                });
+            }
+
+            return tx.academicYear.create({
+                data: {
+                    ...data,
+                    isCurrent: data.status === "ACTIVE",
+                },
+                select: academicYearDetailSelect,
+            });
+        });
+    }
+
+    async updateAcademicYear(id, data) {
+        return prisma.$transaction(async (tx) => {
+            if (data.status === "ACTIVE") {
+                await tx.academicYear.updateMany({
+                    where: {
+                        deletedAt: null,
+                        status: "ACTIVE",
+                        id: { not: id },
+                    },
+                    data: {
+                        status: "INACTIVE",
+                        isCurrent: false,
+                    },
+                });
+            }
+
+            const payload = { ...data };
+            if (data.status !== undefined) {
+                payload.isCurrent = data.status === "ACTIVE";
+            }
+
+            return tx.academicYear.update({
+                where: { id },
+                data: payload,
+                select: academicYearDetailSelect,
+            });
+        });
+    }
+
+    async softDeleteAcademicYear(id) {
+        return prisma.academicYear.update({
+            where: { id },
+            data: {
+                status: "ARCHIVED",
+                isCurrent: false,
+                deletedAt: new Date(),
+            },
+            select: academicYearDetailSelect,
+        });
+    }
+
+    async restoreAcademicYear(id, { activate = false } = {}) {
+        return prisma.$transaction(async (tx) => {
+            if (activate) {
+                await tx.academicYear.updateMany({
+                    where: {
+                        deletedAt: null,
+                        status: "ACTIVE",
+                    },
+                    data: {
+                        status: "INACTIVE",
+                        isCurrent: false,
+                    },
+                });
+            }
+
+            return tx.academicYear.update({
+                where: { id },
+                data: {
+                    status: activate ? "ACTIVE" : "INACTIVE",
+                    isCurrent: Boolean(activate),
+                    deletedAt: null,
+                },
+                select: academicYearDetailSelect,
+            });
+        });
+    }
+
+    async findArchivedAcademicYears() {
+        return prisma.academicYear.findMany({
+            where: {
+                deletedAt: { not: null },
+            },
+            select: academicYearListSelect,
+            orderBy: [{ startDate: "desc" }, { name: "asc" }],
+        });
+    }
+}
+
+module.exports = new AcademicYearRepository();

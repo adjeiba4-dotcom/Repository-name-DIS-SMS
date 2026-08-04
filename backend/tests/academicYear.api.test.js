@@ -1,10 +1,7 @@
-console.log("====================================");
-console.log("DIS-SMS Academic Year API Test");
-console.log("====================================");
-console.log("✓ Get Academic Years");
-console.log("✓ Get Academic Year By ID");
-console.log("✓ Create Academic Year");
-console.log("✓ Update Academic Year");
-console.log("✓ Delete Academic Year");
-console.log("====================================");
-console.log("DIS-SMS Academic Year Module Passed.");
+/**
+ * Academic Year API smoke checks (manual / placeholder).
+ * Prefer integration tests against a running API with auth.
+ */
+
+console.log("academicYear.api.test: module structure ready.");
+console.log("Endpoints: GET/POST /api/academic-years, GET archived, CRUD + restore.");

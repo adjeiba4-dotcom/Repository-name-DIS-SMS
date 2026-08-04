@@ -1,3 +1,5 @@
+// routes/academicYear.routes.js
+
 const express = require("express");
 const router = express.Router();
 
@@ -24,11 +26,23 @@ const ROLES = require("../constants/roles");
  * @swagger
  * /academic-years:
  *   get:
- *     summary: Retrieve all academic years
- *     description: Returns all active academic years.
+ *     summary: Retrieve academic years (paginated + search)
  *     tags: [Academic Years]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: Academic years retrieved successfully.
@@ -37,6 +51,8 @@ router.get(
     "/",
     authenticate,
     authorize(ROLES.ADMINISTRATOR),
+    academicYearValidator.listAcademicYears,
+    validate,
     academicYearController.getAcademicYears
 );
 
@@ -45,35 +61,9 @@ router.get(
  * /academic-years:
  *   post:
  *     summary: Create a new academic year
- *     description: Creates a new academic year.
  *     tags: [Academic Years]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *               - startDate
- *               - endDate
- *             properties:
- *               name:
- *                 type: string
- *                 example: 2026/2027 Academic Year
- *               startDate:
- *                 type: string
- *                 format: date
- *                 example: 2026-09-01
- *               endDate:
- *                 type: string
- *                 format: date
- *                 example: 2027-07-31
- *               isCurrent:
- *                 type: boolean
- *                 example: true
  *     responses:
  *       201:
  *         description: Academic year created successfully.
@@ -89,39 +79,9 @@ router.post(
 
 /**
  * @swagger
- * /academic-years/search:
- *   get:
- *     summary: Search academic years
- *     description: Search academic years by name.
- *     tags: [Academic Years]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: keyword
- *         required: true
- *         schema:
- *           type: string
- *         example: 2026
- *     responses:
- *       200:
- *         description: Academic years retrieved successfully.
- */
-router.get(
-    "/search",
-    authenticate,
-    authorize(ROLES.ADMINISTRATOR),
-    academicYearValidator.searchAcademicYear,
-    validate,
-    academicYearController.searchAcademicYears
-);
-
-/**
- * @swagger
  * /academic-years/archived:
  *   get:
  *     summary: Retrieve archived academic years
- *     description: Returns all archived academic years.
  *     tags: [Academic Years]
  *     security:
  *       - bearerAuth: []
@@ -141,17 +101,9 @@ router.get(
  * /academic-years/{id}:
  *   get:
  *     summary: Retrieve academic year by ID
- *     description: Returns an academic year using its ID.
  *     tags: [Academic Years]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         example: 1
  *     responses:
  *       200:
  *         description: Academic year retrieved successfully.
@@ -170,35 +122,9 @@ router.get(
  * /academic-years/{id}:
  *   put:
  *     summary: Update academic year
- *     description: Updates an existing academic year.
  *     tags: [Academic Years]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         example: 1
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *                 example: 2026/2027 Academic Year
- *               startDate:
- *                 type: string
- *                 format: date
- *               endDate:
- *                 type: string
- *                 format: date
- *               isCurrent:
- *                 type: boolean
  *     responses:
  *       200:
  *         description: Academic year updated successfully.
@@ -217,16 +143,9 @@ router.put(
  * /academic-years/{id}:
  *   delete:
  *     summary: Archive academic year
- *     description: Soft deletes an academic year.
  *     tags: [Academic Years]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
  *     responses:
  *       200:
  *         description: Academic year archived successfully.
@@ -245,16 +164,9 @@ router.delete(
  * /academic-years/{id}/restore:
  *   patch:
  *     summary: Restore archived academic year
- *     description: Restores a previously archived academic year.
  *     tags: [Academic Years]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
  *     responses:
  *       200:
  *         description: Academic year restored successfully.
@@ -263,7 +175,7 @@ router.patch(
     "/:id/restore",
     authenticate,
     authorize(ROLES.ADMINISTRATOR),
-    academicYearValidator.validateAcademicYearId,
+    academicYearValidator.restoreAcademicYear,
     validate,
     academicYearController.restoreAcademicYear
 );

@@ -31,30 +31,30 @@ exports.createTeacher = [
     .withMessage("Gender must be MALE or FEMALE."),
 
     body("email")
-    .optional()
+    .optional({ checkFalsy: true })
     .isEmail()
     .withMessage("Email must be valid."),
 
     body("phone")
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ max: 30 })
     .withMessage("Phone number cannot exceed 30 characters."),
 
     body("address")
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ max: 255 })
     .withMessage("Address cannot exceed 255 characters."),
 
     body("qualification")
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ max: 150 })
     .withMessage("Qualification cannot exceed 150 characters."),
 
     body("employmentDate")
-    .optional()
+    .optional({ checkFalsy: true })
     .isISO8601()
     .withMessage("Employment Date must be a valid date."),
 
@@ -62,7 +62,8 @@ exports.createTeacher = [
     .notEmpty()
     .withMessage("Department is required.")
     .isInt({ min: 1 })
-    .withMessage("Department ID must be a valid integer."),
+    .withMessage("Department ID must be a valid integer.")
+    .toInt(),
 
     body("status")
     .optional()
@@ -99,37 +100,38 @@ exports.updateTeacher = [
     .withMessage("Gender must be MALE or FEMALE."),
 
     body("email")
-    .optional()
+    .optional({ checkFalsy: true })
     .isEmail()
     .withMessage("Email must be valid."),
 
     body("phone")
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ max: 30 })
     .withMessage("Phone number cannot exceed 30 characters."),
 
     body("address")
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ max: 255 })
     .withMessage("Address cannot exceed 255 characters."),
 
     body("qualification")
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ max: 150 })
     .withMessage("Qualification cannot exceed 150 characters."),
 
     body("employmentDate")
-    .optional()
+    .optional({ checkFalsy: true })
     .isISO8601()
     .withMessage("Employment Date must be a valid date."),
 
     body("departmentId")
     .optional()
     .isInt({ min: 1 })
-    .withMessage("Department ID must be a valid integer."),
+    .withMessage("Department ID must be a valid integer.")
+    .toInt(),
 
     body("status")
     .optional()

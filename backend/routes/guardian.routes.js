@@ -1,8 +1,18 @@
+// routes/guardian.routes.js
+
 const express = require("express");
-const router = express.Router();
 
 const guardianController = require("../controllers/guardian.controller");
-const guardianValidator = require("../validators/guardian.validator");
+
+const {
+    createGuardian,
+    updateGuardian,
+    validateGuardianId,
+    listGuardians,
+    linkGuardianToStudent,
+    unlinkGuardianFromStudent,
+    validateStudentId,
+} = require("../validators/guardian.validator");
 
 const {
     authenticate,
@@ -12,6 +22,9 @@ const {
 const { validate } = require("../middleware/validation.middleware");
 
 const ROLES = require("../constants/roles");
+
+const router = express.Router();
+const studentGuardianRouter = express.Router();
 
 /**
  * @swagger
@@ -24,7 +37,7 @@ const ROLES = require("../constants/roles");
  * @swagger
  * /guardians:
  *   get:
- *     summary: Retrieve all guardians
+ *     summary: Retrieve guardians (paginated + search)
  *     tags: [Guardians]
  *     security:
  *       - bearerAuth: []
@@ -33,25 +46,27 @@ router.get(
     "/",
     authenticate,
     authorize(ROLES.ADMINISTRATOR),
+    listGuardians,
+    validate,
     guardianController.getGuardians
 );
 
 /**
  * @swagger
- * /guardians/search:
- *   get:
- *     summary: Search guardians
+ * /guardians:
+ *   post:
+ *     summary: Register a new guardian
  *     tags: [Guardians]
  *     security:
  *       - bearerAuth: []
  */
-router.get(
-    "/search",
+router.post(
+    "/",
     authenticate,
     authorize(ROLES.ADMINISTRATOR),
-    guardianValidator.searchGuardian,
+    createGuardian,
     validate,
-    guardianController.searchGuardians
+    guardianController.createGuardian
 );
 
 /**
@@ -83,27 +98,9 @@ router.get(
     "/:id",
     authenticate,
     authorize(ROLES.ADMINISTRATOR),
-    guardianValidator.validateGuardianId,
+    validateGuardianId,
     validate,
     guardianController.getGuardianById
-);
-
-/**
- * @swagger
- * /guardians:
- *   post:
- *     summary: Register a new guardian
- *     tags: [Guardians]
- *     security:
- *       - bearerAuth: []
- */
-router.post(
-    "/",
-    authenticate,
-    authorize(ROLES.ADMINISTRATOR),
-    guardianValidator.createGuardian,
-    validate,
-    guardianController.createGuardian
 );
 
 /**
@@ -119,7 +116,7 @@ router.put(
     "/:id",
     authenticate,
     authorize(ROLES.ADMINISTRATOR),
-    guardianValidator.updateGuardian,
+    updateGuardian,
     validate,
     guardianController.updateGuardian
 );
@@ -137,7 +134,7 @@ router.delete(
     "/:id",
     authenticate,
     authorize(ROLES.ADMINISTRATOR),
-    guardianValidator.validateGuardianId,
+    validateGuardianId,
     validate,
     guardianController.deleteGuardian
 );
@@ -155,9 +152,69 @@ router.patch(
     "/:id/restore",
     authenticate,
     authorize(ROLES.ADMINISTRATOR),
-    guardianValidator.validateGuardianId,
+    validateGuardianId,
     validate,
     guardianController.restoreGuardian
 );
 
+/**
+ * Nested Student ↔ Guardian relationship routes
+ * Mounted at /students
+ */
+
+/**
+ * @swagger
+ * /students/{studentId}/guardians:
+ *   get:
+ *     summary: List guardians linked to a student
+ *     tags: [Guardians]
+ *     security:
+ *       - bearerAuth: []
+ */
+studentGuardianRouter.get(
+    "/:studentId/guardians",
+    authenticate,
+    authorize(ROLES.ADMINISTRATOR),
+    validateStudentId,
+    validate,
+    guardianController.getGuardiansByStudentId
+);
+
+/**
+ * @swagger
+ * /students/{studentId}/guardians:
+ *   post:
+ *     summary: Link a guardian to a student
+ *     tags: [Guardians]
+ *     security:
+ *       - bearerAuth: []
+ */
+studentGuardianRouter.post(
+    "/:studentId/guardians",
+    authenticate,
+    authorize(ROLES.ADMINISTRATOR),
+    linkGuardianToStudent,
+    validate,
+    guardianController.linkGuardianToStudent
+);
+
+/**
+ * @swagger
+ * /students/{studentId}/guardians/{guardianId}:
+ *   delete:
+ *     summary: Unlink a guardian from a student
+ *     tags: [Guardians]
+ *     security:
+ *       - bearerAuth: []
+ */
+studentGuardianRouter.delete(
+    "/:studentId/guardians/:guardianId",
+    authenticate,
+    authorize(ROLES.ADMINISTRATOR),
+    unlinkGuardianFromStudent,
+    validate,
+    guardianController.unlinkGuardianFromStudent
+);
+
 module.exports = router;
+module.exports.studentGuardianRouter = studentGuardianRouter;

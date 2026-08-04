@@ -27,6 +27,12 @@ enum Status {
   ARCHIVED
 }
 
+enum AcademicYearStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
 enum Gender {
   MALE
   FEMALE
@@ -73,6 +79,19 @@ enum DayOfWeek {
   FRIDAY
   SATURDAY
   SUNDAY
+}
+
+enum GuardianRelationship {
+  FATHER
+  MOTHER
+  GUARDIAN
+  SPONSOR
+  UNCLE
+  AUNT
+  BROTHER
+  SISTER
+  GRANDPARENT
+  OTHER
 }
 
 //
@@ -387,7 +406,7 @@ model AcademicYear {
 
   isCurrent Boolean @default(false)
 
-  status Status @default(ACTIVE)
+  status AcademicYearStatus @default(ACTIVE)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -679,16 +698,30 @@ model TeacherSubject {
 model Guardian {
   id Int @id @default(autoincrement())
 
-  firstName String
-  lastName  String
+  guardianNumber String @unique
 
-  relationship String
+  firstName  String
+  middleName String?
+  lastName   String
 
-  phone String
-  email String?
+  gender Gender
+
+  dateOfBirth DateTime?
+
+  nationalId String? @unique
+
+  phone          String
+  alternatePhone String?
+  email          String?
 
   occupation String?
-  address String?
+  employer   String?
+
+  residentialAddress String?
+  digitalAddress     String?
+
+  photo String?
+  notes String?
 
   status Status @default(ACTIVE)
 
@@ -699,12 +732,55 @@ model Guardian {
   // ==============================
   // Relationships
   // ==============================
-  students Student[]
+
+  studentGuardians StudentGuardian[]
 
   @@index([phone])
+  @@index([email])
   @@index([status])
 
   @@map("guardians")
+}
+
+//
+// =======================================================
+// STUDENT GUARDIAN ASSIGNMENT
+// =======================================================
+//
+
+model StudentGuardian {
+  id Int @id @default(autoincrement())
+
+  studentId  Int
+  guardianId Int
+
+  relationship GuardianRelationship
+
+  isPrimary               Boolean @default(false)
+  emergencyContact        Boolean @default(false)
+  financialResponsibility Boolean @default(false)
+  canPickup               Boolean @default(false)
+
+  remarks String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ==============================
+  // Relationships
+  // ==============================
+
+  student  Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  guardian Guardian @relation(fields: [guardianId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, guardianId])
+
+  @@index([studentId])
+  @@index([guardianId])
+  @@index([relationship])
+  @@index([isPrimary])
+
+  @@map("student_guardians")
 }
 
 //
@@ -733,7 +809,6 @@ model Student {
 
   admissionDate DateTime
 
-  guardianId Int?
   classId Int
 
   status Status @default(ACTIVE)
@@ -742,8 +817,9 @@ model Student {
   updatedAt DateTime @updatedAt
   deletedAt DateTime?
 
-  guardian Guardian? @relation(fields: [guardianId], references: [id], onDelete: SetNull)
   schoolClass SchoolClass @relation(fields: [classId], references: [id])
+
+  studentGuardians StudentGuardian[]
 
   enrollments Enrollment[]
   attendance Attendance[]
@@ -760,7 +836,6 @@ model Student {
 
   bedAllocations BedAllocation[]
 
-  @@index([guardianId])
   @@index([classId])
   @@index([status])
 

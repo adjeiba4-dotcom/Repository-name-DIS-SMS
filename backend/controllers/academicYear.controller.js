@@ -1,30 +1,32 @@
+// controllers/academicYear.controller.js
+
 const academicYearService = require("../services/academicYear.service");
 const ApiResponse = require("../utils/response");
 
-/**
- * Get all academic years
- */
-exports.getAcademicYears = async(req, res, next) => {
+exports.getAcademicYears = async (req, res, next) => {
     try {
-        const academicYears = await academicYearService.getAcademicYears();
+        const result = await academicYearService.getAcademicYears(req.query);
 
-        return ApiResponse.success(
+        return ApiResponse.paginated(
             res,
             "Academic years retrieved successfully.",
-            academicYears
+            result.data,
+            {
+                page: result.page,
+                limit: result.limit,
+                total: result.total,
+                totalPages: result.totalPages,
+            }
         );
     } catch (error) {
         next(error);
     }
 };
 
-/**
- * Get academic year by ID
- */
-exports.getAcademicYearById = async(req, res, next) => {
+exports.getAcademicYearById = async (req, res, next) => {
     try {
         const academicYear = await academicYearService.getAcademicYearById(
-            Number(req.params.id)
+            parseInt(req.params.id, 10)
         );
 
         return ApiResponse.success(
@@ -37,29 +39,7 @@ exports.getAcademicYearById = async(req, res, next) => {
     }
 };
 
-/**
- * Search academic years
- */
-exports.searchAcademicYears = async(req, res, next) => {
-    try {
-        const academicYears = await academicYearService.searchAcademicYears(
-            req.query.keyword
-        );
-
-        return ApiResponse.success(
-            res,
-            "Academic years retrieved successfully.",
-            academicYears
-        );
-    } catch (error) {
-        next(error);
-    }
-};
-
-/**
- * Get archived academic years
- */
-exports.getArchivedAcademicYears = async(req, res, next) => {
+exports.getArchivedAcademicYears = async (req, res, next) => {
     try {
         const academicYears =
             await academicYearService.getArchivedAcademicYears();
@@ -74,13 +54,11 @@ exports.getArchivedAcademicYears = async(req, res, next) => {
     }
 };
 
-/**
- * Create academic year
- */
-exports.createAcademicYear = async(req, res, next) => {
+exports.createAcademicYear = async (req, res, next) => {
     try {
-        const academicYear =
-            await academicYearService.createAcademicYear(req.body);
+        const academicYear = await academicYearService.createAcademicYear(
+            req.body
+        );
 
         return ApiResponse.created(
             res,
@@ -92,16 +70,12 @@ exports.createAcademicYear = async(req, res, next) => {
     }
 };
 
-/**
- * Update academic year
- */
-exports.updateAcademicYear = async(req, res, next) => {
+exports.updateAcademicYear = async (req, res, next) => {
     try {
-        const academicYear =
-            await academicYearService.updateAcademicYear(
-                Number(req.params.id),
-                req.body
-            );
+        const academicYear = await academicYearService.updateAcademicYear(
+            parseInt(req.params.id, 10),
+            req.body
+        );
 
         return ApiResponse.success(
             res,
@@ -113,15 +87,11 @@ exports.updateAcademicYear = async(req, res, next) => {
     }
 };
 
-/**
- * Archive academic year
- */
-exports.deleteAcademicYear = async(req, res, next) => {
+exports.deleteAcademicYear = async (req, res, next) => {
     try {
-        const academicYear =
-            await academicYearService.deleteAcademicYear(
-                Number(req.params.id)
-            );
+        const academicYear = await academicYearService.deleteAcademicYear(
+            parseInt(req.params.id, 10)
+        );
 
         return ApiResponse.success(
             res,
@@ -133,15 +103,15 @@ exports.deleteAcademicYear = async(req, res, next) => {
     }
 };
 
-/**
- * Restore archived academic year
- */
-exports.restoreAcademicYear = async(req, res, next) => {
+exports.restoreAcademicYear = async (req, res, next) => {
     try {
-        const academicYear =
-            await academicYearService.restoreAcademicYear(
-                Number(req.params.id)
-            );
+        const activate =
+            req.body?.activate === true || req.query?.activate === "true";
+
+        const academicYear = await academicYearService.restoreAcademicYear(
+            parseInt(req.params.id, 10),
+            { activate }
+        );
 
         return ApiResponse.success(
             res,

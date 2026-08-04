@@ -60,6 +60,14 @@ const navigationConfig = [
         enabled: true,
       },
       {
+        id: "guardians",
+        label: "Guardians",
+        icon: Shield,
+        path: "/guardians",
+        roles: [],
+        enabled: true,
+      },
+      {
         id: "departments",
         label: "Departments",
         icon: Building2,

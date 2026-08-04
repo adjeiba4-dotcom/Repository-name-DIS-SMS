@@ -27,6 +27,7 @@ const auditRoutes = require("./audit.routes");
 */
 const studentRoutes = require("./student.routes");
 const guardianRoutes = require("./guardian.routes");
+const studentGuardianRoutes = guardianRoutes.studentGuardianRouter;
 const departmentRoutes = require("./department.routes");
 const classRoutes = require("./class.routes");
 const academicYearRoutes = require("./academicYear.routes");
@@ -99,6 +100,7 @@ router.use("/audits", auditRoutes);
 | Academic Management
 |--------------------------------------------------------------------------
 */
+router.use("/students", studentGuardianRoutes);
 router.use("/students", studentRoutes);
 router.use("/guardians", guardianRoutes);
 router.use("/departments", departmentRoutes);

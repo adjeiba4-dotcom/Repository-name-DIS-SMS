@@ -1,134 +1,188 @@
+// services/academicYear.service.js
+
 const academicYearRepository = require("../repositories/academicYear.repository");
+const {
+    NotFoundError,
+    ConflictError,
+    BadRequestError,
+} = require("../errors");
 
-/**
- * Get all academic years
- */
-exports.getAcademicYears = async() => {
-    return await academicYearRepository.findAllAcademicYears();
-};
+const ACADEMIC_YEAR_FIELDS = ["name", "startDate", "endDate", "status"];
 
-/**
- * Get academic year by ID
- */
-exports.getAcademicYearById = async(id) => {
-    const academicYear = await academicYearRepository.findAcademicYearById(id);
+function sanitizeAcademicYearData(data = {}) {
+    const payload = {};
 
-    if (!academicYear) {
-        throw new Error("Academic year not found.");
-    }
-
-    return academicYear;
-};
-
-/**
- * Search academic years
- */
-exports.searchAcademicYears = async(keyword) => {
-    return await academicYearRepository.searchAcademicYears(keyword);
-};
-
-/**
- * Get archived academic years
- */
-exports.getArchivedAcademicYears = async() => {
-    return await academicYearRepository.findArchivedAcademicYears();
-};
-
-/**
- * Create academic year
- */
-exports.createAcademicYear = async(data) => {
-    const existing = await academicYearRepository.findAcademicYearByName(
-        data.name
-    );
-
-    if (existing) {
-        throw new Error("Academic year already exists.");
-    }
-
-    if (new Date(data.startDate) >= new Date(data.endDate)) {
-        throw new Error("Start date must be earlier than end date.");
-    }
-
-    if (data.isCurrent === true) {
-        await academicYearRepository.clearCurrentAcademicYear();
-    }
-
-    return await academicYearRepository.createAcademicYear(data);
-};
-
-/**
- * Update academic year
- */
-exports.updateAcademicYear = async(id, data) => {
-    const academicYear = await academicYearRepository.findAcademicYearById(id);
-
-    if (!academicYear) {
-        throw new Error("Academic year not found.");
-    }
-
-    if (
-        data.name &&
-        data.name !== academicYear.name
-    ) {
-        const existing =
-            await academicYearRepository.findAcademicYearByName(data.name);
-
-        if (existing) {
-            throw new Error("Academic year already exists.");
+    for (const field of ACADEMIC_YEAR_FIELDS) {
+        if (data[field] === undefined) continue;
+        if (typeof data[field] === "string") {
+            payload[field] = data[field].trim();
+        } else {
+            payload[field] = data[field];
         }
     }
 
-    const startDate = data.startDate ?
-        new Date(data.startDate) :
-        new Date(academicYear.startDate);
+    return payload;
+}
 
-    const endDate = data.endDate ?
-        new Date(data.endDate) :
-        new Date(academicYear.endDate);
+function assertDateOrder(startDate, endDate) {
+    if (!startDate || !endDate) return;
+    if (new Date(startDate) >= new Date(endDate)) {
+        throw new BadRequestError("Start date must be earlier than end date.");
+    }
+}
 
-    if (startDate >= endDate) {
-        throw new Error("Start date must be earlier than end date.");
+function assertValidStatus(status, { allowArchived = false } = {}) {
+    const allowed = allowArchived
+        ? ["ACTIVE", "INACTIVE", "ARCHIVED"]
+        : ["ACTIVE", "INACTIVE"];
+
+    if (status && !allowed.includes(status)) {
+        throw new BadRequestError(
+            `Status must be one of: ${allowed.join(", ")}.`
+        );
+    }
+}
+
+class AcademicYearService {
+    async getAcademicYears(query = {}) {
+        const page = Math.max(1, parseInt(query.page, 10) || 1);
+        const limit = Math.min(
+            100,
+            Math.max(1, parseInt(query.limit, 10) || 20)
+        );
+        const search = (query.search || query.keyword || "").trim();
+
+        return academicYearRepository.findAcademicYears({
+            page,
+            limit,
+            search,
+        });
     }
 
-    if (data.isCurrent === true) {
-        await academicYearRepository.clearCurrentAcademicYear();
+    async getAcademicYearById(id) {
+        const academicYear =
+            await academicYearRepository.findAcademicYearById(id);
+
+        if (!academicYear) {
+            throw new NotFoundError("Academic year not found.");
+        }
+
+        return academicYear;
     }
 
-    return await academicYearRepository.updateAcademicYear(id, data);
-};
-
-/**
- * Archive academic year
- */
-exports.deleteAcademicYear = async(id) => {
-    const academicYear = await academicYearRepository.findAcademicYearById(id);
-
-    if (!academicYear) {
-        throw new Error("Academic year not found.");
+    async getArchivedAcademicYears() {
+        return academicYearRepository.findArchivedAcademicYears();
     }
 
-    return await academicYearRepository.softDeleteAcademicYear(id);
-};
+    async createAcademicYear(rawData) {
+        const data = sanitizeAcademicYearData(rawData);
 
-/**
- * Restore archived academic year
- */
-exports.restoreAcademicYear = async(id) => {
-    const archivedYears =
-        await academicYearRepository.findArchivedAcademicYears();
+        if (!data.name || !data.startDate || !data.endDate) {
+            throw new BadRequestError(
+                "Name, start date, and end date are required."
+            );
+        }
 
-    const academicYear = archivedYears.find(
-        (item) => item.id === id
-    );
+        assertDateOrder(data.startDate, data.endDate);
 
-    if (!academicYear) {
-        throw new Error("Archived academic year not found.");
+        data.status = data.status || "ACTIVE";
+        assertValidStatus(data.status);
+
+        const existing = await academicYearRepository.findAcademicYearByName(
+            data.name
+        );
+        if (existing) {
+            throw new ConflictError(
+                existing.deletedAt
+                    ? "An archived academic year with this name already exists. Restore it instead."
+                    : "Academic year name must be unique."
+            );
+        }
+
+        return academicYearRepository.createAcademicYear(data);
     }
 
-    if (academicYear.deletedAt === null) {
-        throw new Error("Academic year is already active.");
+    async updateAcademicYear(id, rawData) {
+        const academicYear =
+            await academicYearRepository.findAcademicYearById(id);
+
+        if (!academicYear) {
+            throw new NotFoundError("Academic year not found.");
+        }
+
+        const data = sanitizeAcademicYearData(rawData);
+
+        if (data.status !== undefined) {
+            assertValidStatus(data.status);
+        }
+
+        if (data.name && data.name !== academicYear.name) {
+            const existing =
+                await academicYearRepository.findAcademicYearByName(data.name, {
+                    excludeId: id,
+                });
+            if (existing) {
+                throw new ConflictError(
+                    existing.deletedAt
+                        ? "An archived academic year with this name already exists."
+                        : "Academic year name must be unique."
+                );
+            }
+        }
+
+        const startDate = data.startDate ?? academicYear.startDate;
+        const endDate = data.endDate ?? academicYear.endDate;
+        assertDateOrder(startDate, endDate);
+
+        return academicYearRepository.updateAcademicYear(id, data);
     }
 
-    return await academicYearRepository.restoreAcademicYear(id);
-};
+    async deleteAcademicYear(id) {
+        const academicYear =
+            await academicYearRepository.findAcademicYearById(id);
+
+        if (!academicYear) {
+            throw new NotFoundError("Academic year not found.");
+        }
+
+        const references =
+            await academicYearRepository.countReferences(id);
+
+        if (references.total > 0) {
+            throw new ConflictError(
+                "Cannot archive academic year while it is referenced by related records (terms, enrollments, attendance, examinations, fees, timetables, or hostel allocations)."
+            );
+        }
+
+        return academicYearRepository.softDeleteAcademicYear(id);
+    }
+
+    async restoreAcademicYear(id, { activate = false } = {}) {
+        const academicYear =
+            await academicYearRepository.findAcademicYearByIdIncludingDeleted(
+                id
+            );
+
+        if (!academicYear) {
+            throw new NotFoundError("Academic year not found.");
+        }
+
+        if (!academicYear.deletedAt) {
+            throw new BadRequestError("Academic year is already active.");
+        }
+
+        const existing = await academicYearRepository.findAcademicYearByName(
+            academicYear.name,
+            { excludeId: id }
+        );
+        if (existing && !existing.deletedAt) {
+            throw new ConflictError(
+                "Cannot restore because another academic year already uses this name."
+            );
+        }
+
+        return academicYearRepository.restoreAcademicYear(id, { activate });
+    }
+}
+
+module.exports = new AcademicYearService();

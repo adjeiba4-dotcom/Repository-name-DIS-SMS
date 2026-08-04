@@ -1,22 +1,86 @@
-const db = require("../database/db");
+// repositories/guardian.repository.js
+
+const prisma = require("../database/db");
 
 /**
- * Fields returned for Guardian queries
+ * Fields returned for every guardian query.
  */
 const guardianSelect = {
     id: true,
+    guardianNumber: true,
     firstName: true,
+    middleName: true,
     lastName: true,
-    relationship: true,
+    gender: true,
+    dateOfBirth: true,
+    nationalId: true,
     phone: true,
+    alternatePhone: true,
     email: true,
     occupation: true,
-    address: true,
+    employer: true,
+    residentialAddress: true,
+    digitalAddress: true,
+    photo: true,
+    notes: true,
     status: true,
     createdAt: true,
     updatedAt: true,
+    deletedAt: true,
 
-    students: {
+    studentGuardians: {
+        select: {
+            id: true,
+            studentId: true,
+            relationship: true,
+            isPrimary: true,
+            emergencyContact: true,
+            financialResponsibility: true,
+            canPickup: true,
+            remarks: true,
+            createdAt: true,
+            updatedAt: true,
+            student: {
+                select: {
+                    id: true,
+                    admissionNo: true,
+                    firstName: true,
+                    lastName: true,
+                    status: true,
+                },
+            },
+        },
+    },
+};
+
+const studentGuardianSelect = {
+    id: true,
+    studentId: true,
+    guardianId: true,
+    relationship: true,
+    isPrimary: true,
+    emergencyContact: true,
+    financialResponsibility: true,
+    canPickup: true,
+    remarks: true,
+    createdAt: true,
+    updatedAt: true,
+    guardian: {
+        select: {
+            id: true,
+            guardianNumber: true,
+            firstName: true,
+            middleName: true,
+            lastName: true,
+            gender: true,
+            phone: true,
+            alternatePhone: true,
+            email: true,
+            occupation: true,
+            status: true,
+        },
+    },
+    student: {
         select: {
             id: true,
             admissionNo: true,
@@ -27,151 +91,324 @@ const guardianSelect = {
     },
 };
 
-/**
- * Get all active guardians
- */
-exports.findAllGuardians = async () => {
-    return await db.guardian.findMany({
-        where: {
+class GuardianRepository {
+    /**
+     * Get guardians with pagination and optional search
+     */
+    async findGuardians({ page = 1, limit = 20, search = "" } = {}) {
+        const where = {
             deletedAt: null,
-        },
-        select: guardianSelect,
-        orderBy: {
-            firstName: "asc",
-        },
-    });
-};
+        };
 
-/**
- * Get guardian by ID
- */
-exports.findGuardianById = async (id) => {
-    return await db.guardian.findUnique({
-        where: {
-            id: Number(id),
-        },
-        select: guardianSelect,
-    });
-};
+        if (search) {
+            where.OR = [
+                { guardianNumber: { contains: search } },
+                { firstName: { contains: search } },
+                { middleName: { contains: search } },
+                { lastName: { contains: search } },
+                { phone: { contains: search } },
+                { alternatePhone: { contains: search } },
+                { email: { contains: search } },
+                { nationalId: { contains: search } },
+            ];
+        }
 
-/**
- * Find guardian by email
- */
-exports.findGuardianByEmail = async (email) => {
-    if (!email) return null;
+        const skip = (page - 1) * limit;
 
-    return await db.guardian.findFirst({
-        where: {
-            email,
-            deletedAt: null,
-        },
-    });
-};
+        const [data, total] = await Promise.all([
+            prisma.guardian.findMany({
+                where,
+                select: guardianSelect,
+                orderBy: {
+                    guardianNumber: "asc",
+                },
+                skip,
+                take: limit,
+            }),
+            prisma.guardian.count({ where }),
+        ]);
 
-/**
- * Search guardians
- */
-exports.searchGuardians = async (keyword) => {
-    return await db.guardian.findMany({
-        where: {
-            deletedAt: null,
-            OR: [
-                {
-                    firstName: {
-                        contains: keyword,
-                        mode: "insensitive",
-                    },
+        return {
+            data,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit) || 0,
+        };
+    }
+
+    /**
+     * Get guardian by ID (active only)
+     */
+    async findGuardianById(id) {
+        return prisma.guardian.findFirst({
+            where: {
+                id,
+                deletedAt: null,
+            },
+            select: guardianSelect,
+        });
+    }
+
+    /**
+     * Get archived guardian by ID
+     */
+    async findArchivedGuardianById(id) {
+        return prisma.guardian.findFirst({
+            where: {
+                id,
+                deletedAt: {
+                    not: null,
                 },
-                {
-                    lastName: {
-                        contains: keyword,
-                        mode: "insensitive",
-                    },
+            },
+            select: guardianSelect,
+        });
+    }
+
+    /**
+     * Find guardian by phone (active)
+     */
+    async findGuardianByPhone(phone) {
+        if (!phone) return null;
+
+        return prisma.guardian.findFirst({
+            where: {
+                phone,
+                deletedAt: null,
+            },
+            select: guardianSelect,
+        });
+    }
+
+    /**
+     * Find guardian by email (active)
+     */
+    async findGuardianByEmail(email) {
+        if (!email) return null;
+
+        return prisma.guardian.findFirst({
+            where: {
+                email,
+                deletedAt: null,
+            },
+            select: guardianSelect,
+        });
+    }
+
+    /**
+     * Find guardian by national ID (active)
+     */
+    async findGuardianByNationalId(nationalId) {
+        if (!nationalId) return null;
+
+        return prisma.guardian.findFirst({
+            where: {
+                nationalId,
+                deletedAt: null,
+            },
+            select: guardianSelect,
+        });
+    }
+
+    /**
+     * Find guardian by guardian number
+     */
+    async findGuardianByNumber(guardianNumber) {
+        if (!guardianNumber) return null;
+
+        return prisma.guardian.findFirst({
+            where: {
+                guardianNumber,
+            },
+            select: {
+                id: true,
+                guardianNumber: true,
+            },
+        });
+    }
+
+    /**
+     * Get the latest guardian number for sequencing
+     */
+    async findLatestGuardianNumber() {
+        return prisma.guardian.findFirst({
+            where: {
+                guardianNumber: {
+                    startsWith: "GDN-",
                 },
-                {
-                    phone: {
-                        contains: keyword,
-                    },
+            },
+            orderBy: {
+                guardianNumber: "desc",
+            },
+            select: {
+                guardianNumber: true,
+            },
+        });
+    }
+
+    /**
+     * Create guardian
+     */
+    async createGuardian(data) {
+        return prisma.guardian.create({
+            data,
+            select: guardianSelect,
+        });
+    }
+
+    /**
+     * Update guardian
+     */
+    async updateGuardian(id, data) {
+        return prisma.guardian.update({
+            where: {
+                id,
+            },
+            data,
+            select: guardianSelect,
+        });
+    }
+
+    /**
+     * Soft-delete / archive guardian
+     */
+    async softDeleteGuardian(id) {
+        return prisma.guardian.update({
+            where: {
+                id,
+            },
+            data: {
+                status: "ARCHIVED",
+                deletedAt: new Date(),
+            },
+            select: guardianSelect,
+        });
+    }
+
+    /**
+     * Restore archived guardian
+     */
+    async restoreGuardian(id) {
+        return prisma.guardian.update({
+            where: {
+                id,
+            },
+            data: {
+                status: "ACTIVE",
+                deletedAt: null,
+            },
+            select: guardianSelect,
+        });
+    }
+
+    /**
+     * Get archived guardians
+     */
+    async findArchivedGuardians() {
+        return prisma.guardian.findMany({
+            where: {
+                deletedAt: {
+                    not: null,
                 },
-                {
-                    email: {
-                        contains: keyword,
-                        mode: "insensitive",
-                    },
+            },
+            select: guardianSelect,
+            orderBy: {
+                deletedAt: "desc",
+            },
+        });
+    }
+
+    /**
+     * Check student exists and is active
+     */
+    async findStudentById(id) {
+        return prisma.student.findFirst({
+            where: {
+                id,
+                deletedAt: null,
+            },
+            select: {
+                id: true,
+                admissionNo: true,
+                firstName: true,
+                lastName: true,
+                status: true,
+            },
+        });
+    }
+
+    /**
+     * Find StudentGuardian link
+     */
+    async findStudentGuardian(studentId, guardianId) {
+        return prisma.studentGuardian.findUnique({
+            where: {
+                studentId_guardianId: {
+                    studentId,
+                    guardianId,
                 },
+            },
+            select: studentGuardianSelect,
+        });
+    }
+
+    /**
+     * List guardians linked to a student
+     */
+    async findGuardiansByStudentId(studentId) {
+        return prisma.studentGuardian.findMany({
+            where: {
+                studentId,
+                guardian: {
+                    deletedAt: null,
+                },
+            },
+            select: studentGuardianSelect,
+            orderBy: [
+                { isPrimary: "desc" },
+                { createdAt: "asc" },
             ],
-        },
-        select: guardianSelect,
-        orderBy: {
-            firstName: "asc",
-        },
-    });
-};
-/**
- * Create guardian
- */
-exports.createGuardian = async (guardianData) => {
-    return await db.guardian.create({
-        data: guardianData,
-        select: guardianSelect,
-    });
-};
+        });
+    }
 
-/**
- * Update guardian
- */
-exports.updateGuardian = async (id, guardianData) => {
-    return await db.guardian.update({
-        where: {
-            id: Number(id),
-        },
-        data: guardianData,
-        select: guardianSelect,
-    });
-};
+    /**
+     * Link guardian to student
+     */
+    async linkStudentGuardian(data) {
+        return prisma.$transaction(async (tx) => {
+            if (data.isPrimary) {
+                await tx.studentGuardian.updateMany({
+                    where: {
+                        studentId: data.studentId,
+                        isPrimary: true,
+                    },
+                    data: {
+                        isPrimary: false,
+                    },
+                });
+            }
 
-/**
- * Soft delete guardian
- */
-exports.softDeleteGuardian = async (id) => {
-    return await db.guardian.update({
-        where: {
-            id: Number(id),
-        },
-        data: {
-            status: "ARCHIVED",
-            deletedAt: new Date(),
-        },
-    });
-};
+            return tx.studentGuardian.create({
+                data,
+                select: studentGuardianSelect,
+            });
+        });
+    }
 
-/**
- * Restore archived guardian
- */
-exports.restoreGuardian = async (id) => {
-    return await db.guardian.update({
-        where: {
-            id: Number(id),
-        },
-        data: {
-            status: "ACTIVE",
-            deletedAt: null,
-        },
-        select: guardianSelect,
-    });
-};
+    /**
+     * Unlink guardian from student
+     */
+    async unlinkStudentGuardian(studentId, guardianId) {
+        return prisma.studentGuardian.delete({
+            where: {
+                studentId_guardianId: {
+                    studentId,
+                    guardianId,
+                },
+            },
+            select: studentGuardianSelect,
+        });
+    }
+}
 
-/**
- * Get archived guardians
- */
-exports.findArchivedGuardians = async () => {
-    return await db.guardian.findMany({
-        where: {
-            status: "ARCHIVED",
-        },
-        select: guardianSelect,
-        orderBy: {
-            updatedAt: "desc",
-        },
-    });
-};
+module.exports = new GuardianRepository();

@@ -11,7 +11,6 @@ const teacherSelect = {
     staffNo: true,
     firstName: true,
     lastName: true,
-    otherName: true,
     gender: true,
     email: true,
     phone: true,

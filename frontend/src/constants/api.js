@@ -22,11 +22,44 @@ const API = {
     GUARDIANS: {
         LIST: "/guardians",
         CREATE: "/guardians",
+        ARCHIVED: "/guardians/archived",
+        DETAIL: (id) => `/guardians/${id}`,
         UPDATE: (id) => `/guardians/${id}`,
+        DELETE: (id) => `/guardians/${id}`,
+        RESTORE: (id) => `/guardians/${id}/restore`,
+        BY_STUDENT: (studentId) => `/students/${studentId}/guardians`,
+        LINK: (studentId) => `/students/${studentId}/guardians`,
+        UNLINK: (studentId, guardianId) =>
+            `/students/${studentId}/guardians/${guardianId}`,
     },
 
     CLASSES: {
         LIST: "/classes",
+    },
+
+    TEACHERS: {
+        LIST: "/teachers",
+        CREATE: "/teachers",
+        SEARCH: "/teachers/search",
+        ARCHIVED: "/teachers/archived",
+        DETAIL: (id) => `/teachers/${id}`,
+        UPDATE: (id) => `/teachers/${id}`,
+        DELETE: (id) => `/teachers/${id}`,
+        RESTORE: (id) => `/teachers/${id}/restore`,
+    },
+
+    DEPARTMENTS: {
+        LIST: "/departments",
+    },
+
+    ACADEMIC_YEARS: {
+        LIST: "/academic-years",
+        CREATE: "/academic-years",
+        ARCHIVED: "/academic-years/archived",
+        DETAIL: (id) => `/academic-years/${id}`,
+        UPDATE: (id) => `/academic-years/${id}`,
+        DELETE: (id) => `/academic-years/${id}`,
+        RESTORE: (id) => `/academic-years/${id}/restore`,
     },
 };
 

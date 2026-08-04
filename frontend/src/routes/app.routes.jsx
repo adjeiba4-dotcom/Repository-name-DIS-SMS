@@ -1,5 +1,8 @@
 import Dashboard from "../pages/dashboard/Dashboard";
 import Students from "../pages/students/Students";
+import Teachers from "../pages/teachers/Teachers";
+import Guardians from "../pages/guardians/Guardians";
+import AcademicYears from "../pages/academic-years/AcademicYears";
 import ModulePlaceholder from "../pages/common/ModulePlaceholder";
 import {
   getNavigationItems,
@@ -14,6 +17,9 @@ import {
 const PAGE_REGISTRY = {
   dashboard: Dashboard,
   students: Students,
+  teachers: Teachers,
+  guardians: Guardians,
+  "academic-years": AcademicYears,
 };
 
 /**
