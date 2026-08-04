@@ -107,9 +107,9 @@ export default function StudentsPage() {
   });
 
   const classesQuery = useQuery({
-    queryKey: ["classes"],
+    queryKey: ["classes", "student-options"],
     queryFn: async () => {
-      const response = await getClasses();
+      const response = await getClasses({ page: 1, limit: 100 });
       return (response?.data ?? []).map(mapClassToOption);
     },
   });

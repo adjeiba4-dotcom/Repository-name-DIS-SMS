@@ -1,202 +1,294 @@
+// repositories/class.repository.js
+
 const prisma = require("../database/db");
 
-const classSelect = {
+/** Slim fields for list / search / archive directory. */
+const classListSelect = {
     id: true,
-    code: true,
-    name: true,
-    level: true,
+    classCode: true,
+    className: true,
+    academicYearId: true,
+    departmentId: true,
+    classTeacherId: true,
     capacity: true,
     description: true,
     status: true,
     createdAt: true,
     updatedAt: true,
     deletedAt: true,
-
-    students: {
+    academicYear: {
         select: {
             id: true,
-            admissionNo: true,
-            firstName: true,
-            lastName: true,
-        },
-    },
-
-    enrollments: {
-        select: {
-            id: true,
-            enrollmentDate: true,
+            name: true,
+            startDate: true,
+            endDate: true,
             status: true,
+            isCurrent: true,
         },
     },
-
-    subjects: {
+    department: {
         select: {
             id: true,
             code: true,
             name: true,
-        },
-    },
-
-    feeStructures: {
-        select: {
-            id: true,
-            amount: true,
             status: true,
         },
     },
+    classTeacher: {
+        select: {
+            id: true,
+            staffNo: true,
+            firstName: true,
+            lastName: true,
+            status: true,
+        },
+    },
+    _count: {
+        select: {
+            students: true,
+            enrollments: true,
+            subjects: true,
+            feeStructures: true,
+            timetables: true,
+        },
+    },
 };
 
-/**
- * Get all active classes
- */
-exports.findAllClasses = () => {
-    return prisma.schoolClass.findMany({
-        where: {
+/** Full detail for profile / edit. */
+const classDetailSelect = {
+    ...classListSelect,
+};
+
+class ClassRepository {
+    async findClasses({
+        page = 1,
+        limit = 20,
+        search = "",
+        academicYearId = null,
+        departmentId = null,
+        status = null,
+        sortBy = "className",
+        sortOrder = "asc",
+    } = {}) {
+        const where = {
             deletedAt: null,
-        },
-        select: classSelect,
-        orderBy: {
-            name: "asc",
-        },
-    });
-};
+        };
 
-/**
- * Get class by ID
- */
-exports.findClassById = (id) => {
-    return prisma.schoolClass.findFirst({
-        where: {
-            id,
-            deletedAt: null,
-        },
-        select: classSelect,
-    });
-};
+        if (academicYearId) {
+            where.academicYearId = academicYearId;
+        }
 
-/**
- * Find class by code
- */
-exports.findClassByCode = (code) => {
-    return prisma.schoolClass.findFirst({
-        where: {
-            code,
-            deletedAt: null,
-        },
-        select: classSelect,
-    });
-};
+        if (departmentId) {
+            where.departmentId = departmentId;
+        }
 
-/**
- * Find class by name
- */
-exports.findClassByName = (name) => {
-    return prisma.schoolClass.findFirst({
-        where: {
-            name,
-            deletedAt: null,
-        },
-        select: classSelect,
-    });
-};
+        if (status) {
+            where.status = status;
+        }
 
-/**
- * Search classes
- */
-exports.searchClasses = (keyword) => {
-    return prisma.schoolClass.findMany({
-        where: {
-            deletedAt: null,
-            OR: [{
-                    code: {
-                        contains: keyword,
-                    },
-                },
-                {
-                    name: {
-                        contains: keyword,
-                    },
-                },
-                {
-                    level: {
-                        contains: keyword,
-                    },
-                },
-            ],
-        },
-        select: classSelect,
-        orderBy: {
-            name: "asc",
-        },
-    });
-};
+        if (search) {
+            where.OR = [
+                { classCode: { contains: search } },
+                { className: { contains: search } },
+                { description: { contains: search } },
+                { academicYear: { name: { contains: search } } },
+                { department: { name: { contains: search } } },
+                { department: { code: { contains: search } } },
+            ];
+        }
 
-/**
- * Create class
- */
-exports.createClass = (data) => {
-    return prisma.schoolClass.create({
-        data,
-        select: classSelect,
-    });
-};
+        const allowedSort = new Set([
+            "className",
+            "classCode",
+            "capacity",
+            "status",
+            "createdAt",
+            "updatedAt",
+        ]);
+        const orderField = allowedSort.has(sortBy) ? sortBy : "className";
+        const orderDir = sortOrder === "desc" ? "desc" : "asc";
 
-/**
- * Update class
- */
-exports.updateClass = (id, data) => {
-    return prisma.schoolClass.update({
-        where: {
-            id,
-        },
-        data,
-        select: classSelect,
-    });
-};
+        const skip = (page - 1) * limit;
 
-/**
- * Soft delete class
- */
-exports.softDeleteClass = (id) => {
-    return prisma.schoolClass.update({
-        where: {
-            id,
-        },
-        data: {
-            deletedAt: new Date(),
-        },
-        select: classSelect,
-    });
-};
+        const [data, total] = await Promise.all([
+            prisma.schoolClass.findMany({
+                where,
+                select: classListSelect,
+                orderBy: [
+                    { academicYear: { startDate: "desc" } },
+                    { [orderField]: orderDir },
+                ],
+                skip,
+                take: limit,
+            }),
+            prisma.schoolClass.count({ where }),
+        ]);
 
-/**
- * Restore class
- */
-exports.restoreClass = (id) => {
-    return prisma.schoolClass.update({
-        where: {
-            id,
-        },
-        data: {
-            deletedAt: null,
-        },
-        select: classSelect,
-    });
-};
+        return {
+            data,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit) || 0,
+        };
+    }
 
-/**
- * Get archived classes
- */
-exports.findArchivedClasses = () => {
-    return prisma.schoolClass.findMany({
-        where: {
-            deletedAt: {
-                not: null,
+    async findClassById(id) {
+        return prisma.schoolClass.findFirst({
+            where: {
+                id,
+                deletedAt: null,
             },
-        },
-        select: classSelect,
-        orderBy: {
-            name: "asc",
-        },
-    });
-};
+            select: classDetailSelect,
+        });
+    }
+
+    async findClassByIdIncludingDeleted(id) {
+        return prisma.schoolClass.findFirst({
+            where: { id },
+            select: classDetailSelect,
+        });
+    }
+
+    async findClassByCode(academicYearId, classCode, { excludeId = null } = {}) {
+        if (!classCode) return null;
+
+        return prisma.schoolClass.findFirst({
+            where: {
+                academicYearId,
+                classCode,
+                ...(excludeId ? { id: { not: excludeId } } : {}),
+            },
+            select: {
+                id: true,
+                classCode: true,
+                className: true,
+                deletedAt: true,
+                status: true,
+            },
+        });
+    }
+
+    async findAcademicYearById(id) {
+        return prisma.academicYear.findFirst({
+            where: {
+                id,
+                deletedAt: null,
+            },
+            select: {
+                id: true,
+                name: true,
+                startDate: true,
+                endDate: true,
+                status: true,
+                isCurrent: true,
+                deletedAt: true,
+            },
+        });
+    }
+
+    async findDepartmentById(id) {
+        return prisma.department.findFirst({
+            where: {
+                id,
+                deletedAt: null,
+            },
+            select: {
+                id: true,
+                code: true,
+                name: true,
+                status: true,
+                deletedAt: true,
+            },
+        });
+    }
+
+    async findTeacherById(id) {
+        return prisma.teacher.findFirst({
+            where: {
+                id,
+                deletedAt: null,
+            },
+            select: {
+                id: true,
+                staffNo: true,
+                firstName: true,
+                lastName: true,
+                status: true,
+                deletedAt: true,
+            },
+        });
+    }
+
+    async countEnrolledStudents(id) {
+        const [students, enrollments] = await Promise.all([
+            prisma.student.count({
+                where: {
+                    classId: id,
+                    deletedAt: null,
+                },
+            }),
+            prisma.enrollment.count({
+                where: {
+                    classId: id,
+                    status: "ACTIVE",
+                },
+            }),
+        ]);
+
+        return {
+            students,
+            enrollments,
+            total: students + enrollments,
+        };
+    }
+
+    async createClass(data) {
+        return prisma.schoolClass.create({
+            data,
+            select: classDetailSelect,
+        });
+    }
+
+    async updateClass(id, data) {
+        return prisma.schoolClass.update({
+            where: { id },
+            data,
+            select: classDetailSelect,
+        });
+    }
+
+    async softDeleteClass(id) {
+        return prisma.schoolClass.update({
+            where: { id },
+            data: {
+                status: "ARCHIVED",
+                deletedAt: new Date(),
+            },
+            select: classDetailSelect,
+        });
+    }
+
+    async restoreClass(id, { status = "INACTIVE" } = {}) {
+        return prisma.schoolClass.update({
+            where: { id },
+            data: {
+                status,
+                deletedAt: null,
+            },
+            select: classDetailSelect,
+        });
+    }
+
+    async findArchivedClasses() {
+        return prisma.schoolClass.findMany({
+            where: {
+                deletedAt: { not: null },
+            },
+            select: classListSelect,
+            orderBy: [{ deletedAt: "desc" }, { className: "asc" }],
+        });
+    }
+}
+
+module.exports = new ClassRepository();

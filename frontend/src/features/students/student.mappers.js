@@ -181,11 +181,13 @@ export function mapStudentToForm(student) {
 }
 
 export function mapClassToOption(schoolClass) {
+  const className = schoolClass.className ?? schoolClass.name ?? "";
+  const classCode = schoolClass.classCode ?? schoolClass.code ?? "";
   return {
     value: String(schoolClass.id),
-    name: schoolClass.name ?? "",
-    label: schoolClass.name
-      ? `${schoolClass.name}${schoolClass.code ? ` (${schoolClass.code})` : ""}`
+    name: className,
+    label: className
+      ? `${className}${classCode ? ` (${classCode})` : ""}`
       : `Class #${schoolClass.id}`,
   };
 }

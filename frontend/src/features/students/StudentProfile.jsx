@@ -234,10 +234,10 @@ export default function StudentProfile({
                 icon={School}
                 label="Class"
                 value={
-                  student.schoolClass?.name
-                    ? `${student.schoolClass.name}${
-                        student.schoolClass.code
-                          ? ` (${student.schoolClass.code})`
+                  student.schoolClass?.className || student.schoolClass?.name
+                    ? `${student.schoolClass.className || student.schoolClass.name}${
+                        student.schoolClass.classCode || student.schoolClass.code
+                          ? ` (${student.schoolClass.classCode || student.schoolClass.code})`
                           : ""
                       }`
                     : "—"

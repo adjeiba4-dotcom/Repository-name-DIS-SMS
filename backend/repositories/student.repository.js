@@ -45,8 +45,8 @@ const studentSelect = {
     schoolClass: {
         select: {
             id: true,
-            name: true,
-            code: true,
+            className: true,
+            classCode: true,
         },
     },
 };

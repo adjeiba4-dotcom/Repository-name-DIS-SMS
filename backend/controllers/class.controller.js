@@ -1,30 +1,32 @@
+// controllers/class.controller.js
+
 const classService = require("../services/class.service");
 const ApiResponse = require("../utils/response");
 
-/**
- * Get all classes
- */
-exports.getClasses = async(req, res, next) => {
+exports.getClasses = async (req, res, next) => {
     try {
-        const classes = await classService.getClasses();
+        const result = await classService.getClasses(req.query);
 
-        return ApiResponse.success(
+        return ApiResponse.paginated(
             res,
             "Classes retrieved successfully.",
-            classes
+            result.data,
+            {
+                page: result.page,
+                limit: result.limit,
+                total: result.total,
+                totalPages: result.totalPages,
+            }
         );
     } catch (error) {
         next(error);
     }
 };
 
-/**
- * Get class by ID
- */
-exports.getClassById = async(req, res, next) => {
+exports.getClassById = async (req, res, next) => {
     try {
         const schoolClass = await classService.getClassById(
-            Number(req.params.id)
+            parseInt(req.params.id, 10)
         );
 
         return ApiResponse.success(
@@ -37,29 +39,7 @@ exports.getClassById = async(req, res, next) => {
     }
 };
 
-/**
- * Search classes
- */
-exports.searchClasses = async(req, res, next) => {
-    try {
-        const classes = await classService.searchClasses(
-            req.query.keyword
-        );
-
-        return ApiResponse.success(
-            res,
-            "Classes retrieved successfully.",
-            classes
-        );
-    } catch (error) {
-        next(error);
-    }
-};
-
-/**
- * Get archived classes
- */
-exports.getArchivedClasses = async(req, res, next) => {
+exports.getArchivedClasses = async (req, res, next) => {
     try {
         const classes = await classService.getArchivedClasses();
 
@@ -73,10 +53,7 @@ exports.getArchivedClasses = async(req, res, next) => {
     }
 };
 
-/**
- * Create class
- */
-exports.createClass = async(req, res, next) => {
+exports.createClass = async (req, res, next) => {
     try {
         const schoolClass = await classService.createClass(req.body);
 
@@ -90,13 +67,10 @@ exports.createClass = async(req, res, next) => {
     }
 };
 
-/**
- * Update class
- */
-exports.updateClass = async(req, res, next) => {
+exports.updateClass = async (req, res, next) => {
     try {
         const schoolClass = await classService.updateClass(
-            Number(req.params.id),
+            parseInt(req.params.id, 10),
             req.body
         );
 
@@ -110,13 +84,10 @@ exports.updateClass = async(req, res, next) => {
     }
 };
 
-/**
- * Archive class
- */
-exports.deleteClass = async(req, res, next) => {
+exports.deleteClass = async (req, res, next) => {
     try {
         const schoolClass = await classService.deleteClass(
-            Number(req.params.id)
+            parseInt(req.params.id, 10)
         );
 
         return ApiResponse.success(
@@ -129,13 +100,14 @@ exports.deleteClass = async(req, res, next) => {
     }
 };
 
-/**
- * Restore archived class
- */
-exports.restoreClass = async(req, res, next) => {
+exports.restoreClass = async (req, res, next) => {
     try {
+        const activate =
+            req.body?.activate === true || req.query?.activate === "true";
+
         const schoolClass = await classService.restoreClass(
-            Number(req.params.id)
+            parseInt(req.params.id, 10),
+            { activate }
         );
 
         return ApiResponse.success(

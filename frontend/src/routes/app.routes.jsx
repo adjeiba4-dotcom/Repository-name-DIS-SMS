@@ -2,6 +2,7 @@ import Dashboard from "../pages/dashboard/Dashboard";
 import Students from "../pages/students/Students";
 import Teachers from "../pages/teachers/Teachers";
 import Guardians from "../pages/guardians/Guardians";
+import Classes from "../pages/classes/Classes";
 import AcademicYears from "../pages/academic-years/AcademicYears";
 import Terms from "../pages/terms/Terms";
 import ModulePlaceholder from "../pages/common/ModulePlaceholder";
@@ -20,6 +21,7 @@ const PAGE_REGISTRY = {
   students: Students,
   teachers: Teachers,
   guardians: Guardians,
+  classes: Classes,
   "academic-years": AcademicYears,
   terms: Terms,
 };

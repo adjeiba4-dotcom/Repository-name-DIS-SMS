@@ -416,6 +416,7 @@ model AcademicYear {
   // Academic
   // ==============================
   terms         Term[]
+  schoolClasses SchoolClass[]
   enrollments   Enrollment[]
   attendance    Attendance[]
   examinations  Examination[]
@@ -509,6 +510,8 @@ model Department {
 
   subjects Subject[]
 
+  schoolClasses SchoolClass[]
+
   // ==============================
   // Human Resources
   // ==============================
@@ -535,10 +538,14 @@ model Department {
 model SchoolClass {
   id Int @id @default(autoincrement())
 
-  code String @unique
-  name String
-  level String
-  capacity Int?
+  classCode String
+  className String
+
+  academicYearId Int
+  departmentId   Int?
+  classTeacherId Int?
+
+  capacity    Int
   description String?
 
   status Status @default(ACTIVE)
@@ -547,13 +554,23 @@ model SchoolClass {
   updatedAt DateTime @updatedAt
   deletedAt DateTime?
 
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  department   Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  classTeacher Teacher?     @relation("ClassTeacher", fields: [classTeacherId], references: [id], onDelete: SetNull)
+
   subjects      Subject[]
   enrollments   Enrollment[]
   feeStructures FeeStructure[]
   students      Student[]
   timetables    Timetable[]
 
+  @@unique([academicYearId, classCode])
+
+  @@index([academicYearId])
+  @@index([departmentId])
+  @@index([classTeacherId])
   @@index([status])
+  @@index([classCode])
 
   @@map("school_classes")
 }
@@ -598,6 +615,8 @@ model Teacher {
   teacherSubjects TeacherSubject[]
 
   examinations Examination[]
+
+  classTeacherOf SchoolClass[] @relation("ClassTeacher")
 
   timetables Timetable[] @relation("TeacherTimetables")
   timetableEntries TimetableEntry[] @relation("TeacherTimetableEntries")

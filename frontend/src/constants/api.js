@@ -35,6 +35,12 @@ const API = {
 
     CLASSES: {
         LIST: "/classes",
+        CREATE: "/classes",
+        ARCHIVED: "/classes/archived",
+        DETAIL: (id) => `/classes/${id}`,
+        UPDATE: (id) => `/classes/${id}`,
+        DELETE: (id) => `/classes/${id}`,
+        RESTORE: (id) => `/classes/${id}/restore`,
     },
 
     TEACHERS: {
