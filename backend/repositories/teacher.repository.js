@@ -32,9 +32,15 @@ const teacherSelect = {
     },
 
     teacherSubjects: {
+        where: { deletedAt: null },
         select: {
             id: true,
             subjectId: true,
+            academicYearId: true,
+            termId: true,
+            isPrimary: true,
+            weeklyPeriods: true,
+            status: true,
         },
     },
 

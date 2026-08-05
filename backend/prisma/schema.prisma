@@ -420,13 +420,14 @@ model AcademicYear {
   // ==============================
   // Academic
   // ==============================
-  terms         Term[]
-  schoolClasses SchoolClass[]
-  enrollments   Enrollment[]
-  attendance    Attendance[]
-  examinations  Examination[]
-  feeStructures FeeStructure[]
-  timetables    Timetable[]
+  terms            Term[]
+  schoolClasses    SchoolClass[]
+  enrollments      Enrollment[]
+  attendance       Attendance[]
+  examinations     Examination[]
+  feeStructures    FeeStructure[]
+  timetables       Timetable[]
+  teacherSubjects  TeacherSubject[]
 
   // ==============================
   // Hostel
@@ -470,10 +471,11 @@ model Term {
   // ==============================
   // Academic
   // ==============================
-  attendance   Attendance[]
-  examinations Examination[]
-  results      Result[]
-  timetables   Timetable[]
+  attendance      Attendance[]
+  examinations    Examination[]
+  results         Result[]
+  timetables      Timetable[]
+  teacherSubjects TeacherSubject[]
 
   @@unique([academicYearId, name])
   @@unique([academicYearId, code])
@@ -692,27 +694,32 @@ model Subject {
 model TeacherSubject {
   id Int @id @default(autoincrement())
 
-  teacherId Int
+  teacherId      Int
+  subjectId      Int
+  academicYearId Int
+  termId         Int?
 
-  subjectId Int
-
-  assignedDate DateTime @default(now())
+  isPrimary     Boolean @default(false)
+  weeklyPeriods Int     @default(1)
+  remarks       String?
 
   status Status @default(ACTIVE)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacher      Teacher      @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subject      Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  term         Term?        @relation(fields: [termId], references: [id], onDelete: SetNull)
 
-  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-
-  @@unique([teacherId, subjectId])
+  @@unique([teacherId, subjectId, academicYearId, termId])
 
   @@index([teacherId])
-
   @@index([subjectId])
-
+  @@index([academicYearId])
+  @@index([termId])
   @@index([status])
 
   @@map("teacher_subjects")

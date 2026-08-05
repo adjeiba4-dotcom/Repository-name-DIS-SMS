@@ -3,101 +3,122 @@
 const teacherSubjectService = require("../services/teacherSubject.service");
 const ApiResponse = require("../utils/response");
 
-exports.getTeacherSubjects = async(req, res, next) => {
+exports.getTeacherSubjects = async (req, res, next) => {
     try {
-        const teacherSubjects =
-            await teacherSubjectService.getTeacherSubjects();
+        const result = await teacherSubjectService.getTeacherSubjects(
+            req.query
+        );
 
-        return ApiResponse.success(
+        return ApiResponse.paginated(
             res,
             "Teacher subject assignments retrieved successfully.",
-            teacherSubjects
+            result.data,
+            {
+                page: result.page,
+                limit: result.limit,
+                total: result.total,
+                totalPages: result.totalPages,
+            }
         );
     } catch (error) {
         next(error);
     }
 };
 
-exports.getTeacherSubjectById = async(req, res, next) => {
+exports.getTeacherSubjectById = async (req, res, next) => {
     try {
-        const teacherSubject =
-            await teacherSubjectService.getTeacherSubjectById(
-                parseInt(req.params.id)
-            );
+        const assignment = await teacherSubjectService.getTeacherSubjectById(
+            parseInt(req.params.id, 10)
+        );
 
         return ApiResponse.success(
             res,
             "Teacher subject assignment retrieved successfully.",
-            teacherSubject
+            assignment
         );
     } catch (error) {
         next(error);
     }
 };
 
-exports.searchTeacherSubjects = async(req, res, next) => {
+exports.getArchivedTeacherSubjects = async (req, res, next) => {
     try {
-        const { keyword = "" } = req.query;
-
-        const teacherSubjects =
-            await teacherSubjectService.searchTeacherSubjects(
-                keyword
-            );
+        const assignments =
+            await teacherSubjectService.getArchivedTeacherSubjects();
 
         return ApiResponse.success(
             res,
-            "Teacher subject assignments retrieved successfully.",
-            teacherSubjects
+            "Archived teacher subject assignments retrieved successfully.",
+            assignments
         );
     } catch (error) {
         next(error);
     }
 };
 
-exports.createTeacherSubject = async(req, res, next) => {
+exports.createTeacherSubject = async (req, res, next) => {
     try {
-        const teacherSubject =
-            await teacherSubjectService.createTeacherSubject(
-                req.body
-            );
+        const assignment = await teacherSubjectService.createTeacherSubject(
+            req.body
+        );
 
         return ApiResponse.created(
             res,
-            "Teacher subject assigned successfully.",
-            teacherSubject
+            "Teacher subject assignment created successfully.",
+            assignment
         );
     } catch (error) {
         next(error);
     }
 };
 
-exports.updateTeacherSubject = async(req, res, next) => {
+exports.updateTeacherSubject = async (req, res, next) => {
     try {
-        const teacherSubject =
-            await teacherSubjectService.updateTeacherSubject(
-                parseInt(req.params.id),
-                req.body
-            );
+        const assignment = await teacherSubjectService.updateTeacherSubject(
+            parseInt(req.params.id, 10),
+            req.body
+        );
 
         return ApiResponse.success(
             res,
             "Teacher subject assignment updated successfully.",
-            teacherSubject
+            assignment
         );
     } catch (error) {
         next(error);
     }
 };
 
-exports.deleteTeacherSubject = async(req, res, next) => {
+exports.deleteTeacherSubject = async (req, res, next) => {
     try {
-        await teacherSubjectService.deleteTeacherSubject(
-            parseInt(req.params.id)
+        const assignment = await teacherSubjectService.deleteTeacherSubject(
+            parseInt(req.params.id, 10)
         );
 
         return ApiResponse.success(
             res,
-            "Teacher subject assignment deleted successfully."
+            "Teacher subject assignment archived successfully.",
+            assignment
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.restoreTeacherSubject = async (req, res, next) => {
+    try {
+        const activate =
+            req.body?.activate === true || req.query?.activate === "true";
+
+        const assignment = await teacherSubjectService.restoreTeacherSubject(
+            parseInt(req.params.id, 10),
+            { activate }
+        );
+
+        return ApiResponse.success(
+            res,
+            "Teacher subject assignment restored successfully.",
+            assignment
         );
     } catch (error) {
         next(error);

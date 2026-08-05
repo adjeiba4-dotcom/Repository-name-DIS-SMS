@@ -35,7 +35,7 @@ const subjectListSelect = {
     },
     _count: {
         select: {
-            teacherSubjects: true,
+            teacherSubjects: { where: { deletedAt: null } },
             examinations: true,
             results: true,
             timetables: true,
@@ -217,7 +217,7 @@ class SubjectRepository {
     async countReferences(id) {
         const [teacherAssignments, examinations, subject] = await Promise.all([
             prisma.teacherSubject.count({
-                where: { subjectId: id },
+                where: { subjectId: id, deletedAt: null },
             }),
             prisma.examination.count({
                 where: { subjectId: id },

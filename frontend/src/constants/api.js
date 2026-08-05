@@ -53,6 +53,16 @@ const API = {
         RESTORE: (id) => `/subjects/${id}/restore`,
     },
 
+    TEACHER_SUBJECTS: {
+        LIST: "/teacher-subjects",
+        CREATE: "/teacher-subjects",
+        ARCHIVED: "/teacher-subjects/archived",
+        DETAIL: (id) => `/teacher-subjects/${id}`,
+        UPDATE: (id) => `/teacher-subjects/${id}`,
+        DELETE: (id) => `/teacher-subjects/${id}`,
+        RESTORE: (id) => `/teacher-subjects/${id}/restore`,
+    },
+
     TEACHERS: {
         LIST: "/teachers",
         CREATE: "/teachers",
