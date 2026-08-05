@@ -3,27 +3,31 @@
 const enrollmentService = require("../services/enrollment.service");
 const ApiResponse = require("../utils/response");
 
-exports.getEnrollments = async(req, res, next) => {
+exports.getEnrollments = async (req, res, next) => {
     try {
-        const enrollments =
-            await enrollmentService.getEnrollments();
+        const result = await enrollmentService.getEnrollments(req.query);
 
-        return ApiResponse.success(
+        return ApiResponse.paginated(
             res,
             "Enrollments retrieved successfully.",
-            enrollments
+            result.data,
+            {
+                page: result.page,
+                limit: result.limit,
+                total: result.total,
+                totalPages: result.totalPages,
+            }
         );
     } catch (error) {
         next(error);
     }
 };
 
-exports.getEnrollmentById = async(req, res, next) => {
+exports.getEnrollmentById = async (req, res, next) => {
     try {
-        const enrollment =
-            await enrollmentService.getEnrollmentById(
-                req.params.id
-            );
+        const enrollment = await enrollmentService.getEnrollmentById(
+            parseInt(req.params.id, 10)
+        );
 
         return ApiResponse.success(
             res,
@@ -35,18 +39,14 @@ exports.getEnrollmentById = async(req, res, next) => {
     }
 };
 
-exports.searchEnrollments = async(req, res, next) => {
+exports.getArchivedEnrollments = async (req, res, next) => {
     try {
-        const { keyword } = req.query;
-
         const enrollments =
-            await enrollmentService.searchEnrollments(
-                keyword || ""
-            );
+            await enrollmentService.getArchivedEnrollments();
 
         return ApiResponse.success(
             res,
-            "Enrollment search completed successfully.",
+            "Archived enrollments retrieved successfully.",
             enrollments
         );
     } catch (error) {
@@ -54,12 +54,11 @@ exports.searchEnrollments = async(req, res, next) => {
     }
 };
 
-exports.createEnrollment = async(req, res, next) => {
+exports.createEnrollment = async (req, res, next) => {
     try {
-        const enrollment =
-            await enrollmentService.createEnrollment(
-                req.body
-            );
+        const enrollment = await enrollmentService.createEnrollment(
+            req.body
+        );
 
         return ApiResponse.created(
             res,
@@ -71,13 +70,12 @@ exports.createEnrollment = async(req, res, next) => {
     }
 };
 
-exports.updateEnrollment = async(req, res, next) => {
+exports.updateEnrollment = async (req, res, next) => {
     try {
-        const enrollment =
-            await enrollmentService.updateEnrollment(
-                req.params.id,
-                req.body
-            );
+        const enrollment = await enrollmentService.updateEnrollment(
+            parseInt(req.params.id, 10),
+            req.body
+        );
 
         return ApiResponse.success(
             res,
@@ -89,15 +87,36 @@ exports.updateEnrollment = async(req, res, next) => {
     }
 };
 
-exports.deleteEnrollment = async(req, res, next) => {
+exports.deleteEnrollment = async (req, res, next) => {
     try {
-        await enrollmentService.deleteEnrollment(
-            req.params.id
+        const enrollment = await enrollmentService.deleteEnrollment(
+            parseInt(req.params.id, 10)
         );
 
         return ApiResponse.success(
             res,
-            "Enrollment deleted successfully."
+            "Enrollment archived successfully.",
+            enrollment
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.restoreEnrollment = async (req, res, next) => {
+    try {
+        const activate =
+            req.body?.activate === true || req.query?.activate === "true";
+
+        const enrollment = await enrollmentService.restoreEnrollment(
+            parseInt(req.params.id, 10),
+            { activate }
+        );
+
+        return ApiResponse.success(
+            res,
+            "Enrollment restored successfully.",
+            enrollment
         );
     } catch (error) {
         next(error);

@@ -478,6 +478,7 @@ model Term {
   timetables      Timetable[]
   teacherSubjects TeacherSubject[]
   classSubjects   ClassSubject[]
+  enrollments     Enrollment[]
 
   @@unique([academicYearId, name])
   @@unique([academicYearId, code])
@@ -937,30 +938,34 @@ model Student {
 model Enrollment {
   id Int @id @default(autoincrement())
 
-  studentId Int
+  enrollmentNumber String @unique
 
-  classId Int
-
+  studentId      Int
+  schoolClassId  Int
   academicYearId Int
+  termId         Int?
 
   enrollmentDate DateTime @default(now())
 
-  status Status @default(ACTIVE)
+  status  Status  @default(ACTIVE)
+  remarks String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  schoolClass SchoolClass @relation(fields: [classId], references: [id])
-
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  schoolClass  SchoolClass  @relation(fields: [schoolClassId], references: [id])
   academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  term         Term?        @relation(fields: [termId], references: [id], onDelete: SetNull)
 
   @@unique([studentId, academicYearId])
 
   @@index([studentId])
-  @@index([classId])
+  @@index([schoolClassId])
   @@index([academicYearId])
+  @@index([termId])
+  @@index([status])
 
   @@map("enrollments")
 }

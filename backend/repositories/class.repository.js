@@ -230,8 +230,9 @@ class ClassRepository {
             }),
             prisma.enrollment.count({
                 where: {
-                    classId: id,
+                    schoolClassId: id,
                     status: "ACTIVE",
+                    deletedAt: null,
                 },
             }),
         ]);

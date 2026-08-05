@@ -4,7 +4,6 @@ const express = require("express");
 const router = express.Router();
 
 const enrollmentController = require("../controllers/enrollment.controller");
-
 const enrollmentValidator = require("../validators/enrollment.validator");
 
 const {
@@ -12,9 +11,7 @@ const {
     authorize,
 } = require("../middleware/auth.middleware");
 
-const {
-    validate,
-} = require("../middleware/validation.middleware");
+const { validate } = require("../middleware/validation.middleware");
 
 const ROLES = require("../constants/roles");
 
@@ -29,45 +26,132 @@ const ROLES = require("../constants/roles");
  * @swagger
  * /enrollments:
  *   get:
- *     summary: Retrieve all enrollments
- *     tags: [Enrollments]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Enrollments retrieved successfully
- */
-router.get(
-    "/",
-    authenticate,
-    authorize(ROLES.ADMIN),
-    enrollmentController.getEnrollments
-);
-
-/**
- * @swagger
- * /enrollments/search:
- *   get:
- *     summary: Search enrollments
+ *     summary: Retrieve enrollments (paginated + search + filters)
  *     tags: [Enrollments]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
- *         name: keyword
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: search
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: studentId
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: schoolClassId
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: academicYearId
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: termId
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [ACTIVE, INACTIVE]
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
  *     responses:
  *       200:
- *         description: Search completed successfully
+ *         description: Enrollments retrieved successfully.
  */
 router.get(
-    "/search",
+    "/",
     authenticate,
-    authorize(ROLES.ADMIN),
-    enrollmentValidator.searchEnrollment,
+    authorize(ROLES.ADMINISTRATOR),
+    enrollmentValidator.listEnrollments,
     validate,
-    enrollmentController.searchEnrollments
+    enrollmentController.getEnrollments
+);
+
+/**
+ * @swagger
+ * /enrollments:
+ *   post:
+ *     summary: Enroll a student
+ *     tags: [Enrollments]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - studentId
+ *               - schoolClassId
+ *               - academicYearId
+ *             properties:
+ *               studentId:
+ *                 type: integer
+ *               schoolClassId:
+ *                 type: integer
+ *               academicYearId:
+ *                 type: integer
+ *               termId:
+ *                 type: integer
+ *                 nullable: true
+ *               enrollmentDate:
+ *                 type: string
+ *                 format: date-time
+ *               remarks:
+ *                 type: string
+ *               status:
+ *                 type: string
+ *                 enum: [ACTIVE, INACTIVE]
+ *     responses:
+ *       201:
+ *         description: Enrollment created successfully.
+ */
+router.post(
+    "/",
+    authenticate,
+    authorize(ROLES.ADMINISTRATOR),
+    enrollmentValidator.createEnrollment,
+    validate,
+    enrollmentController.createEnrollment
+);
+
+/**
+ * @swagger
+ * /enrollments/archived:
+ *   get:
+ *     summary: Retrieve archived enrollments
+ *     tags: [Enrollments]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Archived enrollments retrieved successfully.
+ */
+router.get(
+    "/archived",
+    authenticate,
+    authorize(ROLES.ADMINISTRATOR),
+    enrollmentController.getArchivedEnrollments
 );
 
 /**
@@ -86,36 +170,15 @@ router.get(
  *           type: integer
  *     responses:
  *       200:
- *         description: Enrollment retrieved successfully
+ *         description: Enrollment retrieved successfully.
  */
 router.get(
     "/:id",
     authenticate,
-    authorize(ROLES.ADMIN),
+    authorize(ROLES.ADMINISTRATOR),
     enrollmentValidator.validateEnrollmentId,
     validate,
     enrollmentController.getEnrollmentById
-);
-
-/**
- * @swagger
- * /enrollments:
- *   post:
- *     summary: Enroll a student
- *     tags: [Enrollments]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       201:
- *         description: Enrollment created successfully
- */
-router.post(
-    "/",
-    authenticate,
-    authorize(ROLES.ADMIN),
-    enrollmentValidator.createEnrollment,
-    validate,
-    enrollmentController.createEnrollment
 );
 
 /**
@@ -134,13 +197,12 @@ router.post(
  *           type: integer
  *     responses:
  *       200:
- *         description: Enrollment updated successfully
+ *         description: Enrollment updated successfully.
  */
 router.put(
     "/:id",
     authenticate,
-    authorize(ROLES.ADMIN),
-    enrollmentValidator.validateEnrollmentId,
+    authorize(ROLES.ADMINISTRATOR),
     enrollmentValidator.updateEnrollment,
     validate,
     enrollmentController.updateEnrollment
@@ -150,7 +212,7 @@ router.put(
  * @swagger
  * /enrollments/{id}:
  *   delete:
- *     summary: Delete enrollment
+ *     summary: Archive enrollment
  *     tags: [Enrollments]
  *     security:
  *       - bearerAuth: []
@@ -162,15 +224,42 @@ router.put(
  *           type: integer
  *     responses:
  *       200:
- *         description: Enrollment deleted successfully
+ *         description: Enrollment archived successfully.
  */
 router.delete(
     "/:id",
     authenticate,
-    authorize(ROLES.ADMIN),
+    authorize(ROLES.ADMINISTRATOR),
     enrollmentValidator.validateEnrollmentId,
     validate,
     enrollmentController.deleteEnrollment
+);
+
+/**
+ * @swagger
+ * /enrollments/{id}/restore:
+ *   patch:
+ *     summary: Restore archived enrollment
+ *     tags: [Enrollments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Enrollment restored successfully.
+ */
+router.patch(
+    "/:id/restore",
+    authenticate,
+    authorize(ROLES.ADMINISTRATOR),
+    enrollmentValidator.restoreEnrollment,
+    validate,
+    enrollmentController.restoreEnrollment
 );
 
 module.exports = router;
