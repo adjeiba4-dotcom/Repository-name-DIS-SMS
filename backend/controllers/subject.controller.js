@@ -1,30 +1,32 @@
+// controllers/subject.controller.js
+
 const subjectService = require("../services/subject.service");
 const ApiResponse = require("../utils/response");
 
-/**
- * Get all subjects
- */
 exports.getSubjects = async (req, res, next) => {
     try {
-        const subjects = await subjectService.getSubjects();
+        const result = await subjectService.getSubjects(req.query);
 
-        return ApiResponse.success(
+        return ApiResponse.paginated(
             res,
             "Subjects retrieved successfully.",
-            subjects
+            result.data,
+            {
+                page: result.page,
+                limit: result.limit,
+                total: result.total,
+                totalPages: result.totalPages,
+            }
         );
     } catch (error) {
         next(error);
     }
 };
 
-/**
- * Get subject by ID
- */
 exports.getSubjectById = async (req, res, next) => {
     try {
         const subject = await subjectService.getSubjectById(
-            req.params.id
+            parseInt(req.params.id, 10)
         );
 
         return ApiResponse.success(
@@ -37,33 +39,9 @@ exports.getSubjectById = async (req, res, next) => {
     }
 };
 
-/**
- * Search subjects
- */
-exports.searchSubjects = async (req, res, next) => {
-    try {
-        const keyword = req.query.keyword || "";
-
-        const subjects =
-            await subjectService.searchSubjects(keyword);
-
-        return ApiResponse.success(
-            res,
-            "Search completed successfully.",
-            subjects
-        );
-    } catch (error) {
-        next(error);
-    }
-};
-
-/**
- * Get archived subjects
- */
 exports.getArchivedSubjects = async (req, res, next) => {
     try {
-        const subjects =
-            await subjectService.getArchivedSubjects();
+        const subjects = await subjectService.getArchivedSubjects();
 
         return ApiResponse.success(
             res,
@@ -75,13 +53,9 @@ exports.getArchivedSubjects = async (req, res, next) => {
     }
 };
 
-/**
- * Create subject
- */
 exports.createSubject = async (req, res, next) => {
     try {
-        const subject =
-            await subjectService.createSubject(req.body);
+        const subject = await subjectService.createSubject(req.body);
 
         return ApiResponse.created(
             res,
@@ -93,16 +67,12 @@ exports.createSubject = async (req, res, next) => {
     }
 };
 
-/**
- * Update subject
- */
 exports.updateSubject = async (req, res, next) => {
     try {
-        const subject =
-            await subjectService.updateSubject(
-                req.params.id,
-                req.body
-            );
+        const subject = await subjectService.updateSubject(
+            parseInt(req.params.id, 10),
+            req.body
+        );
 
         return ApiResponse.success(
             res,
@@ -114,31 +84,31 @@ exports.updateSubject = async (req, res, next) => {
     }
 };
 
-/**
- * Archive subject
- */
 exports.deleteSubject = async (req, res, next) => {
     try {
-        await subjectService.deleteSubject(req.params.id);
+        const subject = await subjectService.deleteSubject(
+            parseInt(req.params.id, 10)
+        );
 
         return ApiResponse.success(
             res,
-            "Subject archived successfully."
+            "Subject archived successfully.",
+            subject
         );
     } catch (error) {
         next(error);
     }
 };
 
-/**
- * Restore subject
- */
 exports.restoreSubject = async (req, res, next) => {
     try {
-        const subject =
-            await subjectService.restoreSubject(
-                req.params.id
-            );
+        const activate =
+            req.body?.activate === true || req.query?.activate === "true";
+
+        const subject = await subjectService.restoreSubject(
+            parseInt(req.params.id, 10),
+            { activate }
+        );
 
         return ApiResponse.success(
             res,

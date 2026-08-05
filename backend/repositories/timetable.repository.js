@@ -131,7 +131,7 @@ const searchTimetables = async(keyword) => {
                 },
                 {
                     subject: {
-                        name: {
+                        subjectName: {
                             contains: keyword,
                             mode: "insensitive",
                         },

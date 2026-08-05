@@ -1,180 +1,289 @@
-const db = require("../database/db");
+// repositories/subject.repository.js
 
-/**
- * Fields returned for Subject queries
- */
-const subjectSelect = {
+const prisma = require("../database/db");
+
+/** Slim fields for list / search / archive directory. */
+const subjectListSelect = {
     id: true,
-    code: true,
-    name: true,
-    description: true,
+    subjectCode: true,
+    subjectName: true,
+    shortName: true,
+    departmentId: true,
+    schoolClassId: true,
+    category: true,
     creditHours: true,
+    description: true,
     status: true,
     createdAt: true,
     updatedAt: true,
     deletedAt: true,
-
     department: {
         select: {
             id: true,
+            code: true,
             name: true,
+            status: true,
         },
     },
-
     schoolClass: {
         select: {
             id: true,
-            name: true,
+            classCode: true,
+            className: true,
+            status: true,
         },
     },
-
-    teacherSubjects: {
+    _count: {
         select: {
-            id: true,
-            teacher: {
-                select: {
-                    id: true,
-                    firstName: true,
-                    lastName: true,
-                },
-            },
+            teacherSubjects: true,
+            examinations: true,
+            results: true,
+            timetables: true,
+            timetableEntries: true,
         },
     },
 };
 
-/**
- * Get all active subjects
- */
-exports.findAllSubjects = async () => {
-    return db.subject.findMany({
-        where: {
+/** Full detail for profile / edit. */
+const subjectDetailSelect = {
+    ...subjectListSelect,
+};
+
+class SubjectRepository {
+    async findSubjects({
+        page = 1,
+        limit = 20,
+        search = "",
+        departmentId = null,
+        schoolClassId = null,
+        category = null,
+        status = null,
+        sortBy = "subjectName",
+        sortOrder = "asc",
+    } = {}) {
+        const where = {
             deletedAt: null,
-        },
-        select: subjectSelect,
-        orderBy: {
-            name: "asc",
-        },
-    });
-};
+        };
 
-/**
- * Get subject by ID
- */
-exports.findSubjectById = async (id) => {
-    return db.subject.findUnique({
-        where: {
-            id: Number(id),
-        },
-        select: subjectSelect,
-    });
-};
+        if (departmentId) {
+            where.departmentId = departmentId;
+        }
 
-/**
- * Get subject by code
- */
-exports.findSubjectByCode = async (code) => {
-    return db.subject.findFirst({
-        where: {
-            code,
-            deletedAt: null,
-        },
-    });
-};
+        if (schoolClassId) {
+            where.schoolClassId = schoolClassId;
+        }
 
-/**
- * Search subjects
- */
-exports.searchSubjects = async (keyword) => {
-    return db.subject.findMany({
-        where: {
-            deletedAt: null,
-            OR: [
-                {
-                    name: {
-                        contains: keyword,
-                        mode: "insensitive",
-                    },
-                },
-                {
-                    code: {
-                        contains: keyword,
-                        mode: "insensitive",
-                    },
-                },
-            ],
-        },
-        select: subjectSelect,
-        orderBy: {
-            name: "asc",
-        },
-    });
-};
+        if (category) {
+            where.category = category;
+        }
 
-/**
- * Create subject
- */
-exports.createSubject = async (data) => {
-    return db.subject.create({
-        data,
-        select: subjectSelect,
-    });
-};
+        if (status) {
+            where.status = status;
+        }
 
-/**
- * Update subject
- */
-exports.updateSubject = async (id, data) => {
-    return db.subject.update({
-        where: {
-            id: Number(id),
-        },
-        data,
-        select: subjectSelect,
-    });
-};
+        if (search) {
+            where.OR = [
+                { subjectCode: { contains: search } },
+                { subjectName: { contains: search } },
+                { shortName: { contains: search } },
+                { description: { contains: search } },
+                { department: { name: { contains: search } } },
+                { department: { code: { contains: search } } },
+                { schoolClass: { className: { contains: search } } },
+                { schoolClass: { classCode: { contains: search } } },
+            ];
+        }
 
-/**
- * Archive subject
- */
-exports.softDeleteSubject = async (id) => {
-    return db.subject.update({
-        where: {
-            id: Number(id),
-        },
-        data: {
-            status: "ARCHIVED",
-            deletedAt: new Date(),
-        },
-    });
-};
+        const allowedSort = new Set([
+            "subjectName",
+            "subjectCode",
+            "shortName",
+            "category",
+            "creditHours",
+            "status",
+            "createdAt",
+            "updatedAt",
+        ]);
+        const orderField = allowedSort.has(sortBy) ? sortBy : "subjectName";
+        const orderDir = sortOrder === "desc" ? "desc" : "asc";
 
-/**
- * Restore subject
- */
-exports.restoreSubject = async (id) => {
-    return db.subject.update({
-        where: {
-            id: Number(id),
-        },
-        data: {
-            status: "ACTIVE",
-            deletedAt: null,
-        },
-        select: subjectSelect,
-    });
-};
+        const skip = (page - 1) * limit;
 
-/**
- * Archived subjects
- */
-exports.findArchivedSubjects = async () => {
-    return db.subject.findMany({
-        where: {
-            status: "ARCHIVED",
-        },
-        select: subjectSelect,
-        orderBy: {
-            updatedAt: "desc",
-        },
-    });
-};
+        const [data, total] = await Promise.all([
+            prisma.subject.findMany({
+                where,
+                select: subjectListSelect,
+                orderBy: { [orderField]: orderDir },
+                skip,
+                take: limit,
+            }),
+            prisma.subject.count({ where }),
+        ]);
+
+        return {
+            data,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit) || 0,
+        };
+    }
+
+    async findSubjectById(id) {
+        return prisma.subject.findFirst({
+            where: {
+                id,
+                deletedAt: null,
+            },
+            select: subjectDetailSelect,
+        });
+    }
+
+    async findSubjectByIdIncludingDeleted(id) {
+        return prisma.subject.findFirst({
+            where: { id },
+            select: subjectDetailSelect,
+        });
+    }
+
+    async findSubjectByCode(subjectCode, { excludeId = null } = {}) {
+        if (!subjectCode) return null;
+
+        return prisma.subject.findFirst({
+            where: {
+                subjectCode,
+                ...(excludeId ? { id: { not: excludeId } } : {}),
+            },
+            select: {
+                id: true,
+                subjectCode: true,
+                subjectName: true,
+                deletedAt: true,
+                status: true,
+            },
+        });
+    }
+
+    async findSubjectByName(subjectName, { excludeId = null } = {}) {
+        if (!subjectName) return null;
+
+        return prisma.subject.findFirst({
+            where: {
+                subjectName,
+                ...(excludeId ? { id: { not: excludeId } } : {}),
+            },
+            select: {
+                id: true,
+                subjectCode: true,
+                subjectName: true,
+                deletedAt: true,
+                status: true,
+            },
+        });
+    }
+
+    async findDepartmentById(id) {
+        return prisma.department.findFirst({
+            where: {
+                id,
+                deletedAt: null,
+            },
+            select: {
+                id: true,
+                code: true,
+                name: true,
+                status: true,
+                deletedAt: true,
+            },
+        });
+    }
+
+    async findSchoolClassById(id) {
+        return prisma.schoolClass.findFirst({
+            where: {
+                id,
+                deletedAt: null,
+            },
+            select: {
+                id: true,
+                classCode: true,
+                className: true,
+                status: true,
+                deletedAt: true,
+            },
+        });
+    }
+
+    async countReferences(id) {
+        const [teacherAssignments, examinations, subject] = await Promise.all([
+            prisma.teacherSubject.count({
+                where: { subjectId: id },
+            }),
+            prisma.examination.count({
+                where: { subjectId: id },
+            }),
+            prisma.subject.findFirst({
+                where: { id },
+                select: { schoolClassId: true },
+            }),
+        ]);
+
+        const classAssignments = subject?.schoolClassId ? 1 : 0;
+
+        return {
+            teacherAssignments,
+            classAssignments,
+            examinations,
+            total: teacherAssignments + classAssignments + examinations,
+        };
+    }
+
+    async createSubject(data) {
+        return prisma.subject.create({
+            data,
+            select: subjectDetailSelect,
+        });
+    }
+
+    async updateSubject(id, data) {
+        return prisma.subject.update({
+            where: { id },
+            data,
+            select: subjectDetailSelect,
+        });
+    }
+
+    async softDeleteSubject(id) {
+        return prisma.subject.update({
+            where: { id },
+            data: {
+                status: "ARCHIVED",
+                deletedAt: new Date(),
+            },
+            select: subjectDetailSelect,
+        });
+    }
+
+    async restoreSubject(id, { status = "INACTIVE" } = {}) {
+        return prisma.subject.update({
+            where: { id },
+            data: {
+                status,
+                deletedAt: null,
+            },
+            select: subjectDetailSelect,
+        });
+    }
+
+    async findArchivedSubjects() {
+        return prisma.subject.findMany({
+            where: {
+                deletedAt: { not: null },
+            },
+            select: subjectListSelect,
+            orderBy: [{ deletedAt: "desc" }, { subjectName: "asc" }],
+        });
+    }
+}
+
+module.exports = new SubjectRepository();

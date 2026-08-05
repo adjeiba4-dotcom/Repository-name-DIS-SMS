@@ -71,6 +71,11 @@ enum AttendanceStatus {
   EXCUSED
 }
 
+enum SubjectCategory {
+  CORE
+  ELECTIVE
+}
+
 enum DayOfWeek {
   MONDAY
   TUESDAY
@@ -636,17 +641,16 @@ model Teacher {
 model Subject {
   id Int @id @default(autoincrement())
 
-  code String @unique
+  subjectCode String @unique
+  subjectName String @unique
+  shortName   String
 
-  name String
-
-  departmentId Int
-
+  departmentId  Int?
   schoolClassId Int?
 
+  category    SubjectCategory @default(CORE)
+  creditHours Int             @default(1)
   description String?
-
-  creditHours Int @default(1)
 
   status Status @default(ACTIVE)
 
@@ -658,9 +662,8 @@ model Subject {
   // Relationships
   // ==============================
 
-  department Department @relation(fields: [departmentId], references: [id])
-
-  schoolClass SchoolClass? @relation(fields: [schoolClassId], references: [id])
+  department  Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  schoolClass SchoolClass? @relation(fields: [schoolClassId], references: [id], onDelete: SetNull)
 
   teacherSubjects TeacherSubject[]
 
@@ -668,12 +671,14 @@ model Subject {
 
   results Result[]
 
-  timetables Timetable[] @relation("SubjectTimetables")
+  timetables       Timetable[]      @relation("SubjectTimetables")
   timetableEntries TimetableEntry[] @relation("SubjectTimetableEntries")
 
   @@index([departmentId])
   @@index([schoolClassId])
+  @@index([category])
   @@index([status])
+  @@index([subjectCode])
 
   @@map("subjects")
 }

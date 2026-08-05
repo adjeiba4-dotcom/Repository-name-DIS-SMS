@@ -153,7 +153,7 @@ const findStudentResults = async(
         },
         orderBy: {
             subject: {
-                name: "asc",
+                subjectName: "asc",
             },
         },
     });

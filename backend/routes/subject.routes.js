@@ -1,3 +1,5 @@
+// routes/subject.routes.js
+
 const express = require("express");
 const router = express.Router();
 
@@ -24,25 +26,60 @@ const ROLES = require("../constants/roles");
  * @swagger
  * /subjects:
  *   get:
- *     summary: Retrieve all subjects
- *     description: Returns a list of all active subjects.
+ *     summary: Retrieve subjects (paginated + search + filters)
  *     tags: [Subjects]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: departmentId
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: schoolClassId
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *           enum: [CORE, ELECTIVE]
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [ACTIVE, INACTIVE]
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
  *     responses:
  *       200:
  *         description: Subjects retrieved successfully.
- *       401:
- *         description: Unauthorized.
- *       403:
- *         description: Forbidden.
- *       500:
- *         description: Internal server error.
  */
 router.get(
     "/",
     authenticate,
     authorize(ROLES.ADMINISTRATOR),
+    subjectValidator.listSubjects,
+    validate,
     subjectController.getSubjects
 );
 
@@ -51,7 +88,6 @@ router.get(
  * /subjects:
  *   post:
  *     summary: Create a new subject
- *     description: Creates a new academic subject.
  *     tags: [Subjects]
  *     security:
  *       - bearerAuth: []
@@ -62,41 +98,40 @@ router.get(
  *           schema:
  *             type: object
  *             required:
- *               - code
- *               - name
- *               - departmentId
+ *               - subjectCode
+ *               - subjectName
+ *               - shortName
+ *               - creditHours
  *             properties:
- *               code:
+ *               subjectCode:
  *                 type: string
  *                 example: MATH101
- *               name:
+ *               subjectName:
  *                 type: string
- *                 example: Mathematics
+ *                 example: Core Mathematics
+ *               shortName:
+ *                 type: string
+ *                 example: Math
  *               departmentId:
  *                 type: integer
- *                 example: 1
+ *                 nullable: true
  *               schoolClassId:
  *                 type: integer
- *                 example: 2
+ *                 nullable: true
+ *               category:
+ *                 type: string
+ *                 enum: [CORE, ELECTIVE]
  *               creditHours:
  *                 type: integer
  *                 example: 3
  *               description:
  *                 type: string
- *                 example: Core Mathematics subject
+ *               status:
+ *                 type: string
+ *                 enum: [ACTIVE, INACTIVE]
  *     responses:
  *       201:
  *         description: Subject created successfully.
- *       400:
- *         description: Validation error.
- *       401:
- *         description: Unauthorized.
- *       403:
- *         description: Forbidden.
- *       409:
- *         description: Subject code already exists.
- *       500:
- *         description: Internal server error.
  */
 router.post(
     "/",
@@ -106,62 +141,18 @@ router.post(
     validate,
     subjectController.createSubject
 );
-/**
- * @swagger
- * /subjects/search:
- *   get:
- *     summary: Search subjects
- *     description: Search subjects by code or name.
- *     tags: [Subjects]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: keyword
- *         required: true
- *         schema:
- *           type: string
- *         example: Mathematics
- *         description: Subject name or code
- *     responses:
- *       200:
- *         description: Subjects retrieved successfully.
- *       400:
- *         description: Validation error.
- *       401:
- *         description: Unauthorized.
- *       403:
- *         description: Forbidden.
- *       500:
- *         description: Internal server error.
- */
-router.get(
-    "/search",
-    authenticate,
-    authorize(ROLES.ADMINISTRATOR),
-    subjectValidator.searchSubject,
-    validate,
-    subjectController.searchSubjects
-);
 
 /**
  * @swagger
  * /subjects/archived:
  *   get:
  *     summary: Retrieve archived subjects
- *     description: Returns all archived (soft deleted) subjects.
  *     tags: [Subjects]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Archived subjects retrieved successfully.
- *       401:
- *         description: Unauthorized.
- *       403:
- *         description: Forbidden.
- *       500:
- *         description: Internal server error.
  */
 router.get(
     "/archived",
@@ -174,8 +165,7 @@ router.get(
  * @swagger
  * /subjects/{id}:
  *   get:
- *     summary: Retrieve a subject by ID
- *     description: Returns a single subject using its ID.
+ *     summary: Retrieve subject by ID
  *     tags: [Subjects]
  *     security:
  *       - bearerAuth: []
@@ -185,21 +175,9 @@ router.get(
  *         required: true
  *         schema:
  *           type: integer
- *         example: 1
- *         description: Subject ID
  *     responses:
  *       200:
  *         description: Subject retrieved successfully.
- *       400:
- *         description: Invalid subject ID.
- *       401:
- *         description: Unauthorized.
- *       403:
- *         description: Forbidden.
- *       404:
- *         description: Subject not found.
- *       500:
- *         description: Internal server error.
  */
 router.get(
     "/:id",
@@ -209,12 +187,12 @@ router.get(
     validate,
     subjectController.getSubjectById
 );
+
 /**
  * @swagger
  * /subjects/{id}:
  *   put:
- *     summary: Update a subject
- *     description: Update an existing subject by ID.
+ *     summary: Update subject
  *     tags: [Subjects]
  *     security:
  *       - bearerAuth: []
@@ -224,46 +202,9 @@ router.get(
  *         required: true
  *         schema:
  *           type: integer
- *         example: 1
- *         description: Subject ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               code:
- *                 type: string
- *                 example: MATH101
- *               name:
- *                 type: string
- *                 example: Mathematics
- *               departmentId:
- *                 type: integer
- *                 example: 1
- *               schoolClassId:
- *                 type: integer
- *                 example: 2
- *               creditHours:
- *                 type: integer
- *                 example: 3
- *               description:
- *                 type: string
- *                 example: Updated Mathematics subject
  *     responses:
  *       200:
  *         description: Subject updated successfully.
- *       400:
- *         description: Validation error.
- *       401:
- *         description: Unauthorized.
- *       403:
- *         description: Forbidden.
- *       404:
- *         description: Subject not found.
- *       500:
- *         description: Internal server error.
  */
 router.put(
     "/:id",
@@ -278,8 +219,7 @@ router.put(
  * @swagger
  * /subjects/{id}:
  *   delete:
- *     summary: Archive a subject
- *     description: Soft delete (archive) a subject by ID.
+ *     summary: Archive subject
  *     tags: [Subjects]
  *     security:
  *       - bearerAuth: []
@@ -289,21 +229,9 @@ router.put(
  *         required: true
  *         schema:
  *           type: integer
- *         example: 1
- *         description: Subject ID
  *     responses:
  *       200:
  *         description: Subject archived successfully.
- *       400:
- *         description: Invalid subject ID.
- *       401:
- *         description: Unauthorized.
- *       403:
- *         description: Forbidden.
- *       404:
- *         description: Subject not found.
- *       500:
- *         description: Internal server error.
  */
 router.delete(
     "/:id",
@@ -318,8 +246,7 @@ router.delete(
  * @swagger
  * /subjects/{id}/restore:
  *   patch:
- *     summary: Restore an archived subject
- *     description: Restore a previously archived subject.
+ *     summary: Restore archived subject
  *     tags: [Subjects]
  *     security:
  *       - bearerAuth: []
@@ -329,27 +256,15 @@ router.delete(
  *         required: true
  *         schema:
  *           type: integer
- *         example: 1
- *         description: Subject ID
  *     responses:
  *       200:
  *         description: Subject restored successfully.
- *       400:
- *         description: Invalid subject ID.
- *       401:
- *         description: Unauthorized.
- *       403:
- *         description: Forbidden.
- *       404:
- *         description: Subject not found.
- *       500:
- *         description: Internal server error.
  */
 router.patch(
     "/:id/restore",
     authenticate,
     authorize(ROLES.ADMINISTRATOR),
-    subjectValidator.validateSubjectId,
+    subjectValidator.restoreSubject,
     validate,
     subjectController.restoreSubject
 );

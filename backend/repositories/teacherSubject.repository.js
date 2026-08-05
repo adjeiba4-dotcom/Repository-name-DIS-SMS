@@ -129,14 +129,14 @@ class TeacherSubjectRepository {
                     },
                     {
                         subject: {
-                            name: {
+                            subjectName: {
                                 contains: keyword,
                             },
                         },
                     },
                     {
                         subject: {
-                            code: {
+                            subjectCode: {
                                 contains: keyword,
                             },
                         },

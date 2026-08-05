@@ -111,7 +111,7 @@ const searchExaminations = async(keyword) => {
                 },
                 {
                     subject: {
-                        name: {
+                        subjectName: {
                             contains: keyword,
                         },
                     },
