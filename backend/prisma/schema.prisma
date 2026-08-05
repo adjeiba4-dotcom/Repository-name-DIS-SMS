@@ -428,6 +428,7 @@ model AcademicYear {
   feeStructures    FeeStructure[]
   timetables       Timetable[]
   teacherSubjects  TeacherSubject[]
+  classSubjects    ClassSubject[]
 
   // ==============================
   // Hostel
@@ -476,6 +477,7 @@ model Term {
   results         Result[]
   timetables      Timetable[]
   teacherSubjects TeacherSubject[]
+  classSubjects   ClassSubject[]
 
   @@unique([academicYearId, name])
   @@unique([academicYearId, code])
@@ -570,6 +572,7 @@ model SchoolClass {
   feeStructures FeeStructure[]
   students      Student[]
   timetables    Timetable[]
+  classSubjects ClassSubject[]
 
   @@unique([academicYearId, classCode])
 
@@ -668,6 +671,7 @@ model Subject {
   schoolClass SchoolClass? @relation(fields: [schoolClassId], references: [id], onDelete: SetNull)
 
   teacherSubjects TeacherSubject[]
+  classSubjects   ClassSubject[]
 
   examinations Examination[]
 
@@ -714,6 +718,8 @@ model TeacherSubject {
   academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
   term         Term?        @relation(fields: [termId], references: [id], onDelete: SetNull)
 
+  classSubjects ClassSubject[]
+
   @@unique([teacherId, subjectId, academicYearId, termId])
 
   @@index([teacherId])
@@ -723,6 +729,51 @@ model TeacherSubject {
   @@index([status])
 
   @@map("teacher_subjects")
+}
+
+//
+// =======================================================
+// CLASS SUBJECT ALLOCATION
+// =======================================================
+//
+
+model ClassSubject {
+  id Int @id @default(autoincrement())
+
+  schoolClassId    Int
+  teacherSubjectId Int
+  subjectId        Int
+  academicYearId   Int
+  termId           Int?
+
+  weeklyPeriods Int     @default(1)
+  isCompulsory  Boolean @default(true)
+  displayOrder  Int     @default(0)
+  remarks       String?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  schoolClass    SchoolClass    @relation(fields: [schoolClassId], references: [id], onDelete: Cascade)
+  teacherSubject TeacherSubject @relation(fields: [teacherSubjectId], references: [id], onDelete: Restrict)
+  subject        Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  academicYear   AcademicYear   @relation(fields: [academicYearId], references: [id])
+  term           Term?          @relation(fields: [termId], references: [id], onDelete: SetNull)
+
+  @@unique([schoolClassId, subjectId, academicYearId, termId])
+
+  @@index([schoolClassId])
+  @@index([teacherSubjectId])
+  @@index([subjectId])
+  @@index([academicYearId])
+  @@index([termId])
+  @@index([status])
+  @@index([displayOrder])
+
+  @@map("class_subjects")
 }
 //
 // =======================================================

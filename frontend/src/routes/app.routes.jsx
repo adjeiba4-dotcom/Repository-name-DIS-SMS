@@ -5,6 +5,7 @@ import Guardians from "../pages/guardians/Guardians";
 import Classes from "../pages/classes/Classes";
 import Subjects from "../pages/subjects/Subjects";
 import TeacherSubjects from "../pages/teacher-subjects/TeacherSubjects";
+import ClassSubjects from "../pages/class-subjects/ClassSubjects";
 import AcademicYears from "../pages/academic-years/AcademicYears";
 import Terms from "../pages/terms/Terms";
 import ModulePlaceholder from "../pages/common/ModulePlaceholder";
@@ -26,6 +27,7 @@ const PAGE_REGISTRY = {
   classes: Classes,
   subjects: Subjects,
   "teacher-subjects": TeacherSubjects,
+  "class-subjects": ClassSubjects,
   "academic-years": AcademicYears,
   terms: Terms,
 };
