@@ -1,44 +1,66 @@
-const { body } = require("express-validator");
+// validators/notification.validator.js
 
-exports.createNotificationValidator = [
-    body("title")
+const { body, param, query } = require("express-validator");
+
+const createNotificationValidator = [
+  body("userId")
+    .isInt({ min: 1 })
+    .withMessage("userId must be a positive integer."),
+  body("title")
     .trim()
     .notEmpty()
-    .withMessage("Notification title is required."),
-
-    body("message")
+    .withMessage("Title is required.")
+    .isLength({ max: 200 }),
+  body("message")
     .trim()
     .notEmpty()
-    .withMessage("Notification message is required."),
-
-    body("recipient")
-    .trim()
-    .notEmpty()
-    .withMessage("Recipient is required."),
-
-    body("isRead")
+    .withMessage("Message is required.")
+    .isLength({ max: 5000 }),
+  body("type")
     .optional()
-    .isBoolean()
-    .withMessage("isRead must be true or false."),
+    .trim()
+    .isIn(["INFO", "SUCCESS", "WARNING", "ERROR"]),
+  body("channel")
+    .optional()
+    .trim()
+    .isIn(["IN_APP", "EMAIL", "SMS"]),
+  body("entityType").optional({ nullable: true }).trim().isLength({ max: 100 }),
+  body("entityId").optional({ nullable: true }).isInt({ min: 1 }),
 ];
 
-exports.updateNotificationValidator = [
-    body("title")
+const updateNotificationValidator = [
+  param("id").isInt({ min: 1 }),
+  body("title").optional().trim().notEmpty().isLength({ max: 200 }),
+  body("message").optional().trim().notEmpty().isLength({ max: 5000 }),
+  body("type")
     .optional()
     .trim()
-    .notEmpty(),
-
-    body("message")
+    .isIn(["INFO", "SUCCESS", "WARNING", "ERROR"]),
+  body("channel")
     .optional()
     .trim()
-    .notEmpty(),
-
-    body("recipient")
+    .isIn(["IN_APP", "EMAIL", "SMS"]),
+  body("status")
     .optional()
     .trim()
-    .notEmpty(),
-
-    body("isRead")
-    .optional()
-    .isBoolean(),
+    .isIn(["PENDING", "SENT", "FAILED", "READ"]),
 ];
+
+const listNotifications = [
+  query("page").optional().isInt({ min: 1 }),
+  query("limit").optional().isInt({ min: 1, max: 100 }),
+  query("isRead").optional().isIn(["true", "false"]),
+  query("type").optional().isIn(["INFO", "SUCCESS", "WARNING", "ERROR"]),
+  query("channel").optional().isIn(["IN_APP", "EMAIL", "SMS"]),
+];
+
+const validateNotificationId = [
+  param("id").isInt({ min: 1 }).withMessage("Notification ID must be a positive integer."),
+];
+
+module.exports = {
+  createNotificationValidator,
+  updateNotificationValidator,
+  listNotifications,
+  validateNotificationId,
+};

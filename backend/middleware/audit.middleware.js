@@ -1,23 +1,43 @@
+// middleware/audit.middleware.js — optional route-level audit wrapper
+
 const auditService = require("../services/audit.service");
 
-exports.audit = (action, tableName) => {
-    return async(req, res, next) => {
-        const originalJson = res.json;
+/**
+ * Attach after successful JSON responses.
+ * Usage: audit("CREATE", "Students", { entityType: "Student" })
+ */
+exports.audit = (action, moduleName, options = {}) => {
+  return async (req, res, next) => {
+    const originalJson = res.json.bind(res);
 
-        res.json = function(body) {
-            if (req.user && body.success) {
-                auditService.createAuditLog({
-                    userId: req.user.id,
-                    action,
-                    tableName,
-                    recordId: body.data && body.data.id ? body.data.id : null,
-                    ipAddress: req.ip,
-                }).catch(console.error);
-            }
+    res.json = (body) => {
+      if (req.user && body && body.success !== false) {
+        const recordId =
+          options.recordIdResolver?.(req, body) ??
+          body?.data?.id ??
+          null;
 
-            return originalJson.call(this, body);
-        };
+        auditService
+          .recordSafe({
+            userId: req.user.id,
+            module: moduleName,
+            action,
+            entityType: options.entityType || null,
+            recordId,
+            description:
+              options.description ||
+              body?.message ||
+              `${action} on ${moduleName}`,
+            newValues: options.includeBody ? body?.data : undefined,
+            ipAddress: req.ip,
+            userAgent: req.get?.("user-agent") || null,
+          })
+          .catch(() => {});
+      }
 
-        next();
+      return originalJson(body);
     };
+
+    next();
+  };
 };

@@ -3,6 +3,7 @@
 require("dotenv").config();
 
 const express = require("express");
+const path = require("path");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
@@ -10,22 +11,11 @@ const rateLimit = require("express-rate-limit");
 const swaggerUi = require("swagger-ui-express");
 
 // ==========================================
-// Route Imports
+// Route / Config / Middleware Imports
 // ==========================================
 
-const authRoutes = require("./routes/auth.routes");
 const indexRoutes = require("./routes");
-
-// ==========================================
-// Config Imports
-// ==========================================
-
 const swaggerSpec = require("./config/swagger");
-
-// ==========================================
-// Middleware Imports
-// ==========================================
-
 const errorHandler = require("./middleware/error.middleware");
 
 const app = express();
@@ -64,6 +54,12 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Public uploaded assets (logos, photos, documents)
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "public", "uploads"))
+);
+
 // ==========================================
 // Health Check
 // ==========================================
@@ -89,12 +85,9 @@ app.use(
 );
 
 // ==========================================
-// API Routes
+// API Routes (auth + all modules via routes/index.js)
 // ==========================================
 
-app.use("/api/auth", authRoutes);
-
-// Register all remaining routes
 app.use("/api", indexRoutes);
 
 // ==========================================

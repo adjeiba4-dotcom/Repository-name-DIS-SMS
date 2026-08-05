@@ -1,105 +1,99 @@
-// routes/settings.routes.js
+// routes/settings.routes.js — Global Configuration
 
 const express = require("express");
-
 const router = express.Router();
 
 const settingsController = require("../controllers/settings.controller");
-
 const {
-    createSetting,
-    updateSetting,
-    validateSettingId,
-    searchSettings,
+  createSetting,
+  updateSetting,
+  upsertSettings,
+  validateSettingId,
+  validateSettingKey,
+  listSettings,
 } = require("../validators/settings.validator");
-
-const {
-    validate,
-} = require("../middleware/validation.middleware");
-
-const {
-    authenticate,
-    authorize,
-} = require("../middleware/auth.middleware");
-
+const { validate } = require("../middleware/validation.middleware");
+const { authenticate, authorize } = require("../middleware/auth.middleware");
 const ROLES = require("../constants/roles");
 
 /**
  * @swagger
  * tags:
  *   name: Settings
- *   description: System Settings Management APIs
+ *   description: Global application configuration
  */
 
-/**
- * Get all settings
- */
 router.get(
-    "/",
-    authenticate,
-    authorize(ROLES.ADMIN),
-    settingsController.getSettings
+  "/",
+  authenticate,
+  authorize(ROLES.ADMINISTRATOR, ROLES.HEADMASTER),
+  listSettings,
+  validate,
+  settingsController.getSettings
 );
 
-/**
- * Search settings
- */
 router.get(
-    "/search",
-    authenticate,
-    authorize(ROLES.ADMIN),
-    searchSettings,
-    validate,
-    settingsController.searchSettings
+  "/map",
+  authenticate,
+  authorize(ROLES.ADMINISTRATOR, ROLES.HEADMASTER),
+  listSettings,
+  validate,
+  settingsController.getConfigMap
 );
 
-/**
- * Get setting by ID
- */
-router.get(
-    "/:id",
-    authenticate,
-    authorize(ROLES.ADMIN),
-    validateSettingId,
-    validate,
-    settingsController.getSettingById
-);
-
-/**
- * Create setting
- */
-router.post(
-    "/",
-    authenticate,
-    authorize(ROLES.ADMIN),
-    createSetting,
-    validate,
-    settingsController.createSetting
-);
-
-/**
- * Update setting
- */
 router.put(
-    "/:id",
-    authenticate,
-    authorize(ROLES.ADMIN),
-    validateSettingId,
-    updateSetting,
-    validate,
-    settingsController.updateSetting
+  "/bulk",
+  authenticate,
+  authorize(ROLES.ADMINISTRATOR),
+  upsertSettings,
+  validate,
+  settingsController.upsertSettings
 );
 
-/**
- * Delete setting
- */
+router.get(
+  "/key/:key",
+  authenticate,
+  authorize(ROLES.ADMINISTRATOR, ROLES.HEADMASTER),
+  validateSettingKey,
+  validate,
+  settingsController.getSettingByKey
+);
+
+router.get(
+  "/:id",
+  authenticate,
+  authorize(ROLES.ADMINISTRATOR, ROLES.HEADMASTER),
+  validateSettingId,
+  validate,
+  settingsController.getSettingById
+);
+
+router.post(
+  "/",
+  authenticate,
+  authorize(ROLES.ADMINISTRATOR),
+  createSetting,
+  validate,
+  settingsController.createSetting
+);
+
+router.put(
+  "/:id",
+  authenticate,
+  authorize(ROLES.ADMINISTRATOR),
+  validateSettingId,
+  updateSetting,
+  validate,
+  settingsController.updateSetting
+);
+
 router.delete(
-    "/:id",
-    authenticate,
-    authorize(ROLES.ADMIN),
-    validateSettingId,
-    validate,
-    settingsController.deleteSetting
+  "/:id",
+  authenticate,
+  authorize(ROLES.ADMINISTRATOR),
+  validateSettingId,
+  validate,
+  settingsController.deleteSetting
 );
 
 module.exports = router;

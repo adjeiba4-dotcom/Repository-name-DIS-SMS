@@ -1,100 +1,87 @@
 // validators/settings.validator.js
 
-const {
-    body,
-    param,
-    query,
-} = require("express-validator");
+const { body, param, query } = require("express-validator");
 
-/**
- * Validate Setting ID
- */
 const validateSettingId = [
-    param("id")
+  param("id")
     .isInt({ min: 1 })
-    .withMessage(
-        "Setting ID must be a positive integer."
-    ),
+    .withMessage("Setting ID must be a positive integer."),
 ];
 
-/**
- * Create Setting
- */
+const validateSettingKey = [
+  param("key")
+    .trim()
+    .notEmpty()
+    .withMessage("Setting key is required.")
+    .isLength({ max: 120 })
+    .withMessage("Setting key cannot exceed 120 characters."),
+];
+
 const createSetting = [
-    body("settingKey")
+  body("settingKey")
     .trim()
     .notEmpty()
-    .withMessage(
-        "Setting key is required."
-    )
-    .isLength({ max: 100 })
-    .withMessage(
-        "Setting key cannot exceed 100 characters."
-    ),
-
-    body("settingValue")
-    .notEmpty()
-    .withMessage(
-        "Setting value is required."
-    ),
-
-    body("description")
-    .optional()
+    .withMessage("Setting key is required.")
+    .isLength({ max: 120 })
+    .withMessage("Setting key cannot exceed 120 characters."),
+  body("settingValue").notEmpty().withMessage("Setting value is required."),
+  body("description")
+    .optional({ nullable: true })
     .trim()
     .isLength({ max: 500 })
-    .withMessage(
-        "Description cannot exceed 500 characters."
-    ),
+    .withMessage("Description cannot exceed 500 characters."),
+  body("category").optional({ nullable: true }).trim().isLength({ max: 50 }),
+  body("dataType")
+    .optional()
+    .trim()
+    .isIn(["STRING", "NUMBER", "BOOLEAN", "JSON"])
+    .withMessage("dataType must be STRING, NUMBER, BOOLEAN, or JSON."),
+  body("isSystem").optional().isBoolean(),
 ];
 
-/**
- * Update Setting
- */
 const updateSetting = [
-    body("settingKey")
+  body("settingKey")
     .optional()
     .trim()
     .notEmpty()
-    .withMessage(
-        "Setting key cannot be empty."
-    )
-    .isLength({ max: 100 })
-    .withMessage(
-        "Setting key cannot exceed 100 characters."
-    ),
-
-    body("settingValue")
+    .withMessage("Setting key cannot be empty.")
+    .isLength({ max: 120 }),
+  body("settingValue")
     .optional()
     .notEmpty()
-    .withMessage(
-        "Setting value cannot be empty."
-    ),
-
-    body("description")
+    .withMessage("Setting value cannot be empty."),
+  body("description").optional({ nullable: true }).trim().isLength({ max: 500 }),
+  body("category").optional({ nullable: true }).trim().isLength({ max: 50 }),
+  body("dataType")
     .optional()
     .trim()
-    .isLength({ max: 500 })
-    .withMessage(
-        "Description cannot exceed 500 characters."
-    ),
+    .isIn(["STRING", "NUMBER", "BOOLEAN", "JSON"]),
+  body("isSystem").optional().isBoolean(),
 ];
 
-/**
- * Search Settings
- */
-const searchSettings = [
-    query("keyword")
-    .optional()
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage(
-        "Keyword cannot be empty."
-    ),
+const upsertSettings = [
+  body().custom((value, { req }) => {
+    const entries = Array.isArray(req.body)
+      ? req.body
+      : req.body?.settings;
+    if (!Array.isArray(entries) || entries.length === 0) {
+      throw new Error("settings must be a non-empty array.");
+    }
+    return true;
+  }),
+];
+
+const listSettings = [
+  query("category").optional().trim(),
+  query("search").optional().trim(),
+  query("keyword").optional().trim(),
 ];
 
 module.exports = {
-    validateSettingId,
-    createSetting,
-    updateSetting,
-    searchSettings,
+  validateSettingId,
+  validateSettingKey,
+  createSetting,
+  updateSetting,
+  upsertSettings,
+  listSettings,
 };

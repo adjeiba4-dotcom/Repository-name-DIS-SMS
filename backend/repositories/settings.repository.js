@@ -1,113 +1,96 @@
-// repositories/settings.repository.js
+// repositories/settings.repository.js — SystemSetting / Global Configuration
 
 const prisma = require("../database/db");
 
-/**
- * Get all settings
- */
-const findAllSettings = async() => {
-    return await prisma.setting.findMany({
-        orderBy: {
-            settingKey: "asc",
-        },
-    });
+const settingSelect = {
+  id: true,
+  settingKey: true,
+  settingValue: true,
+  description: true,
+  category: true,
+  dataType: true,
+  isSystem: true,
+  createdAt: true,
+  updatedAt: true,
 };
 
-/**
- * Get setting by ID
- */
-const findSettingById = async(id) => {
-    return await prisma.setting.findUnique({
-        where: {
-            id: Number(id),
-        },
-    });
-};
+class SettingsRepository {
+  async findAllSettings({ category, search } = {}) {
+    const where = {};
 
-/**
- * Get setting by key
- */
-const findSettingByKey = async(settingKey) => {
-    return await prisma.setting.findUnique({
-        where: {
-            settingKey,
-        },
-    });
-};
+    if (category) {
+      where.category = category;
+    }
 
-/**
- * Search settings
- */
-const searchSettings = async(keyword) => {
-    return await prisma.setting.findMany({
-        where: {
-            OR: [{
-                    settingKey: {
-                        contains: keyword,
-                        mode: "insensitive",
-                    },
-                },
-                {
-                    settingValue: {
-                        contains: keyword,
-                        mode: "insensitive",
-                    },
-                },
-                {
-                    description: {
-                        contains: keyword,
-                        mode: "insensitive",
-                    },
-                },
-            ],
-        },
-        orderBy: {
-            settingKey: "asc",
-        },
-    });
-};
+    if (search) {
+      where.OR = [
+        { settingKey: { contains: search } },
+        { settingValue: { contains: search } },
+        { description: { contains: search } },
+      ];
+    }
 
-/**
- * Create setting
- */
-const createSetting = async(data) => {
-    return await prisma.setting.create({
-        data,
+    return prisma.systemSetting.findMany({
+      where,
+      select: settingSelect,
+      orderBy: [{ category: "asc" }, { settingKey: "asc" }],
     });
-};
+  }
 
-/**
- * Update setting
- */
-const updateSetting = async(
-    id,
-    data
-) => {
-    return await prisma.setting.update({
-        where: {
-            id: Number(id),
-        },
-        data,
+  async findSettingById(id) {
+    return prisma.systemSetting.findUnique({
+      where: { id: Number(id) },
+      select: settingSelect,
     });
-};
+  }
 
-/**
- * Delete setting
- */
-const deleteSetting = async(id) => {
-    return await prisma.setting.delete({
-        where: {
-            id: Number(id),
-        },
+  async findSettingByKey(settingKey) {
+    return prisma.systemSetting.findUnique({
+      where: { settingKey },
+      select: settingSelect,
     });
-};
+  }
 
-module.exports = {
-    findAllSettings,
-    findSettingById,
-    findSettingByKey,
-    searchSettings,
-    createSetting,
-    updateSetting,
-    deleteSetting,
-};
+  async createSetting(data) {
+    return prisma.systemSetting.create({
+      data,
+      select: settingSelect,
+    });
+  }
+
+  async updateSetting(id, data) {
+    return prisma.systemSetting.update({
+      where: { id: Number(id) },
+      data,
+      select: settingSelect,
+    });
+  }
+
+  async upsertByKey(settingKey, data) {
+    return prisma.systemSetting.upsert({
+      where: { settingKey },
+      create: { settingKey, ...data },
+      update: data,
+      select: settingSelect,
+    });
+  }
+
+  async deleteSetting(id) {
+    return prisma.systemSetting.delete({
+      where: { id: Number(id) },
+      select: settingSelect,
+    });
+  }
+
+  async bulkUpsert(entries = []) {
+    const results = [];
+    for (const entry of entries) {
+      const { settingKey, ...rest } = entry;
+      const row = await this.upsertByKey(settingKey, rest);
+      results.push(row);
+    }
+    return results;
+  }
+}
+
+module.exports = new SettingsRepository();

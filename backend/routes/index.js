@@ -6,25 +6,13 @@ const router = express.Router();
 
 /*
 |--------------------------------------------------------------------------
-| Authentication
+| Route modules (each required and mounted exactly once)
 |--------------------------------------------------------------------------
 */
 const authRoutes = require("./auth.routes");
-
-/*
-|--------------------------------------------------------------------------
-| User & Security
-|--------------------------------------------------------------------------
-*/
 const userRoutes = require("./user.routes");
 const roleRoutes = require("./role.routes");
 const auditRoutes = require("./audit.routes");
-
-/*
-|--------------------------------------------------------------------------
-| Academic Management
-|--------------------------------------------------------------------------
-*/
 const studentRoutes = require("./student.routes");
 const guardianRoutes = require("./guardian.routes");
 const studentGuardianRoutes = guardianRoutes.studentGuardianRouter;
@@ -43,42 +31,20 @@ const resultRoutes = require("./result.routes");
 const reportCardRoutes = require("./reportCard.routes");
 const studentPromotionRoutes = require("./studentPromotion.routes");
 const timetableRoutes = require("./timetable.routes");
-
-/*
-|--------------------------------------------------------------------------
-| Finance
-|--------------------------------------------------------------------------
-*/
 const feeTypeRoutes = require("./feeType.routes");
 const feeStructureRoutes = require("./feeStructure.routes");
 const studentInvoiceRoutes = require("./studentInvoice.routes");
 const paymentRoutes = require("./payment.routes");
 const paymentAllocationRoutes = require("./paymentAllocation.routes");
 const receiptRoutes = require("./receipt.routes");
-
-/*
-|--------------------------------------------------------------------------
-| Communication
-|--------------------------------------------------------------------------
-*/
 const announcementRoutes = require("./announcement.routes");
 const notificationRoutes = require("./notification.routes");
 const eventRoutes = require("./event.routes");
-
-/*
-|--------------------------------------------------------------------------
-| Dashboard
-|--------------------------------------------------------------------------
-*/
 const dashboardRoutes = require("./dashboard.routes");
 const dashboardWidgetRoutes = require("./dashboardWidget.routes");
-
-/*
-|--------------------------------------------------------------------------
-| System
-|--------------------------------------------------------------------------
-*/
 const settingsRoutes = require("./settings.routes");
+const schoolSettingsRoutes = require("./schoolSettings.routes");
+const fileUploadRoutes = require("./fileUpload.routes");
 
 /*
 |--------------------------------------------------------------------------
@@ -155,5 +121,7 @@ router.use("/dashboard-widgets", dashboardWidgetRoutes);
 |--------------------------------------------------------------------------
 */
 router.use("/settings", settingsRoutes);
+router.use("/school-settings", schoolSettingsRoutes);
+router.use("/uploads", fileUploadRoutes);
 
 module.exports = router;

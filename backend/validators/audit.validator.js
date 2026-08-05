@@ -1,27 +1,22 @@
-const { body } = require("express-validator");
+// validators/audit.validator.js
 
-exports.createAuditValidator = [
-    body("userId")
-    .isInt()
-    .withMessage("User ID is required."),
+const { param, query } = require("express-validator");
 
-    body("action")
-    .trim()
-    .notEmpty()
-    .withMessage("Action is required."),
-
-    body("tableName")
-    .trim()
-    .notEmpty()
-    .withMessage("Table name is required."),
-
-    body("recordId")
-    .optional()
-    .isInt()
-    .withMessage("Record ID must be an integer."),
-
-    body("ipAddress")
-    .optional()
-    .isIP()
-    .withMessage("IP address must be valid."),
+const listAuditLogs = [
+  query("page").optional().isInt({ min: 1 }),
+  query("limit").optional().isInt({ min: 1, max: 100 }),
+  query("module").optional().trim(),
+  query("action").optional().trim(),
+  query("entityType").optional().trim(),
+  query("userId").optional().isInt({ min: 1 }),
+  query("search").optional().trim(),
 ];
+
+const validateAuditId = [
+  param("id").isInt({ min: 1 }).withMessage("Audit log ID must be a positive integer."),
+];
+
+module.exports = {
+  listAuditLogs,
+  validateAuditId,
+};

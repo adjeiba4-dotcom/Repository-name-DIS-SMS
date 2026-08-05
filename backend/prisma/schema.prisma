@@ -58,6 +58,19 @@ enum NotificationStatus {
   READ
 }
 
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+}
+
+enum FileCategory {
+  LOGO
+  PHOTO
+  DOCUMENT
+  OTHER
+}
+
 //
 // =======================================================
 // ACADEMIC ENUMS
@@ -298,6 +311,8 @@ model User {
 
   systemBackups SystemBackup[]
 
+  fileAssets FileAsset[]
+
   // =====================================
   // COMMUNICATION
   // =====================================
@@ -354,22 +369,25 @@ model AuditLog {
   module String
   action String
 
-  recordId Int?
+  entityType String?
+  recordId   Int?
 
   description String? @db.Text
 
+  oldValues Json?
+  newValues Json?
+
   ipAddress String?
+  userAgent String?
 
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-
   @@index([module])
-
   @@index([action])
-
+  @@index([entityType])
   @@index([createdAt])
 
   @@map("audit_logs")
@@ -390,10 +408,91 @@ model SystemSetting {
 
   description String?
 
+  category String? @db.VarChar(50)
+
+  dataType String @default("STRING") @db.VarChar(20)
+
+  isSystem Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([category])
+
   @@map("system_settings")
+}
+
+//
+// =======================================================
+// SCHOOL PROFILE (singleton school identity)
+// =======================================================
+//
+
+model SchoolProfile {
+  id Int @id @default(autoincrement())
+
+  schoolName String
+  schoolCode String? @unique
+
+  motto String?
+
+  address    String? @db.Text
+  city       String?
+  region     String?
+  country    String?
+  postalCode String?
+
+  phone   String?
+  email   String?
+  website String?
+
+  logoUrl  String?
+  stampUrl String?
+
+  establishedYear   Int?
+  accreditationInfo String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("school_profiles")
+}
+
+//
+// =======================================================
+// FILE ASSETS (shared upload registry)
+// =======================================================
+//
+
+model FileAsset {
+  id Int @id @default(autoincrement())
+
+  originalName String
+  storedName   String
+  mimeType     String
+  sizeBytes    Int
+
+  category FileCategory @default(OTHER)
+
+  path String
+  url  String
+
+  uploadedById Int?
+
+  entityType String?
+  entityId   Int?
+
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  uploadedBy User? @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([category])
+  @@index([uploadedById])
+  @@index([entityType, entityId])
+  @@index([deletedAt])
+
+  @@map("file_assets")
 }
 //
 // =======================================================
@@ -1608,11 +1707,18 @@ model Notification {
 
   status NotificationStatus @default(PENDING)
 
+  channel NotificationChannel @default(IN_APP)
+
   userId Int
 
   isRead Boolean @default(false)
 
   readAt DateTime?
+
+  entityType String?
+  entityId   Int?
+
+  meta Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1622,6 +1728,8 @@ model Notification {
   @@index([userId])
   @@index([status])
   @@index([type])
+  @@index([channel])
+  @@index([isRead])
 
   @@map("notifications")
 }
