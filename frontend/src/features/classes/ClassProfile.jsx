@@ -61,9 +61,7 @@ export default function ClassProfile({ open, classId, onClose, onEdit }) {
     >
       {open && loading ? <ProfileSkeleton /> : null}
       {open && !loading && error ? (
-        <Alert variant="danger" title="Details unavailable">
-          {error}
-        </Alert>
+        <Alert variant="error" title="Details unavailable" message={error} />
       ) : null}
       {open && !loading && !error ? (
         <ClassDetails schoolClass={schoolClass} />

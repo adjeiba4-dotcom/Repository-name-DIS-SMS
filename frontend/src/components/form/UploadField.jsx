@@ -43,12 +43,12 @@ export default function UploadField({
   const hasPreview = Boolean(previewSrc);
 
   return (
-    <div className={cn("mb-5", className)}>
+    <div className={cn("ds-field mb-5", className)}>
       {label && (
         <label htmlFor={fieldId} className={fieldLabelClassName}>
           {label}
           {required && (
-            <span className="ml-1 text-[var(--color-danger-500)]" aria-hidden>
+            <span className="ds-field__required" aria-hidden>
               *
             </span>
           )}

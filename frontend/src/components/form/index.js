@@ -7,4 +7,7 @@ export { default as DatePickerField } from "./DatePickerField";
 export { default as PhoneField } from "./PhoneField";
 export { default as UploadField } from "./UploadField";
 export { default as SubmitButton } from "./SubmitButton";
+export { default as FormGrid, FormGridFull } from "./FormGrid";
+export { default as FormSection } from "./FormSection";
 export * from "./fieldStyles";
+

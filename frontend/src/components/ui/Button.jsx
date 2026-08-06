@@ -2,7 +2,7 @@ import { cn } from "../../utils/cn";
 
 const variants = {
   primary:
-    "bg-[var(--color-button-primary-bg)] text-[var(--color-button-primary-text)] hover:bg-[var(--color-button-primary-hover)] shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)]",
+    "bg-[var(--color-button-primary-bg)] text-[var(--color-button-primary-text)] hover:bg-[var(--color-button-primary-hover)] active:bg-[var(--color-button-primary-active)] shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)]",
   secondary:
     "bg-[var(--color-button-secondary-bg)] text-[var(--color-button-secondary-text)] hover:bg-[var(--color-button-secondary-hover)]",
   success:
@@ -10,15 +10,15 @@ const variants = {
   danger:
     "bg-[var(--color-button-danger-bg)] text-[var(--color-button-danger-text)] hover:bg-[var(--color-button-danger-hover)] shadow-[var(--shadow-md)]",
   outline:
-    "border border-[var(--color-brand-600)] bg-transparent text-[var(--color-brand-700)] hover:bg-[var(--color-brand-50)]",
+    "border border-[var(--color-ocean-blue)] bg-transparent text-[var(--color-ocean-blue)] hover:bg-[var(--color-ocean-blue-muted)]",
   ghost:
     "bg-transparent text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]",
 };
 
 const sizes = {
-  sm: "h-10 px-4 text-[length:var(--font-size-sm)] rounded-[var(--radius-lg)]",
-  md: "h-12 px-6 text-[length:var(--font-size-base)] rounded-[var(--radius-xl)]",
-  lg: "h-14 px-8 text-[length:var(--font-size-lg)] rounded-[var(--radius-xl)]",
+  sm: "h-10 px-4 text-[length:var(--font-size-sm)] rounded-[var(--radius-control)]",
+  md: "h-12 px-6 text-[length:var(--font-size-base)] rounded-[var(--radius-control)]",
+  lg: "h-14 px-8 text-[length:var(--font-size-lg)] rounded-[var(--radius-control)]",
 };
 
 export default function Button({

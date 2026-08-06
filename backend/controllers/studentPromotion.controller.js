@@ -3,34 +3,83 @@
 const studentPromotionService = require("../services/studentPromotion.service");
 const ApiResponse = require("../utils/response");
 
-/**
- * Get all student promotions
- */
-const getStudentPromotions = async(req, res, next) => {
+exports.getPromotions = async (req, res, next) => {
     try {
-        const promotions =
-            await studentPromotionService.getStudentPromotions();
-
-        return ApiResponse.success(
+        const result = await studentPromotionService.getPromotions(req.query);
+        return ApiResponse.paginated(
             res,
             "Student promotions retrieved successfully.",
-            promotions
+            result.data,
+            {
+                page: result.page,
+                limit: result.limit,
+                total: result.total,
+                totalPages: result.totalPages,
+            }
         );
     } catch (error) {
         next(error);
     }
 };
 
-/**
- * Get student promotion by ID
- */
-const getStudentPromotionById = async(req, res, next) => {
+exports.getArchivedPromotions = async (req, res, next) => {
     try {
-        const promotion =
-            await studentPromotionService.getStudentPromotionById(
-                Number(req.params.id)
-            );
+        const result = await studentPromotionService.getArchivedPromotions(
+            req.query
+        );
+        return ApiResponse.paginated(
+            res,
+            "Archived student promotions retrieved successfully.",
+            result.data,
+            {
+                page: result.page,
+                limit: result.limit,
+                total: result.total,
+                totalPages: result.totalPages,
+            }
+        );
+    } catch (error) {
+        next(error);
+    }
+};
 
+exports.getGraduates = async (req, res, next) => {
+    try {
+        const result = await studentPromotionService.getGraduates(req.query);
+        return ApiResponse.paginated(
+            res,
+            "Graduates retrieved successfully.",
+            result.data,
+            {
+                page: result.page,
+                limit: result.limit,
+                total: result.total,
+                totalPages: result.totalPages,
+            }
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getStats = async (req, res, next) => {
+    try {
+        const stats = await studentPromotionService.getStats(req.query);
+        return ApiResponse.success(
+            res,
+            "Promotion statistics retrieved successfully.",
+            stats
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getPromotionById = async (req, res, next) => {
+    try {
+        const promotion = await studentPromotionService.getPromotionById(
+            parseInt(req.params.id, 10)
+        );
         return ApiResponse.success(
             res,
             "Student promotion retrieved successfully.",
@@ -41,57 +90,44 @@ const getStudentPromotionById = async(req, res, next) => {
     }
 };
 
-/**
- * Search student promotions
- */
-const searchStudentPromotions = async(req, res, next) => {
+exports.getStudentHistory = async (req, res, next) => {
     try {
-        const promotions =
-            await studentPromotionService.searchStudentPromotions(
-                req.query.keyword || ""
-            );
-
+        const history = await studentPromotionService.getStudentHistory(
+            parseInt(req.params.studentId, 10)
+        );
         return ApiResponse.success(
             res,
-            "Student promotions retrieved successfully.",
-            promotions
+            "Student promotion history retrieved successfully.",
+            history
         );
     } catch (error) {
         next(error);
     }
 };
 
-/**
- * Create student promotion
- */
-const createStudentPromotion = async(req, res, next) => {
+exports.recommend = async (req, res, next) => {
     try {
-        const promotion =
-            await studentPromotionService.createStudentPromotion(
-                req.body
-            );
-
-        return ApiResponse.created(
+        const result = await studentPromotionService.recommend(
+            req.body,
+            req.user
+        );
+        return ApiResponse.success(
             res,
-            "Student promoted successfully.",
-            promotion
+            "Promotion recommendations generated successfully.",
+            result
         );
     } catch (error) {
         next(error);
     }
 };
 
-/**
- * Update student promotion
- */
-const updateStudentPromotion = async(req, res, next) => {
+exports.updatePromotion = async (req, res, next) => {
     try {
-        const promotion =
-            await studentPromotionService.updateStudentPromotion(
-                Number(req.params.id),
-                req.body
-            );
-
+        const promotion = await studentPromotionService.updatePromotion(
+            parseInt(req.params.id, 10),
+            req.body,
+            req.user
+        );
         return ApiResponse.success(
             res,
             "Student promotion updated successfully.",
@@ -102,29 +138,96 @@ const updateStudentPromotion = async(req, res, next) => {
     }
 };
 
-/**
- * Delete student promotion
- */
-const deleteStudentPromotion = async(req, res, next) => {
+exports.approve = async (req, res, next) => {
     try {
-        await studentPromotionService.deleteStudentPromotion(
-            Number(req.params.id)
+        const result = await studentPromotionService.approve(
+            req.body,
+            req.user
         );
-
         return ApiResponse.success(
             res,
-            "Student promotion deleted successfully."
+            "Promotions approved successfully.",
+            result
         );
     } catch (error) {
         next(error);
     }
 };
 
-module.exports = {
-    getStudentPromotions,
-    getStudentPromotionById,
-    searchStudentPromotions,
-    createStudentPromotion,
-    updateStudentPromotion,
-    deleteStudentPromotion,
+exports.unapprove = async (req, res, next) => {
+    try {
+        const result = await studentPromotionService.unapprove(
+            req.body,
+            req.user
+        );
+        return ApiResponse.success(
+            res,
+            "Promotion approvals reversed successfully.",
+            result
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.execute = async (req, res, next) => {
+    try {
+        const result = await studentPromotionService.execute(
+            req.body,
+            req.user
+        );
+        return ApiResponse.success(
+            res,
+            "Promotions executed successfully.",
+            result
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.cancel = async (req, res, next) => {
+    try {
+        const result = await studentPromotionService.cancel(
+            req.body,
+            req.user
+        );
+        return ApiResponse.success(
+            res,
+            "Promotions cancelled successfully.",
+            result
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.archivePromotion = async (req, res, next) => {
+    try {
+        await studentPromotionService.archivePromotion(
+            parseInt(req.params.id, 10),
+            req.user
+        );
+        return ApiResponse.success(
+            res,
+            "Student promotion archived successfully."
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.restorePromotion = async (req, res, next) => {
+    try {
+        const promotion = await studentPromotionService.restorePromotion(
+            parseInt(req.params.id, 10)
+        );
+        return ApiResponse.success(
+            res,
+            "Student promotion restored successfully.",
+            promotion
+        );
+    } catch (error) {
+        next(error);
+    }
 };

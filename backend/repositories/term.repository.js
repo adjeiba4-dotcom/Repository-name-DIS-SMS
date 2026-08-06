@@ -92,9 +92,14 @@ class TermRepository {
     }
 
     async findTermById(id) {
+        const termId = Number(id);
+        if (!Number.isInteger(termId) || termId < 1) {
+            return null;
+        }
+
         return prisma.term.findFirst({
             where: {
-                id,
+                id: termId,
                 deletedAt: null,
             },
             select: termDetailSelect,
@@ -102,8 +107,13 @@ class TermRepository {
     }
 
     async findTermByIdIncludingDeleted(id) {
+        const termId = Number(id);
+        if (!Number.isInteger(termId) || termId < 1) {
+            return null;
+        }
+
         return prisma.term.findFirst({
-            where: { id },
+            where: { id: termId },
             select: termDetailSelect,
         });
     }
@@ -111,12 +121,20 @@ class TermRepository {
     async findTermByName(academicYearId, name, { excludeId = null } = {}) {
         if (!name) return null;
 
+        const where = {
+            academicYearId: Number(academicYearId),
+            name,
+        };
+
+        if (excludeId != null && excludeId !== "") {
+            const excluded = Number(excludeId);
+            if (Number.isInteger(excluded) && excluded > 0) {
+                where.id = { not: excluded };
+            }
+        }
+
         return prisma.term.findFirst({
-            where: {
-                academicYearId,
-                name,
-                ...(excludeId ? { id: { not: excludeId } } : {}),
-            },
+            where,
             select: {
                 id: true,
                 name: true,
@@ -130,12 +148,20 @@ class TermRepository {
     async findTermByCode(academicYearId, code, { excludeId = null } = {}) {
         if (!code) return null;
 
+        const where = {
+            academicYearId: Number(academicYearId),
+            code,
+        };
+
+        if (excludeId != null && excludeId !== "") {
+            const excluded = Number(excludeId);
+            if (Number.isInteger(excluded) && excluded > 0) {
+                where.id = { not: excluded };
+            }
+        }
+
         return prisma.term.findFirst({
-            where: {
-                academicYearId,
-                code,
-                ...(excludeId ? { id: { not: excludeId } } : {}),
-            },
+            where,
             select: {
                 id: true,
                 name: true,
@@ -147,12 +173,20 @@ class TermRepository {
     }
 
     async findActiveTerm({ excludeId = null } = {}) {
+        const where = {
+            deletedAt: null,
+            status: "ACTIVE",
+        };
+
+        if (excludeId != null && excludeId !== "") {
+            const excluded = Number(excludeId);
+            if (Number.isInteger(excluded) && excluded > 0) {
+                where.id = { not: excluded };
+            }
+        }
+
         return prisma.term.findFirst({
-            where: {
-                deletedAt: null,
-                status: "ACTIVE",
-                ...(excludeId ? { id: { not: excludeId } } : {}),
-            },
+            where,
             select: termListSelect,
         });
     }
@@ -163,14 +197,22 @@ class TermRepository {
         endDate,
         excludeId = null,
     }) {
+        const where = {
+            academicYearId: Number(academicYearId),
+            deletedAt: null,
+            startDate: { lte: endDate },
+            endDate: { gte: startDate },
+        };
+
+        if (excludeId != null && excludeId !== "") {
+            const excluded = Number(excludeId);
+            if (Number.isInteger(excluded) && excluded > 0) {
+                where.id = { not: excluded };
+            }
+        }
+
         return prisma.term.findFirst({
-            where: {
-                academicYearId,
-                deletedAt: null,
-                ...(excludeId ? { id: { not: excludeId } } : {}),
-                startDate: { lte: endDate },
-                endDate: { gte: startDate },
-            },
+            where,
             select: {
                 id: true,
                 name: true,
@@ -182,9 +224,14 @@ class TermRepository {
     }
 
     async findAcademicYearById(id) {
+        const academicYearId = Number(id);
+        if (!Number.isInteger(academicYearId) || academicYearId < 1) {
+            return null;
+        }
+
         return prisma.academicYear.findFirst({
             where: {
-                id,
+                id: academicYearId,
                 deletedAt: null,
             },
             select: {
@@ -200,12 +247,13 @@ class TermRepository {
     }
 
     async countReferences(id) {
+        const termId = Number(id);
         const [attendance, examinations, results, timetables] =
             await Promise.all([
-                prisma.attendance.count({ where: { termId: id } }),
-                prisma.examination.count({ where: { termId: id } }),
-                prisma.result.count({ where: { termId: id } }),
-                prisma.timetable.count({ where: { termId: id } }),
+                prisma.attendance.count({ where: { termId } }),
+                prisma.examination.count({ where: { termId } }),
+                prisma.result.count({ where: { termId } }),
+                prisma.timetable.count({ where: { termId } }),
             ]);
 
         const total = attendance + examinations + results + timetables;
@@ -245,13 +293,15 @@ class TermRepository {
     }
 
     async updateTerm(id, data) {
+        const termId = Number(id);
+
         return prisma.$transaction(async (tx) => {
             if (data.status === "ACTIVE") {
                 await tx.term.updateMany({
                     where: {
                         deletedAt: null,
                         status: "ACTIVE",
-                        id: { not: id },
+                        id: { not: termId },
                     },
                     data: {
                         status: "INACTIVE",
@@ -266,7 +316,7 @@ class TermRepository {
             }
 
             return tx.term.update({
-                where: { id },
+                where: { id: termId },
                 data: payload,
                 select: termDetailSelect,
             });
@@ -274,12 +324,14 @@ class TermRepository {
     }
 
     async activateTerm(id) {
+        const termId = Number(id);
+
         return prisma.$transaction(async (tx) => {
             await tx.term.updateMany({
                 where: {
                     deletedAt: null,
                     status: "ACTIVE",
-                    id: { not: id },
+                    id: { not: termId },
                 },
                 data: {
                     status: "INACTIVE",
@@ -288,7 +340,7 @@ class TermRepository {
             });
 
             return tx.term.update({
-                where: { id },
+                where: { id: termId },
                 data: {
                     status: "ACTIVE",
                     isCurrent: true,
@@ -301,7 +353,7 @@ class TermRepository {
 
     async softDeleteTerm(id) {
         return prisma.term.update({
-            where: { id },
+            where: { id: Number(id) },
             data: {
                 status: "ARCHIVED",
                 isCurrent: false,
@@ -312,6 +364,8 @@ class TermRepository {
     }
 
     async restoreTerm(id, { activate = false } = {}) {
+        const termId = Number(id);
+
         return prisma.$transaction(async (tx) => {
             if (activate) {
                 await tx.term.updateMany({
@@ -327,7 +381,7 @@ class TermRepository {
             }
 
             return tx.term.update({
-                where: { id },
+                where: { id: termId },
                 data: {
                     status: activate ? "ACTIVE" : "INACTIVE",
                     isCurrent: Boolean(activate),

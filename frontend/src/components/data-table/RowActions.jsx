@@ -3,18 +3,20 @@
 import { cn } from "../../utils/cn";
 
 const TONE_CLASS = {
-  brand:
-    "text-[var(--color-brand-700)] hover:bg-[var(--color-brand-50)]",
+  brand: "text-[var(--color-ocean-blue)] hover:bg-[var(--color-ocean-blue-soft)]",
+  ocean: "text-[var(--color-ocean-blue)] hover:bg-[var(--color-ocean-blue-soft)]",
   success:
-    "text-[var(--color-success-700)] hover:bg-[var(--color-success-100)]",
+    "text-[var(--color-success-700)] hover:bg-[var(--color-accent-lime-soft)]",
   danger:
-    "text-[var(--color-danger-700)] hover:bg-[var(--color-danger-100)]",
+    "text-[var(--color-danger-700)] hover:bg-[var(--color-accent-red-soft)]",
+  warning:
+    "text-[var(--color-warning-700)] hover:bg-[var(--color-accent-yellow-soft)]",
   secondary:
     "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]",
 };
 
 const actionButtonClass = cn(
-  "inline-flex items-center justify-center rounded-[var(--radius-lg)] p-[var(--space-2)]",
+  "inline-flex items-center justify-center rounded-[var(--radius-control)] p-[var(--space-2)]",
   "transition-[background-color,color] duration-[var(--transition-fast)]",
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2",
   "disabled:cursor-not-allowed disabled:opacity-50"

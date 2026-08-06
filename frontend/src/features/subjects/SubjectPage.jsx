@@ -72,9 +72,12 @@ export default function SubjectPage() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileSubjectId, setProfileSubjectId] = useState(null);
 
-  const [formOpen, setFormOpen] = useState(false);
-  const [formMode, setFormMode] = useState("create");
-  const [editingSubject, setEditingSubject] = useState(null);
+  // Atomic drawer state — open/record always update together so edit
+  // cannot mount as create.
+  const [drawer, setDrawer] = useState({
+    open: false,
+    record: null,
+  });
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -198,9 +201,7 @@ export default function SubjectPage() {
         : "";
 
   const openCreateForm = () => {
-    setFormMode("create");
-    setEditingSubject(null);
-    setFormOpen(true);
+    setDrawer({ open: true, record: null });
   };
 
   const openEditForm = async (subjectLike) => {
@@ -210,13 +211,14 @@ export default function SubjectPage() {
     setProfileOpen(false);
     try {
       const response = await getSubjectById(id);
-      setEditingSubject(response?.data ?? subjectLike);
+      setDrawer({ open: true, record: response?.data ?? subjectLike });
     } catch {
-      setEditingSubject(subjectLike);
-    } finally {
-      setFormMode("edit");
-      setFormOpen(true);
+      setDrawer({ open: true, record: subjectLike });
     }
+  };
+
+  const closeForm = () => {
+    setDrawer({ open: false, record: null });
   };
 
   const handleView = (row) => {
@@ -384,10 +386,16 @@ export default function SubjectPage() {
         title="Directory Controls"
         description="Switch between active and archived subjects."
       >
-        <div className="flex flex-wrap gap-[var(--space-2)]">
+        <div
+          role="tablist"
+          aria-label="Subject directory"
+          className="flex flex-wrap gap-[var(--space-2)]"
+        >
           <Button
             type="button"
-            variant={viewMode === "active" ? "primary" : "secondary"}
+            role="tab"
+            aria-selected={viewMode === "active"}
+            variant={viewMode === "active" ? "primary" : "outline"}
             size="sm"
             className="w-auto"
             onClick={() => setViewMode("active")}
@@ -398,7 +406,9 @@ export default function SubjectPage() {
           </Button>
           <Button
             type="button"
-            variant={viewMode === "archived" ? "primary" : "secondary"}
+            role="tab"
+            aria-selected={viewMode === "archived"}
+            variant={viewMode === "archived" ? "primary" : "outline"}
             size="sm"
             className="w-auto"
             onClick={() => setViewMode("archived")}
@@ -439,14 +449,9 @@ export default function SubjectPage() {
       />
 
       <SubjectForm
-        open={formOpen}
-        mode={formMode}
-        subject={formMode === "edit" ? editingSubject : null}
-        onClose={() => {
-          setFormOpen(false);
-          setEditingSubject(null);
-          setFormMode("create");
-        }}
+        open={drawer.open}
+        subject={drawer.record}
+        onClose={closeForm}
         onSuccess={handleFormSuccess}
       />
 

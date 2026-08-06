@@ -1,128 +1,266 @@
+// controllers/reportCard.controller.js
+
 const reportCardService = require("../services/reportCard.service");
 const ApiResponse = require("../utils/response");
 
-/**
- * Get all report cards
- */
-const getReportCards = async(req, res, next) => {
+exports.getReportCards = async (req, res, next) => {
     try {
-        const reportCards =
-            await reportCardService.getReportCards();
-
-        return ApiResponse.success(
+        const result = await reportCardService.getReportCards(req.query);
+        return ApiResponse.paginated(
             res,
             "Report cards retrieved successfully.",
-            reportCards
+            result.data,
+            {
+                page: result.page,
+                limit: result.limit,
+                total: result.total,
+                totalPages: result.totalPages,
+            }
         );
     } catch (error) {
         next(error);
     }
 };
 
-/**
- * Get report card by ID
- */
-const getReportCardById = async(req, res, next) => {
+exports.getArchivedReportCards = async (req, res, next) => {
     try {
-        const reportCard =
-            await reportCardService.getReportCardById(
-                Number(req.params.id)
-            );
+        const result = await reportCardService.getArchivedReportCards(req.query);
+        return ApiResponse.paginated(
+            res,
+            "Archived report cards retrieved successfully.",
+            result.data,
+            {
+                page: result.page,
+                limit: result.limit,
+                total: result.total,
+                totalPages: result.totalPages,
+            }
+        );
+    } catch (error) {
+        next(error);
+    }
+};
 
+exports.getStats = async (req, res, next) => {
+    try {
+        const stats = await reportCardService.getStats(req.query);
+        return ApiResponse.success(
+            res,
+            "Report card statistics retrieved successfully.",
+            stats
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getTemplates = async (req, res, next) => {
+    try {
+        const list = await reportCardService.getTemplates();
+        return ApiResponse.success(
+            res,
+            "Report card templates retrieved successfully.",
+            list
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getReportCardById = async (req, res, next) => {
+    try {
+        const card = await reportCardService.getReportCardById(
+            parseInt(req.params.id, 10)
+        );
         return ApiResponse.success(
             res,
             "Report card retrieved successfully.",
-            reportCard
+            card
         );
     } catch (error) {
         next(error);
     }
 };
 
-/**
- * Search report cards
- */
-const searchReportCards = async(req, res, next) => {
+exports.getPreview = async (req, res, next) => {
     try {
-        const reportCards =
-            await reportCardService.searchReportCards(
-                req.query.keyword || ""
-            );
-
+        const preview = await reportCardService.getPreview(
+            parseInt(req.params.id, 10)
+        );
         return ApiResponse.success(
             res,
-            "Report cards retrieved successfully.",
-            reportCards
+            "Report card preview retrieved successfully.",
+            preview
         );
     } catch (error) {
         next(error);
     }
 };
 
-/**
- * Create report card
- */
-const createReportCard = async(req, res, next) => {
+exports.generateReportCard = async (req, res, next) => {
     try {
-        const reportCard =
-            await reportCardService.createReportCard(
-                req.body
+        const { card, created } = await reportCardService.generateReportCard(
+            req.body,
+            req.user
+        );
+        if (created) {
+            return ApiResponse.created(
+                res,
+                "Report card generated successfully.",
+                card
             );
-
-        return ApiResponse.created(
+        }
+        return ApiResponse.success(
             res,
-            "Report card created successfully.",
-            reportCard
+            "Report card regenerated successfully.",
+            card
         );
     } catch (error) {
         next(error);
     }
 };
 
-/**
- * Update report card
- */
-const updateReportCard = async(req, res, next) => {
+exports.generateBulk = async (req, res, next) => {
     try {
-        const reportCard =
-            await reportCardService.updateReportCard(
-                Number(req.params.id),
-                req.body
-            );
+        const result = await reportCardService.generateBulk(req.body, req.user);
+        return ApiResponse.success(
+            res,
+            "Bulk report card generation completed.",
+            result
+        );
+    } catch (error) {
+        next(error);
+    }
+};
 
+exports.updateReportCard = async (req, res, next) => {
+    try {
+        const card = await reportCardService.updateReportCard(
+            parseInt(req.params.id, 10),
+            req.body,
+            req.user
+        );
         return ApiResponse.success(
             res,
             "Report card updated successfully.",
-            reportCard
+            card
         );
     } catch (error) {
         next(error);
     }
 };
 
-/**
- * Delete report card
- */
-const deleteReportCard = async(req, res, next) => {
+exports.archiveReportCard = async (req, res, next) => {
     try {
-        await reportCardService.deleteReportCard(
-            Number(req.params.id)
+        await reportCardService.archiveReportCard(
+            parseInt(req.params.id, 10),
+            req.user
         );
+        return ApiResponse.success(res, "Report card archived successfully.");
+    } catch (error) {
+        next(error);
+    }
+};
 
+exports.restoreReportCard = async (req, res, next) => {
+    try {
+        const card = await reportCardService.restoreReportCard(
+            parseInt(req.params.id, 10)
+        );
         return ApiResponse.success(
             res,
-            "Report card deleted successfully."
+            "Report card restored successfully.",
+            card
         );
     } catch (error) {
         next(error);
     }
 };
 
-module.exports = {
-    getReportCards,
-    getReportCardById,
-    searchReportCards,
-    createReportCard,
-    updateReportCard,
-    deleteReportCard,
+exports.verifyReportCards = async (req, res, next) => {
+    try {
+        const result = await reportCardService.verifyReportCards(
+            req.body,
+            req.user
+        );
+        return ApiResponse.success(res, "Report cards verified successfully.", result);
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.unverifyReportCards = async (req, res, next) => {
+    try {
+        const result = await reportCardService.unverifyReportCards(
+            req.body,
+            req.user
+        );
+        return ApiResponse.success(
+            res,
+            "Report cards unverified successfully.",
+            result
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.publishReportCards = async (req, res, next) => {
+    try {
+        const result = await reportCardService.publishReportCards(
+            req.body,
+            req.user
+        );
+        return ApiResponse.success(
+            res,
+            "Report cards published successfully.",
+            result
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.unpublishReportCards = async (req, res, next) => {
+    try {
+        const result = await reportCardService.unpublishReportCards(
+            req.body,
+            req.user
+        );
+        return ApiResponse.success(
+            res,
+            "Report cards unpublished successfully.",
+            result
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.lockReportCards = async (req, res, next) => {
+    try {
+        const result = await reportCardService.lockReportCards(
+            req.body,
+            req.user
+        );
+        return ApiResponse.success(res, "Report cards locked successfully.", result);
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.unlockReportCards = async (req, res, next) => {
+    try {
+        const result = await reportCardService.unlockReportCards(
+            req.body,
+            req.user
+        );
+        return ApiResponse.success(
+            res,
+            "Report cards unlocked successfully.",
+            result
+        );
+    } catch (error) {
+        next(error);
+    }
 };

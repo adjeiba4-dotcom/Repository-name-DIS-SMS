@@ -54,6 +54,52 @@ export function exportToExcel(
 }
 
 /**
+ * Export tabular data to CSV.
+ */
+export function exportToCsv(
+  data = [],
+  {
+    filename = "export.csv",
+    columns,
+  } = {}
+) {
+  const rows = buildSheetData(data, columns);
+  const headers =
+    columns?.length > 0
+      ? columns.map((column) => column.label || column.key)
+      : rows.length > 0
+        ? Object.keys(rows[0])
+        : [];
+
+  const escapeCsv = (value) => {
+    const text = String(value ?? "");
+    if (/[",\n\r]/.test(text)) {
+      return `"${text.replaceAll('"', '""')}"`;
+    }
+    return text;
+  };
+
+  const lines = [
+    headers.map(escapeCsv).join(","),
+    ...rows.map((row) =>
+      headers.map((header) => escapeCsv(row[header])).join(",")
+    ),
+  ];
+
+  const blob = new Blob([lines.join("\r\n")], {
+    type: "text/csv;charset=utf-8;",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename.endsWith(".csv") ? filename : `${filename}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+/**
  * Export tabular data to PDF.
  */
 export function exportToPdf(

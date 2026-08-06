@@ -75,9 +75,12 @@ export default function AcademicYearPage() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileAcademicYearId, setProfileAcademicYearId] = useState(null);
 
-  const [formOpen, setFormOpen] = useState(false);
-  const [formMode, setFormMode] = useState("create");
-  const [editingAcademicYear, setEditingAcademicYear] = useState(null);
+  // Atomic drawer state — open/mode/record always update together so edit
+  // cannot mount as create (UAT-006).
+  const [drawer, setDrawer] = useState({
+    open: false,
+    record: null,
+  });
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -195,25 +198,33 @@ export default function AcademicYearPage() {
         : "";
 
   const openCreateForm = () => {
-    setFormMode("create");
-    setEditingAcademicYear(null);
-    setFormOpen(true);
+    setDrawer({ open: true, record: null });
   };
 
   const openEditForm = async (yearLike) => {
     const id = yearLike?.id;
-    if (!id) return;
+    if (id == null || id === "") return;
 
     setProfileOpen(false);
+
+    let record = yearLike;
     try {
       const response = await getAcademicYearById(id);
-      setEditingAcademicYear(response?.data ?? yearLike);
+      if (response?.data?.id != null) {
+        record = response.data;
+      }
     } catch {
-      setEditingAcademicYear(yearLike);
-    } finally {
-      setFormMode("edit");
-      setFormOpen(true);
+      // Fall back to the row/detail already in hand.
     }
+
+    if (record?.id == null || record.id === "") return;
+
+    // Single state update: edit drawer always mounts with a record id.
+    setDrawer({ open: true, record });
+  };
+
+  const closeForm = () => {
+    setDrawer({ open: false, record: null });
   };
 
   const handleView = (row) => {
@@ -353,7 +364,7 @@ export default function AcademicYearPage() {
     onStatusChange: setStatus,
     onSortChange: handleSortChange,
     onView: handleView,
-    onEdit: (row) => openEditForm({ id: row.id }),
+    onEdit: (row) => openEditForm(row),
     onDelete: (row) => {
       setDeleteError("");
       setDeleteTarget(row);
@@ -440,14 +451,9 @@ export default function AcademicYearPage() {
       />
 
       <AcademicYearForm
-        open={formOpen}
-        mode={formMode}
-        academicYear={formMode === "edit" ? editingAcademicYear : null}
-        onClose={() => {
-          setFormOpen(false);
-          setEditingAcademicYear(null);
-          setFormMode("create");
-        }}
+        open={drawer.open}
+        academicYear={drawer.record}
+        onClose={closeForm}
         onSuccess={handleFormSuccess}
       />
 

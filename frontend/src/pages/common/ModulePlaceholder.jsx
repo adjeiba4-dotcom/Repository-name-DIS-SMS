@@ -17,9 +17,11 @@ export default function ModulePlaceholder({ navItem }) {
       <PageHeader
         title={title}
         description={description}
-        variant="plain"
-        size="sm"
-        className="px-0"
+        breadcrumbs={[
+          { label: "Home", to: "/" },
+          { label: title },
+        ]}
+        variant="default"
       />
 
       <Body variant="muted" size="sm">

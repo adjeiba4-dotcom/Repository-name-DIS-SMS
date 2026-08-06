@@ -1,6 +1,7 @@
 // services/subject.service.js
 
 const subjectRepository = require("../repositories/subject.repository");
+const auditService = require("./audit.service");
 const {
     NotFoundError,
     ConflictError,
@@ -86,6 +87,69 @@ function assertValidCreditHours(creditHours) {
     }
 }
 
+function toAuditSnapshot(subject) {
+    if (!subject) return null;
+    return {
+        id: subject.id,
+        subjectCode: subject.subjectCode,
+        subjectName: subject.subjectName,
+        shortName: subject.shortName,
+        departmentId: subject.departmentId ?? null,
+        schoolClassId: subject.schoolClassId ?? null,
+        category: subject.category,
+        creditHours: subject.creditHours,
+        description: subject.description ?? null,
+        status: subject.status,
+        deletedAt: subject.deletedAt ?? null,
+        createdAt: subject.createdAt ?? null,
+        updatedAt: subject.updatedAt ?? null,
+    };
+}
+
+async function recordSubjectAudit({
+    actor = {},
+    action,
+    subject,
+    oldSubject = null,
+    description,
+}) {
+    await auditService.recordSafe({
+        userId: actor.userId,
+        module: "Subjects",
+        action,
+        entityType: "Subject",
+        recordId: subject?.id ?? null,
+        description,
+        oldValues: toAuditSnapshot(oldSubject),
+        newValues: toAuditSnapshot(subject),
+        ipAddress: actor.ipAddress,
+        userAgent: actor.userAgent,
+    });
+}
+
+function buildArchiveBlockMessage(references) {
+    const parts = [];
+    if (references.teacherAssignments > 0) {
+        parts.push("teacher assignments");
+    }
+    if (references.classAssignments > 0) {
+        parts.push("class assignments");
+    }
+    if (references.assessments > 0) {
+        parts.push("assessments");
+    }
+    if (references.examinations > 0) {
+        parts.push("examinations");
+    }
+    if (references.results > 0) {
+        parts.push("results");
+    }
+    if (references.timetables > 0 || references.timetableEntries > 0) {
+        parts.push("timetables");
+    }
+    return `Cannot archive subject while referenced by ${parts.join(", ")}.`;
+}
+
 class SubjectService {
     async getSubjects(query = {}) {
         const page = Math.max(1, parseInt(query.page, 10) || 1);
@@ -150,7 +214,7 @@ class SubjectService {
         return subjectRepository.findArchivedSubjects();
     }
 
-    async createSubject(rawData) {
+    async createSubject(rawData, actor = {}) {
         const data = sanitizeSubjectData(rawData);
 
         if (!data.subjectCode || !data.subjectName || !data.shortName) {
@@ -211,11 +275,21 @@ class SubjectService {
             );
         }
 
-        return subjectRepository.createSubject(data);
+        const created = await subjectRepository.createSubject(data);
+
+        await recordSubjectAudit({
+            actor,
+            action: "CREATE",
+            subject: created,
+            description: `Created subject ${created.subjectCode} — ${created.subjectName}`,
+        });
+
+        return created;
     }
 
-    async updateSubject(id, rawData) {
-        const subject = await subjectRepository.findSubjectById(id);
+    async updateSubject(id, rawData, actor = {}) {
+        const subjectId = Number(id);
+        const subject = await subjectRepository.findSubjectById(subjectId);
 
         if (!subject) {
             throw new NotFoundError("Subject not found.");
@@ -256,7 +330,7 @@ class SubjectService {
         if (data.subjectCode && data.subjectCode !== subject.subjectCode) {
             const existing = await subjectRepository.findSubjectByCode(
                 data.subjectCode,
-                { excludeId: id }
+                { excludeId: subjectId }
             );
             if (existing) {
                 throw new ConflictError(
@@ -270,7 +344,7 @@ class SubjectService {
         if (data.subjectName && data.subjectName !== subject.subjectName) {
             const existing = await subjectRepository.findSubjectByName(
                 data.subjectName,
-                { excludeId: id }
+                { excludeId: subjectId }
             );
             if (existing) {
                 throw new ConflictError(
@@ -281,40 +355,50 @@ class SubjectService {
             }
         }
 
-        return subjectRepository.updateSubject(id, data);
+        const updated = await subjectRepository.updateSubject(subjectId, data);
+
+        await recordSubjectAudit({
+            actor,
+            action: "UPDATE",
+            subject: updated,
+            oldSubject: subject,
+            description: `Updated subject ${updated.subjectCode} — ${updated.subjectName}`,
+        });
+
+        return updated;
     }
 
-    async deleteSubject(id) {
-        const subject = await subjectRepository.findSubjectById(id);
+    async deleteSubject(id, actor = {}) {
+        const subjectId = Number(id);
+        const subject = await subjectRepository.findSubjectById(subjectId);
 
         if (!subject) {
             throw new NotFoundError("Subject not found.");
         }
 
-        const references = await subjectRepository.countReferences(id);
+        const references = await subjectRepository.countReferences(subjectId);
 
         if (references.total > 0) {
-            const parts = [];
-            if (references.teacherAssignments > 0) {
-                parts.push("teacher assignments");
-            }
-            if (references.classAssignments > 0) {
-                parts.push("class assignments");
-            }
-            if (references.examinations > 0) {
-                parts.push("examinations");
-            }
-            throw new ConflictError(
-                `Cannot archive subject while referenced by ${parts.join(", ")}.`
-            );
+            throw new ConflictError(buildArchiveBlockMessage(references));
         }
 
-        return subjectRepository.softDeleteSubject(id);
+        const archived = await subjectRepository.softDeleteSubject(subjectId);
+
+        await recordSubjectAudit({
+            actor,
+            action: "ARCHIVE",
+            subject: archived,
+            oldSubject: subject,
+            description: `Archived subject ${archived.subjectCode} — ${archived.subjectName}`,
+        });
+
+        return archived;
     }
 
-    async restoreSubject(id, { activate = false } = {}) {
+    async restoreSubject(id, { activate = false } = {}, actor = {}) {
+        const subjectId = Number(id);
         const subject =
-            await subjectRepository.findSubjectByIdIncludingDeleted(id);
+            await subjectRepository.findSubjectByIdIncludingDeleted(subjectId);
 
         if (!subject) {
             throw new NotFoundError("Subject not found.");
@@ -326,7 +410,7 @@ class SubjectService {
 
         const existingCode = await subjectRepository.findSubjectByCode(
             subject.subjectCode,
-            { excludeId: id }
+            { excludeId: subjectId }
         );
         if (existingCode && !existingCode.deletedAt) {
             throw new ConflictError(
@@ -336,7 +420,7 @@ class SubjectService {
 
         const existingName = await subjectRepository.findSubjectByName(
             subject.subjectName,
-            { excludeId: id }
+            { excludeId: subjectId }
         );
         if (existingName && !existingName.deletedAt) {
             throw new ConflictError(
@@ -344,9 +428,19 @@ class SubjectService {
             );
         }
 
-        return subjectRepository.restoreSubject(id, {
+        const restored = await subjectRepository.restoreSubject(subjectId, {
             status: activate ? "ACTIVE" : "INACTIVE",
         });
+
+        await recordSubjectAudit({
+            actor,
+            action: "RESTORE",
+            subject: restored,
+            oldSubject: subject,
+            description: `Restored subject ${restored.subjectCode} — ${restored.subjectName}`,
+        });
+
+        return restored;
     }
 }
 

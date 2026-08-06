@@ -71,7 +71,7 @@ export default function Modal({
         aria-disabled={disabled || undefined}
         tabIndex={-1}
         className={cn(
-          "relative z-10 w-full overflow-hidden rounded-[var(--radius-2xl)] shadow-[var(--shadow-xl)]",
+          "relative z-10 w-full overflow-hidden rounded-[var(--radius-panel)] shadow-[var(--shadow-xl)]",
           "focus:outline-none",
           variants[variant] ?? variants.default,
           sizes[size] ?? sizes.md,
@@ -92,7 +92,7 @@ export default function Modal({
             onClick={onClose}
             disabled={disabled}
             aria-label="Close dialog"
-            className="rounded-[var(--radius-lg)] p-2 text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] disabled:cursor-not-allowed"
+            className="rounded-[var(--radius-control)] p-2 text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] disabled:cursor-not-allowed"
           >
             <X size={20} aria-hidden="true" />
           </button>

@@ -1,22 +1,25 @@
 // components/export/ExportButtons.jsx
 
-import { FileDown, FileSpreadsheet, Printer } from "lucide-react";
+import { FileDown, FileSpreadsheet, FileText, Printer } from "lucide-react";
 
 import Button from "../ui/Button";
 import { cn } from "../../utils/cn";
 
 /**
- * Reusable export action group: Excel, PDF, and Print.
+ * Reusable export action group: Excel, CSV, PDF, and Print.
  */
 export default function ExportButtons({
   onExportExcel,
+  onExportCsv,
   onExportPdf,
   onPrint,
   disabled = false,
   showExcel = true,
+  showCsv = true,
   showPdf = true,
   showPrint = true,
   excelLabel = "Excel",
+  csvLabel = "CSV",
   pdfLabel = "PDF",
   printLabel = "Print",
   size = "sm",
@@ -42,6 +45,21 @@ export default function ExportButtons({
         >
           <FileSpreadsheet size={16} aria-hidden />
           {excelLabel}
+        </Button>
+      ) : null}
+
+      {showCsv && onExportCsv ? (
+        <Button
+          type="button"
+          variant="outline"
+          size={size}
+          className={buttonClassName}
+          onClick={onExportCsv}
+          disabled={disabled}
+          title="Export to CSV"
+        >
+          <FileText size={16} aria-hidden />
+          {csvLabel}
         </Button>
       ) : null}
 

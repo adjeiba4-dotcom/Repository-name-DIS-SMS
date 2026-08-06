@@ -64,7 +64,22 @@ async function seedAdmin() {
     });
 
     if (existingUser) {
-      console.log("ℹ️ Admin user already exists.");
+      // Replace legacy role-like placeholder name used in early seeds.
+      if (
+        existingUser.firstName === "System" &&
+        existingUser.lastName === "Administrator"
+      ) {
+        await prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            firstName: "Admin",
+            lastName: "User",
+          },
+        });
+        console.log("✅ Admin display name updated to Admin User.");
+      } else {
+        console.log("ℹ️ Admin user already exists.");
+      }
       return;
     }
 
@@ -72,8 +87,8 @@ async function seedAdmin() {
 
     await prisma.user.create({
       data: {
-        firstName: "System",
-        lastName: "Administrator",
+        firstName: "Admin",
+        lastName: "User",
         email: "admin@dissms.com",
         password: hashedPassword,
         role: {

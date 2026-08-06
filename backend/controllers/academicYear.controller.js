@@ -3,6 +3,14 @@
 const academicYearService = require("../services/academicYear.service");
 const ApiResponse = require("../utils/response");
 
+function actorFrom(req) {
+    return {
+        userId: req.user?.id,
+        ipAddress: req.ip,
+        userAgent: req.get?.("user-agent") || null,
+    };
+}
+
 exports.getAcademicYears = async (req, res, next) => {
     try {
         const result = await academicYearService.getAcademicYears(req.query);
@@ -57,7 +65,8 @@ exports.getArchivedAcademicYears = async (req, res, next) => {
 exports.createAcademicYear = async (req, res, next) => {
     try {
         const academicYear = await academicYearService.createAcademicYear(
-            req.body
+            req.body,
+            actorFrom(req)
         );
 
         return ApiResponse.created(
@@ -74,7 +83,8 @@ exports.updateAcademicYear = async (req, res, next) => {
     try {
         const academicYear = await academicYearService.updateAcademicYear(
             parseInt(req.params.id, 10),
-            req.body
+            req.body,
+            actorFrom(req)
         );
 
         return ApiResponse.success(
@@ -90,7 +100,8 @@ exports.updateAcademicYear = async (req, res, next) => {
 exports.deleteAcademicYear = async (req, res, next) => {
     try {
         const academicYear = await academicYearService.deleteAcademicYear(
-            parseInt(req.params.id, 10)
+            parseInt(req.params.id, 10),
+            actorFrom(req)
         );
 
         return ApiResponse.success(
@@ -110,7 +121,8 @@ exports.restoreAcademicYear = async (req, res, next) => {
 
         const academicYear = await academicYearService.restoreAcademicYear(
             parseInt(req.params.id, 10),
-            { activate }
+            { activate },
+            actorFrom(req)
         );
 
         return ApiResponse.success(

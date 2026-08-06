@@ -40,11 +40,11 @@ export default function Input({
       {label && (
         <label
           htmlFor={inputId}
-          className="mb-2 block text-[length:var(--font-size-sm)] font-[number:var(--font-weight-semibold)] text-[var(--color-text-secondary)]"
+          className="ds-field__label mb-2"
         >
           {label}
           {required && (
-            <span className="ml-1 text-[var(--color-danger-500)]" aria-hidden="true">
+            <span className="ds-field__required" aria-hidden="true">
               *
             </span>
           )}
@@ -53,17 +53,17 @@ export default function Input({
 
       <div
         className={cn(
-          "flex items-center rounded-[var(--radius-xl)] border bg-[var(--color-input-bg)]",
-          "transition-[var(--transition-normal)] shadow-[var(--shadow-sm)]",
+          "flex items-center rounded-[var(--radius-control)] border bg-[var(--color-input-bg)]",
+          "transition-[var(--transition-normal)]",
           error
             ? "border-[var(--color-danger-500)]"
-            : "border-[var(--color-input-border)] focus-within:border-[var(--color-input-border-focus)] focus-within:ring-4 focus-within:ring-[var(--color-brand-100)]",
+            : "border-[var(--color-input-border)] focus-within:border-[var(--color-input-border-focus)] focus-within:ring-2 focus-within:ring-[var(--color-ocean-blue-soft)]",
           disabled && "bg-[var(--color-input-disabled-bg)] opacity-70",
           variants[variant]
         )}
       >
         {leftIcon && (
-          <div className="px-4 text-[var(--color-text-muted)]" aria-hidden="true">
+          <div className="shrink-0 pl-4 text-[var(--color-text-muted)]" aria-hidden="true">
             {leftIcon}
           </div>
         )}
@@ -76,12 +76,11 @@ export default function Input({
           onChange={onChange}
           placeholder={placeholder}
           disabled={disabled}
-          required={required}
           aria-invalid={error ? true : undefined}
           aria-describedby={errorId}
           aria-required={required || undefined}
           className={cn(
-            "w-full rounded-[var(--radius-xl)] bg-transparent px-4 text-[var(--color-input-text)] outline-none",
+            "w-full rounded-[var(--radius-control)] bg-transparent px-4 text-[var(--color-input-text)] outline-none",
             "placeholder:text-[var(--color-input-placeholder)]",
             "disabled:cursor-not-allowed",
             sizes[size] ?? sizes.md
@@ -90,7 +89,7 @@ export default function Input({
         />
 
         {rightIcon && (
-          <div className="px-4 text-[var(--color-text-muted)]" aria-hidden="true">
+          <div className="shrink-0 pr-4 text-[var(--color-text-muted)]" aria-hidden="true">
             {rightIcon}
           </div>
         )}

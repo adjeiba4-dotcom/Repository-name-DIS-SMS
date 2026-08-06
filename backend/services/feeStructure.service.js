@@ -5,6 +5,7 @@ const {
     NotFoundError,
     ConflictError,
 } = require("../errors");
+const { applyDateFields } = require("../utils/date");
 
 /**
  * Get all fee structures
@@ -110,7 +111,7 @@ const createFeeStructure = async(data) => {
     }
 
     return await feeStructureRepository.createFeeStructure(
-        data
+        applyDateFields(data, ["dueDate"], { allowNull: true })
     );
 };
 
@@ -215,13 +216,18 @@ const updateFeeStructure = async(
     }
 
     return await feeStructureRepository.updateFeeStructure(
-        Number(id), {
-            ...data,
-            academicYearId,
-            classId,
-            feeTypeId,
-            amount,
-        }
+        Number(id),
+        applyDateFields(
+            {
+                ...data,
+                academicYearId,
+                classId,
+                feeTypeId,
+                amount,
+            },
+            ["dueDate"],
+            { allowNull: true }
+        )
     );
 };
 

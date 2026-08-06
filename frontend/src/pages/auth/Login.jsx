@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Lock, Mail } from "lucide-react";
 
 import useAuth from "../../hooks/useAuth";
 
@@ -43,8 +44,8 @@ export default function Login() {
   };
 
   return (
-    <div className="w-full max-w-[400px]">
-      <div className="rounded-[var(--radius-xl)] border border-[var(--color-card-border)] bg-white p-10 shadow-[var(--shadow-sm)]">
+    <div className="relative z-[1] w-full max-w-[var(--layout-auth-card-max)]">
+      <div className="ds-panel">
         <Logo />
 
         {sessionExpired && !error && (
@@ -53,23 +54,30 @@ export default function Login() {
               variant="warning"
               title="Session expired"
               message="Your session has expired. Please sign in again to continue."
+              className="ds-radius-none mb-0"
             />
           </div>
         )}
 
         {error && (
           <div className="mt-8">
-            <Alert variant="error" message={error} />
+            <Alert
+              variant="error"
+              message={error}
+              className="ds-radius-none mb-0"
+            />
           </div>
         )}
 
-        <form className="mt-10 flex flex-col gap-7" onSubmit={handleSubmit}>
+        <form className="ds-form-stack mt-10" onSubmit={handleSubmit}>
           <Input
             label="Email"
             type="email"
             value={email}
             placeholder="Enter your email"
             className="mb-0 w-full"
+            autoComplete="username"
+            leftIcon={<Mail size={18} strokeWidth={1.75} />}
             onChange={(e) => setEmail(e.target.value)}
           />
 
@@ -77,6 +85,8 @@ export default function Login() {
             label="Password"
             value={password}
             className="mb-0 w-full"
+            autoComplete="current-password"
+            leftIcon={<Lock size={18} strokeWidth={1.75} />}
             onChange={(e) => setPassword(e.target.value)}
           />
 
@@ -94,7 +104,7 @@ export default function Login() {
               type="submit"
               loading={loading}
               size="md"
-              className="h-12 w-full rounded-[var(--radius-lg)] shadow-none hover:shadow-none active:scale-100"
+              className="ds-btn-signin shadow-none hover:shadow-none active:scale-100"
             >
               Sign In
             </Button>
@@ -102,7 +112,7 @@ export default function Login() {
         </form>
       </div>
 
-      <footer className="mt-8 space-y-1 text-center text-[var(--font-size-xs)] text-[var(--color-footer-text)]">
+      <footer className="ds-panel__footer">
         <p>Version 2.0</p>
         <p>© Data Insight Studio</p>
       </footer>

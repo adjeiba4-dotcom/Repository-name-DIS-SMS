@@ -2,14 +2,15 @@ import { useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import {
+  FormGridFull,
+  FormSection,
   SelectField,
-  SubmitButton,
   TextField,
 } from "../../components/form";
 import Alert from "../../components/ui/Alert";
 import Button from "../../components/ui/Button";
 import Drawer from "../../components/ui/Drawer";
-import { Body, Caption, H3 } from "../../components/ui/Typography";
+import { Caption } from "../../components/ui/Typography";
 import { getAcademicYears } from "../../services/academic-years/academicYear.service";
 import {
   createClass,
@@ -21,6 +22,7 @@ import {
   CLASS_STATUS_OPTIONS,
   buildClassPayload,
   getApiErrorMessage,
+  getApiFieldErrors,
   mapClassToForm,
   teacherDisplayName,
   validateClassForm,
@@ -37,34 +39,31 @@ const INITIAL_FORM = {
   status: "Active",
 };
 
-function buildInitialForm(isEdit, schoolClass) {
-  const mapped = isEdit && schoolClass ? mapClassToForm(schoolClass) : null;
+function buildInitialForm(schoolClass) {
+  const mapped = schoolClass ? mapClassToForm(schoolClass) : null;
   return mapped ? { ...INITIAL_FORM, ...mapped } : { ...INITIAL_FORM };
 }
 
-function FormSection({ title, description, children }) {
-  return (
-    <section className="space-y-[var(--space-4)] border-b border-[var(--color-border-muted)] pb-[var(--space-6)] last:border-b-0 last:pb-0">
-      <div className="space-y-[var(--space-1)]">
-        <H3 size="sm">{title}</H3>
-        {description && (
-          <Body variant="muted" size="sm" className="m-0">
-            {description}
-          </Body>
-        )}
-      </div>
-      <div className="grid grid-cols-1 gap-x-[var(--space-4)] gap-y-0 sm:grid-cols-2">
-        {children}
-      </div>
-    </section>
+function ClassFormBody({
+  formId,
+  schoolClass,
+  onClose,
+  onSuccess,
+  saving,
+  setSaving,
+}) {
+  // Lock the record id at mount. Remount via key when switching create/edit.
+  // Save path depends ONLY on this id — never on a parent "mode" flag.
+  const [editingId] = useState(() =>
+    schoolClass?.id != null && schoolClass.id !== ""
+      ? String(schoolClass.id)
+      : null
   );
-}
+  const isUpdate = Boolean(editingId);
 
-function ClassFormBody({ formId, isEdit, schoolClass, onClose, onSuccess }) {
-  const [form, setForm] = useState(() => buildInitialForm(isEdit, schoolClass));
+  const [form, setForm] = useState(() => buildInitialForm(schoolClass));
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
-  const [saving, setSaving] = useState(false);
 
   const yearsQuery = useQuery({
     queryKey: ["academic-years", "class-form-options"],
@@ -118,30 +117,42 @@ function ClassFormBody({ formId, isEdit, schoolClass, onClose, onSuccess }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    event.stopPropagation();
+
     const nextErrors = validateClassForm(form);
     setErrors(nextErrors);
     setSubmitError("");
 
     if (Object.keys(nextErrors).length > 0) return;
 
+    const payload = buildClassPayload(form);
+    if (
+      !Number.isInteger(payload.academicYearId) ||
+      payload.academicYearId < 1
+    ) {
+      setErrors({ academicYearId: "Academic year is required." });
+      return;
+    }
+
     setSaving(true);
     try {
-      const payload = buildClassPayload(form);
-      const response = isEdit
-        ? await updateClass(schoolClass.id, payload)
-        : await createClass(payload);
-
-      onSuccess?.(
-        response?.data,
-        response?.message,
-        isEdit ? "update" : "create"
-      );
+      if (isUpdate) {
+        const response = await updateClass(editingId, payload);
+        onSuccess?.(response?.data, response?.message, "update");
+      } else {
+        const response = await createClass(payload);
+        onSuccess?.(response?.data, response?.message, "create");
+      }
       onClose?.();
     } catch (error) {
+      const fieldErrors = getApiFieldErrors(error);
+      if (Object.keys(fieldErrors).length > 0) {
+        setErrors((prev) => ({ ...prev, ...fieldErrors }));
+      }
       setSubmitError(
         getApiErrorMessage(
           error,
-          isEdit ? "Unable to update class." : "Unable to create class."
+          isUpdate ? "Unable to update class." : "Unable to create class."
         )
       );
     } finally {
@@ -156,32 +167,40 @@ function ClassFormBody({ formId, isEdit, schoolClass, onClose, onSuccess }) {
       noValidate
       className="space-y-[var(--space-6)]"
     >
+      {isUpdate ? (
+        <input type="hidden" name="id" value={editingId} readOnly />
+      ) : null}
+
       {submitError ? (
-        <Alert variant="danger" title="Unable to save">
-          {submitError}
-        </Alert>
+        <Alert variant="error" title="Unable to save" message={submitError} />
+      ) : null}
+
+      {Object.keys(errors).length > 0 && !submitError ? (
+        <Alert
+          variant="error"
+          message="Please correct the highlighted fields before saving."
+        />
       ) : null}
 
       <FormSection
         title="Class details"
         description="Class code must be unique within the selected academic year."
       >
-        <SelectField
-          label="Academic year"
-          name="academicYearId"
-          value={form.academicYearId}
-          onChange={(event) =>
-            updateField("academicYearId", event.target.value)
-          }
-          options={[
-            { value: "", label: "Select academic year" },
-            ...yearOptions,
-          ]}
-          error={errors.academicYearId}
-          required
-          className="sm:col-span-2"
-          disabled={yearsQuery.isLoading}
-        />
+        <FormGridFull>
+          <SelectField
+            label="Academic year"
+            name="academicYearId"
+            value={form.academicYearId}
+            onChange={(event) =>
+              updateField("academicYearId", event.target.value)
+            }
+            options={yearOptions}
+            placeholder="Select academic year"
+            error={errors.academicYearId}
+            required
+            disabled={saving || yearsQuery.isLoading}
+          />
+        </FormGridFull>
         <TextField
           label="Class code"
           name="classCode"
@@ -190,6 +209,7 @@ function ClassFormBody({ formId, isEdit, schoolClass, onClose, onSuccess }) {
           placeholder="e.g. SHS1A"
           error={errors.classCode}
           required
+          disabled={saving}
         />
         <TextField
           label="Class name"
@@ -199,6 +219,7 @@ function ClassFormBody({ formId, isEdit, schoolClass, onClose, onSuccess }) {
           placeholder="e.g. SHS 1 Science A"
           error={errors.className}
           required
+          disabled={saving}
         />
         <SelectField
           label="Department"
@@ -207,12 +228,10 @@ function ClassFormBody({ formId, isEdit, schoolClass, onClose, onSuccess }) {
           onChange={(event) =>
             updateField("departmentId", event.target.value)
           }
-          options={[
-            { value: "", label: "No department" },
-            ...departmentOptions,
-          ]}
+          options={departmentOptions}
+          placeholder="No department"
           error={errors.departmentId}
-          disabled={departmentsQuery.isLoading}
+          disabled={saving || departmentsQuery.isLoading}
         />
         <SelectField
           label="Class teacher"
@@ -221,12 +240,10 @@ function ClassFormBody({ formId, isEdit, schoolClass, onClose, onSuccess }) {
           onChange={(event) =>
             updateField("classTeacherId", event.target.value)
           }
-          options={[
-            { value: "", label: "No class teacher" },
-            ...teacherOptions,
-          ]}
+          options={teacherOptions}
+          placeholder="No class teacher"
           error={errors.classTeacherId}
-          disabled={teachersQuery.isLoading}
+          disabled={saving || teachersQuery.isLoading}
         />
         <TextField
           label="Capacity"
@@ -238,6 +255,7 @@ function ClassFormBody({ formId, isEdit, schoolClass, onClose, onSuccess }) {
           placeholder="e.g. 45"
           error={errors.capacity}
           required
+          disabled={saving}
         />
         <SelectField
           label="Status"
@@ -250,78 +268,106 @@ function ClassFormBody({ formId, isEdit, schoolClass, onClose, onSuccess }) {
           }))}
           error={errors.status}
           required
-        />
-        <TextField
-          label="Description"
-          name="description"
-          value={form.description}
-          onChange={(event) =>
-            updateField("description", event.target.value)
-          }
-          placeholder="Optional notes"
-          error={errors.description}
-          className="sm:col-span-2"
-        />
-        <Caption variant="muted" size="sm" className="m-0 sm:col-span-2">
-          Capacity must be greater than zero. A class with enrolled students
-          cannot be archived.
-        </Caption>
-      </FormSection>
-
-      <div className="mt-[var(--space-6)] flex flex-wrap justify-end gap-[var(--space-2)] border-t border-[var(--color-border-muted)] pt-[var(--space-4)]">
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          className="w-auto"
-          onClick={onClose}
           disabled={saving}
-        >
-          Cancel
-        </Button>
-        <SubmitButton loading={saving} size="sm">
-          {isEdit ? "Save Changes" : "Create Class"}
-        </SubmitButton>
-      </div>
+        />
+        <FormGridFull>
+          <TextField
+            label="Description"
+            name="description"
+            value={form.description}
+            onChange={(event) =>
+              updateField("description", event.target.value)
+            }
+            placeholder="Optional notes"
+            error={errors.description}
+            disabled={saving}
+          />
+        </FormGridFull>
+        <FormGridFull>
+          <Caption variant="muted" size="sm" className="m-0">
+            Capacity must be greater than zero. A class with enrolled students
+            cannot be archived.
+          </Caption>
+        </FormGridFull>
+      </FormSection>
     </form>
   );
 }
 
 /**
  * Add / Edit class drawer form.
+ * Create vs update is decided solely by whether `schoolClass.id` is present
+ * when the form body mounts (see editingId).
  * Exported aliases: AddClass, EditClass
  */
 export default function ClassForm({
   open,
   onClose,
   onSuccess,
-  mode = "create",
   schoolClass = null,
 }) {
-  const isEdit = mode === "edit";
-  const formId = useId();
-  const instanceKey = `${mode}:${schoolClass?.id ?? "new"}:${open ? "open" : "closed"}`;
+  const reactId = useId();
+  const formId = `class-drawer-form-${reactId.replace(/:/g, "")}`;
+  const [saving, setSaving] = useState(false);
+  const recordId =
+    schoolClass?.id != null && schoolClass.id !== ""
+      ? String(schoolClass.id)
+      : null;
+  const isUpdate = Boolean(recordId);
+  const instanceKey = `${recordId ?? "new"}:${open ? "open" : "closed"}`;
+
+  const handleClose = () => {
+    if (saving) return;
+    onClose?.();
+  };
 
   return (
     <Drawer
       open={open}
-      onClose={onClose}
-      title={isEdit ? "Edit Class" : "Add Class"}
+      onClose={handleClose}
+      title={isUpdate ? "Edit Class" : "Add Class"}
       description={
-        isEdit
+        isUpdate
           ? "Update class details, capacity, department, or class teacher."
           : "Create a new school class under an academic year."
       }
       size="md"
+      disabled={saving}
+      footer={
+        <div className="flex flex-wrap justify-end gap-[var(--space-2)]">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="w-auto"
+            onClick={handleClose}
+            disabled={saving}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form={formId}
+            variant="primary"
+            size="sm"
+            className="w-auto"
+            loading={saving}
+            disabled={saving}
+          >
+            {isUpdate ? "Save Changes" : "Create Class"}
+          </Button>
+        </div>
+      }
     >
       {open ? (
         <ClassFormBody
           key={instanceKey}
           formId={formId}
-          isEdit={isEdit}
           schoolClass={schoolClass}
-          onClose={onClose}
+          onClose={handleClose}
           onSuccess={onSuccess}
+          saving={saving}
+          setSaving={setSaving}
         />
       ) : null}
     </Drawer>
@@ -329,9 +375,9 @@ export default function ClassForm({
 }
 
 export function AddClass(props) {
-  return <ClassForm mode="create" {...props} />;
+  return <ClassForm schoolClass={null} {...props} />;
 }
 
-export function EditClass(props) {
-  return <ClassForm mode="edit" {...props} />;
+export function EditClass({ schoolClass, ...props }) {
+  return <ClassForm schoolClass={schoolClass} {...props} />;
 }

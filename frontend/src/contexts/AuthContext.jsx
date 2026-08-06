@@ -12,6 +12,7 @@ import {
     saveAuth,
     getCurrentUser,
     isAuthenticated,
+    fetchCurrentUser,
 } from "../services/auth/auth.service";
 
 const AuthContext = createContext(null);
@@ -21,13 +22,39 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const currentUser = getCurrentUser();
+        let cancelled = false;
 
-        if (currentUser) {
-            setUser(currentUser);
-        }
+        const hydrate = async () => {
+            const cachedUser = getCurrentUser();
 
-        setLoading(false);
+            if (cachedUser) {
+                setUser(cachedUser);
+            }
+
+            if (!isAuthenticated()) {
+                if (!cancelled) setLoading(false);
+                return;
+            }
+
+            try {
+                // Refresh profile so greetings use current display name fields.
+                const freshUser = await fetchCurrentUser();
+                if (!cancelled && freshUser) {
+                    setUser(freshUser);
+                    localStorage.setItem("user", JSON.stringify(freshUser));
+                }
+            } catch {
+                // Keep cached user if /me fails; auth interceptors handle 401.
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        };
+
+        hydrate();
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     /**

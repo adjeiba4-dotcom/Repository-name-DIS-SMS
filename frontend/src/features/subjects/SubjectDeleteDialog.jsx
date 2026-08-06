@@ -49,8 +49,9 @@ export default function SubjectDeleteDialog({
     >
       <Body variant="secondary" size="sm" className="m-0">
         You are about to archive <strong>{name}</strong>. Archiving is blocked
-        when the subject is linked to teacher assignments, class assignments, or
-        examinations. Soft-deleted subjects can be restored later.
+        when the subject is linked to teacher or class allocations, assessments,
+        examinations, results, or timetables. Soft-deleted subjects can be
+        restored later.
       </Body>
       {error && (
         <p

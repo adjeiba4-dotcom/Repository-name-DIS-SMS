@@ -9,9 +9,11 @@ export default function NotFound() {
       <PageHeader
         title="Page not found"
         description="This path is not registered in the application routes."
-        variant="plain"
-        size="sm"
-        className="px-0"
+        breadcrumbs={[
+          { label: "Home", to: "/" },
+          { label: "Not found" },
+        ]}
+        variant="default"
       />
 
       <Body variant="muted" size="sm">

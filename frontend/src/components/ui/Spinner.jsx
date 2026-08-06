@@ -1,7 +1,7 @@
 import { cn } from "../../utils/cn";
 
 const variants = {
-  primary: "border-[var(--color-brand-600)] border-t-transparent",
+  primary: "border-[var(--color-ocean-blue)] border-t-transparent",
   secondary: "border-[var(--color-border-strong)] border-t-transparent",
   inverse: "border-[var(--color-text-inverse)] border-t-transparent",
   success: "border-[var(--color-success-600)] border-t-transparent",

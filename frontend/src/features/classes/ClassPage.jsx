@@ -72,9 +72,12 @@ export default function ClassPage() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileClassId, setProfileClassId] = useState(null);
 
-  const [formOpen, setFormOpen] = useState(false);
-  const [formMode, setFormMode] = useState("create");
-  const [editingClass, setEditingClass] = useState(null);
+  // Atomic drawer state — open/record always update together so edit
+  // cannot mount as create.
+  const [drawer, setDrawer] = useState({
+    open: false,
+    record: null,
+  });
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -198,9 +201,7 @@ export default function ClassPage() {
         : "";
 
   const openCreateForm = () => {
-    setFormMode("create");
-    setEditingClass(null);
-    setFormOpen(true);
+    setDrawer({ open: true, record: null });
   };
 
   const openEditForm = async (classLike) => {
@@ -210,13 +211,14 @@ export default function ClassPage() {
     setProfileOpen(false);
     try {
       const response = await getClassById(id);
-      setEditingClass(response?.data ?? classLike);
+      setDrawer({ open: true, record: response?.data ?? classLike });
     } catch {
-      setEditingClass(classLike);
-    } finally {
-      setFormMode("edit");
-      setFormOpen(true);
+      setDrawer({ open: true, record: classLike });
     }
+  };
+
+  const closeForm = () => {
+    setDrawer({ open: false, record: null });
   };
 
   const handleView = (row) => {
@@ -378,10 +380,16 @@ export default function ClassPage() {
         title="Directory Controls"
         description="Switch between active and archived classes."
       >
-        <div className="flex flex-wrap gap-[var(--space-2)]">
+        <div
+          role="tablist"
+          aria-label="Class directory"
+          className="flex flex-wrap gap-[var(--space-2)]"
+        >
           <Button
             type="button"
-            variant={viewMode === "active" ? "primary" : "secondary"}
+            role="tab"
+            aria-selected={viewMode === "active"}
+            variant={viewMode === "active" ? "primary" : "outline"}
             size="sm"
             className="w-auto"
             onClick={() => setViewMode("active")}
@@ -392,7 +400,9 @@ export default function ClassPage() {
           </Button>
           <Button
             type="button"
-            variant={viewMode === "archived" ? "primary" : "secondary"}
+            role="tab"
+            aria-selected={viewMode === "archived"}
+            variant={viewMode === "archived" ? "primary" : "outline"}
             size="sm"
             className="w-auto"
             onClick={() => setViewMode("archived")}
@@ -433,14 +443,9 @@ export default function ClassPage() {
       />
 
       <ClassForm
-        open={formOpen}
-        mode={formMode}
-        schoolClass={formMode === "edit" ? editingClass : null}
-        onClose={() => {
-          setFormOpen(false);
-          setEditingClass(null);
-          setFormMode("create");
-        }}
+        open={drawer.open}
+        schoolClass={drawer.record}
+        onClose={closeForm}
         onSuccess={handleFormSuccess}
       />
 

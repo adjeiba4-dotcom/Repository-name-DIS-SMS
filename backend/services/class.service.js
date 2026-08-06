@@ -1,6 +1,7 @@
 // services/class.service.js
 
 const classRepository = require("../repositories/class.repository");
+const auditService = require("./audit.service");
 const {
     NotFoundError,
     ConflictError,
@@ -71,6 +72,45 @@ function assertValidCapacity(capacity) {
     }
 }
 
+function toAuditSnapshot(schoolClass) {
+    if (!schoolClass) return null;
+    return {
+        id: schoolClass.id,
+        classCode: schoolClass.classCode,
+        className: schoolClass.className,
+        academicYearId: schoolClass.academicYearId,
+        departmentId: schoolClass.departmentId ?? null,
+        classTeacherId: schoolClass.classTeacherId ?? null,
+        capacity: schoolClass.capacity,
+        description: schoolClass.description ?? null,
+        status: schoolClass.status,
+        deletedAt: schoolClass.deletedAt ?? null,
+        createdAt: schoolClass.createdAt ?? null,
+        updatedAt: schoolClass.updatedAt ?? null,
+    };
+}
+
+async function recordClassAudit({
+    actor = {},
+    action,
+    schoolClass,
+    oldClass = null,
+    description,
+}) {
+    await auditService.recordSafe({
+        userId: actor.userId,
+        module: "Classes",
+        action,
+        entityType: "SchoolClass",
+        recordId: schoolClass?.id ?? null,
+        description,
+        oldValues: toAuditSnapshot(oldClass),
+        newValues: toAuditSnapshot(schoolClass),
+        ipAddress: actor.ipAddress,
+        userAgent: actor.userAgent,
+    });
+}
+
 class ClassService {
     async getClasses(query = {}) {
         const page = Math.max(1, parseInt(query.page, 10) || 1);
@@ -85,7 +125,9 @@ class ClassService {
         const departmentId = query.departmentId
             ? parseInt(query.departmentId, 10)
             : null;
-        const status = query.status ? String(query.status).trim().toUpperCase() : null;
+        const status = query.status
+            ? String(query.status).trim().toUpperCase()
+            : null;
         const sortBy = (query.sortBy || "className").trim();
         const sortOrder = (query.sortOrder || "asc").trim().toLowerCase();
 
@@ -125,7 +167,7 @@ class ClassService {
         return classRepository.findArchivedClasses();
     }
 
-    async createClass(rawData) {
+    async createClass(rawData, actor = {}) {
         const data = sanitizeClassData(rawData);
 
         if (
@@ -181,11 +223,21 @@ class ClassService {
             );
         }
 
-        return classRepository.createClass(data);
+        const created = await classRepository.createClass(data);
+
+        await recordClassAudit({
+            actor,
+            action: "CREATE",
+            schoolClass: created,
+            description: `Created class ${created.classCode} — ${created.className}`,
+        });
+
+        return created;
     }
 
-    async updateClass(id, rawData) {
-        const schoolClass = await classRepository.findClassById(id);
+    async updateClass(id, rawData, actor = {}) {
+        const classId = Number(id);
+        const schoolClass = await classRepository.findClassById(classId);
 
         if (!schoolClass) {
             throw new NotFoundError("Class not found.");
@@ -236,7 +288,7 @@ class ClassService {
             const existing = await classRepository.findClassByCode(
                 academicYearId,
                 nextCode,
-                { excludeId: id }
+                { excludeId: classId }
             );
             if (existing) {
                 throw new ConflictError(
@@ -247,17 +299,28 @@ class ClassService {
             }
         }
 
-        return classRepository.updateClass(id, data);
+        const updated = await classRepository.updateClass(classId, data);
+
+        await recordClassAudit({
+            actor,
+            action: "UPDATE",
+            schoolClass: updated,
+            oldClass: schoolClass,
+            description: `Updated class ${updated.classCode} — ${updated.className}`,
+        });
+
+        return updated;
     }
 
-    async deleteClass(id) {
-        const schoolClass = await classRepository.findClassById(id);
+    async deleteClass(id, actor = {}) {
+        const classId = Number(id);
+        const schoolClass = await classRepository.findClassById(classId);
 
         if (!schoolClass) {
             throw new NotFoundError("Class not found.");
         }
 
-        const enrolled = await classRepository.countEnrolledStudents(id);
+        const enrolled = await classRepository.countEnrolledStudents(classId);
 
         if (enrolled.students > 0 || enrolled.enrollments > 0) {
             throw new ConflictError(
@@ -265,12 +328,23 @@ class ClassService {
             );
         }
 
-        return classRepository.softDeleteClass(id);
+        const archived = await classRepository.softDeleteClass(classId);
+
+        await recordClassAudit({
+            actor,
+            action: "ARCHIVE",
+            schoolClass: archived,
+            oldClass: schoolClass,
+            description: `Archived class ${archived.classCode} — ${archived.className}`,
+        });
+
+        return archived;
     }
 
-    async restoreClass(id, { activate = false } = {}) {
+    async restoreClass(id, { activate = false } = {}, actor = {}) {
+        const classId = Number(id);
         const schoolClass =
-            await classRepository.findClassByIdIncludingDeleted(id);
+            await classRepository.findClassByIdIncludingDeleted(classId);
 
         if (!schoolClass) {
             throw new NotFoundError("Class not found.");
@@ -283,7 +357,7 @@ class ClassService {
         const existingCode = await classRepository.findClassByCode(
             schoolClass.academicYearId,
             schoolClass.classCode,
-            { excludeId: id }
+            { excludeId: classId }
         );
         if (existingCode && !existingCode.deletedAt) {
             throw new ConflictError(
@@ -291,9 +365,19 @@ class ClassService {
             );
         }
 
-        return classRepository.restoreClass(id, {
+        const restored = await classRepository.restoreClass(classId, {
             status: activate ? "ACTIVE" : "INACTIVE",
         });
+
+        await recordClassAudit({
+            actor,
+            action: "RESTORE",
+            schoolClass: restored,
+            oldClass: schoolClass,
+            description: `Restored class ${restored.classCode} — ${restored.className}`,
+        });
+
+        return restored;
     }
 }
 

@@ -3,6 +3,14 @@
 const classService = require("../services/class.service");
 const ApiResponse = require("../utils/response");
 
+function actorFrom(req) {
+    return {
+        userId: req.user?.id,
+        ipAddress: req.ip,
+        userAgent: req.get?.("user-agent") || null,
+    };
+}
+
 exports.getClasses = async (req, res, next) => {
     try {
         const result = await classService.getClasses(req.query);
@@ -55,7 +63,10 @@ exports.getArchivedClasses = async (req, res, next) => {
 
 exports.createClass = async (req, res, next) => {
     try {
-        const schoolClass = await classService.createClass(req.body);
+        const schoolClass = await classService.createClass(
+            req.body,
+            actorFrom(req)
+        );
 
         return ApiResponse.created(
             res,
@@ -71,7 +82,8 @@ exports.updateClass = async (req, res, next) => {
     try {
         const schoolClass = await classService.updateClass(
             parseInt(req.params.id, 10),
-            req.body
+            req.body,
+            actorFrom(req)
         );
 
         return ApiResponse.success(
@@ -87,7 +99,8 @@ exports.updateClass = async (req, res, next) => {
 exports.deleteClass = async (req, res, next) => {
     try {
         const schoolClass = await classService.deleteClass(
-            parseInt(req.params.id, 10)
+            parseInt(req.params.id, 10),
+            actorFrom(req)
         );
 
         return ApiResponse.success(
@@ -107,7 +120,8 @@ exports.restoreClass = async (req, res, next) => {
 
         const schoolClass = await classService.restoreClass(
             parseInt(req.params.id, 10),
-            { activate }
+            { activate },
+            actorFrom(req)
         );
 
         return ApiResponse.success(

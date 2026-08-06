@@ -20,6 +20,7 @@ import {
   TERM_STATUS_OPTIONS,
   buildTermPayload,
   getApiErrorMessage,
+  getApiFieldErrors,
   mapTermToForm,
   validateTermForm,
 } from "./term.mappers";
@@ -34,8 +35,8 @@ const INITIAL_FORM = {
   status: "Active",
 };
 
-function buildInitialForm(isEdit, term) {
-  const mapped = isEdit && term ? mapTermToForm(term) : null;
+function buildInitialForm(term) {
+  const mapped = term ? mapTermToForm(term) : null;
   return mapped ? { ...INITIAL_FORM, ...mapped } : { ...INITIAL_FORM };
 }
 
@@ -57,8 +58,15 @@ function FormSection({ title, description, children }) {
   );
 }
 
-function TermFormBody({ formId, isEdit, term, onClose, onSuccess }) {
-  const [form, setForm] = useState(() => buildInitialForm(isEdit, term));
+function TermFormBody({ formId, term, onClose, onSuccess }) {
+  // Lock the record id at mount. Remount via key when switching create/edit.
+  // Save path depends ONLY on this id — never on a parent "mode" flag.
+  const [editingId] = useState(() =>
+    term?.id != null && term.id !== "" ? String(term.id) : null
+  );
+  const isUpdate = Boolean(editingId);
+
+  const [form, setForm] = useState(() => buildInitialForm(term));
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -71,10 +79,14 @@ function TermFormBody({ formId, isEdit, term, onClose, onSuccess }) {
     },
   });
 
-  const yearOptions = (yearsQuery.data ?? []).map((year) => ({
+  const years = yearsQuery.data ?? [];
+  const yearOptions = years.map((year) => ({
     value: String(year.id),
     label: year.name,
   }));
+  const selectedYear =
+    years.find((year) => String(year.id) === String(form.academicYearId)) ||
+    null;
 
   const updateField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -89,30 +101,39 @@ function TermFormBody({ formId, isEdit, term, onClose, onSuccess }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const nextErrors = validateTermForm(form);
+    event.stopPropagation();
+
+    const nextErrors = validateTermForm(form, selectedYear);
     setErrors(nextErrors);
     setSubmitError("");
 
     if (Object.keys(nextErrors).length > 0) return;
 
+    const payload = buildTermPayload(form);
+    if (!Number.isInteger(payload.academicYearId) || payload.academicYearId < 1) {
+      setErrors({ academicYearId: "Academic year is required." });
+      return;
+    }
+
     setSaving(true);
     try {
-      const payload = buildTermPayload(form);
-      const response = isEdit
-        ? await updateTerm(term.id, payload)
-        : await createTerm(payload);
-
-      onSuccess?.(
-        response?.data,
-        response?.message,
-        isEdit ? "update" : "create"
-      );
+      if (isUpdate) {
+        const response = await updateTerm(editingId, payload);
+        onSuccess?.(response?.data, response?.message, "update");
+      } else {
+        const response = await createTerm(payload);
+        onSuccess?.(response?.data, response?.message, "create");
+      }
       onClose?.();
     } catch (error) {
+      const fieldErrors = getApiFieldErrors(error);
+      if (Object.keys(fieldErrors).length > 0) {
+        setErrors((prev) => ({ ...prev, ...fieldErrors }));
+      }
       setSubmitError(
         getApiErrorMessage(
           error,
-          isEdit ? "Unable to update term." : "Unable to create term."
+          isUpdate ? "Unable to update term." : "Unable to create term."
         )
       );
     } finally {
@@ -127,15 +148,28 @@ function TermFormBody({ formId, isEdit, term, onClose, onSuccess }) {
       noValidate
       className="space-y-[var(--space-6)]"
     >
+      {isUpdate ? (
+        <input type="hidden" name="id" value={editingId} readOnly />
+      ) : null}
+
       {submitError ? (
-        <Alert variant="danger" title="Unable to save">
-          {submitError}
-        </Alert>
+        <Alert variant="error" title="Unable to save" message={submitError} />
+      ) : null}
+
+      {Object.keys(errors).length > 0 && !submitError ? (
+        <Alert
+          variant="error"
+          message="Please correct the highlighted fields before saving."
+        />
       ) : null}
 
       <FormSection
         title="Term details"
-        description="Code and name must be unique within the selected academic year."
+        description={
+          isUpdate
+            ? "Update the selected term. Code and name must stay unique within the academic year."
+            : "Code and name must be unique within the selected academic year."
+        }
       >
         <SelectField
           label="Academic year"
@@ -144,15 +178,20 @@ function TermFormBody({ formId, isEdit, term, onClose, onSuccess }) {
           onChange={(event) =>
             updateField("academicYearId", event.target.value)
           }
-          options={[
-            { value: "", label: "Select academic year" },
-            ...yearOptions,
-          ]}
+          options={yearOptions}
+          placeholder="Select academic year"
           error={errors.academicYearId}
           required
           className="sm:col-span-2"
-          disabled={yearsQuery.isLoading}
+          disabled={saving || yearsQuery.isLoading}
         />
+        {selectedYear ? (
+          <Caption variant="muted" size="sm" className="m-0 sm:col-span-2">
+            Selected year window:{" "}
+            {String(selectedYear.startDate).slice(0, 10)} –{" "}
+            {String(selectedYear.endDate).slice(0, 10)}
+          </Caption>
+        ) : null}
         <TextField
           label="Code"
           name="code"
@@ -161,6 +200,7 @@ function TermFormBody({ formId, isEdit, term, onClose, onSuccess }) {
           placeholder="e.g. T1"
           error={errors.code}
           required
+          disabled={saving}
         />
         <TextField
           label="Name"
@@ -170,6 +210,7 @@ function TermFormBody({ formId, isEdit, term, onClose, onSuccess }) {
           placeholder="e.g. First Term"
           error={errors.name}
           required
+          disabled={saving}
         />
         <TextField
           label="Description"
@@ -181,6 +222,7 @@ function TermFormBody({ formId, isEdit, term, onClose, onSuccess }) {
           placeholder="Optional notes"
           error={errors.description}
           className="sm:col-span-2"
+          disabled={saving}
         />
         <DatePickerField
           label="Start date"
@@ -189,6 +231,7 @@ function TermFormBody({ formId, isEdit, term, onClose, onSuccess }) {
           onChange={(event) => updateField("startDate", event.target.value)}
           error={errors.startDate}
           required
+          disabled={saving}
         />
         <DatePickerField
           label="End date"
@@ -197,6 +240,7 @@ function TermFormBody({ formId, isEdit, term, onClose, onSuccess }) {
           onChange={(event) => updateField("endDate", event.target.value)}
           error={errors.endDate}
           required
+          disabled={saving}
         />
         <SelectField
           label="Status"
@@ -210,6 +254,7 @@ function TermFormBody({ formId, isEdit, term, onClose, onSuccess }) {
           error={errors.status}
           required
           className="sm:col-span-2"
+          disabled={saving}
         />
         <Caption variant="muted" size="sm" className="m-0 sm:col-span-2">
           Selecting Active marks this as the current term and sets any other
@@ -230,7 +275,7 @@ function TermFormBody({ formId, isEdit, term, onClose, onSuccess }) {
           Cancel
         </Button>
         <SubmitButton loading={saving} size="sm">
-          {isEdit ? "Save Changes" : "Create Term"}
+          {isUpdate ? "Save Changes" : "Create Term"}
         </SubmitButton>
       </div>
     </form>
@@ -238,27 +283,30 @@ function TermFormBody({ formId, isEdit, term, onClose, onSuccess }) {
 }
 
 /**
- * Add / Edit term drawer form.
- * Exported aliases: AddTerm, EditTerm
+ * Add / Edit term drawer.
+ * Create vs update is decided solely by whether `term.id` is present when the
+ * form body mounts (see editingId). Parent must pass the record atomically
+ * with open=true for edits.
  */
 export default function TermForm({
   open,
   onClose,
   onSuccess,
-  mode = "create",
   term = null,
 }) {
-  const isEdit = mode === "edit";
   const formId = useId();
-  const instanceKey = `${mode}:${term?.id ?? "new"}:${open ? "open" : "closed"}`;
+  const recordId =
+    term?.id != null && term.id !== "" ? String(term.id) : null;
+  const isUpdate = Boolean(recordId);
+  const instanceKey = `${recordId ?? "new"}:${open ? "open" : "closed"}`;
 
   return (
     <Drawer
       open={open}
       onClose={onClose}
-      title={isEdit ? "Edit Term" : "Add Term"}
+      title={isUpdate ? "Edit Term" : "Add Term"}
       description={
-        isEdit
+        isUpdate
           ? "Update term dates and status. Setting status to Active demotes any other active term."
           : "Create a new term under an academic year. Only one Active term is allowed."
       }
@@ -268,7 +316,6 @@ export default function TermForm({
         <TermFormBody
           key={instanceKey}
           formId={formId}
-          isEdit={isEdit}
           term={term}
           onClose={onClose}
           onSuccess={onSuccess}
@@ -279,9 +326,9 @@ export default function TermForm({
 }
 
 export function AddTerm(props) {
-  return <TermForm mode="create" {...props} />;
+  return <TermForm term={null} {...props} />;
 }
 
-export function EditTerm(props) {
-  return <TermForm mode="edit" {...props} />;
+export function EditTerm({ term, ...props }) {
+  return <TermForm term={term} {...props} />;
 }

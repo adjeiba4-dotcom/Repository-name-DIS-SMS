@@ -1,0 +1,13 @@
+export { default as ResultPage } from "./ResultPage";
+export { default as ResultList } from "./ResultList";
+export { default as ResultGenerateForm } from "./ResultGenerateForm";
+export { default as ResultProfile } from "./ResultProfile";
+export { default as StudentResultProfile } from "./StudentResultProfile";
+export { default as ResultDetails } from "./ResultDetails";
+export { default as ResultDeleteDialog } from "./ResultDeleteDialog";
+export { default as ResultStats } from "./ResultStats";
+export { default as ResultSummaries } from "./ResultSummaries";
+export { default as ResultBroadsheet } from "./ResultBroadsheet";
+export { default as ResultMeritList } from "./ResultMeritList";
+export * from "./result.mappers";
+export * from "./result.export";

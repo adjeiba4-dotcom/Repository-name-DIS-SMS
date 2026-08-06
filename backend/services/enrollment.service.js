@@ -6,6 +6,7 @@ const {
     ConflictError,
     BadRequestError,
 } = require("../errors");
+const { toDate } = require("../utils/date");
 
 const ENROLLMENT_FIELDS = [
     "studentId",
@@ -41,7 +42,7 @@ function sanitizeEnrollmentData(data = {}) {
 
         if (field === "enrollmentDate") {
             if (data[field] === null || data[field] === "") continue;
-            payload[field] = new Date(data[field]);
+            payload[field] = toDate(data[field]);
             continue;
         }
 

@@ -6,7 +6,7 @@ import Avatar from "../../components/ui/Avatar";
 import Button from "../../components/ui/Button";
 import Drawer from "../../components/ui/Drawer";
 import Input from "../../components/ui/Input";
-import Spinner from "../../components/ui/Spinner";
+import { Skeleton } from "../../components/ui/Skeleton";
 import { toastError } from "../../components/ui/Toast";
 import { Body, Caption, H3 } from "../../components/ui/Typography";
 import { createGuardian, updateGuardian } from "../../services/guardians/guardian.service";
@@ -622,11 +622,14 @@ export default function StudentRegistrationForm({
             disabled={saving || classesLoading || Boolean(classesError)}
           />
           {classesLoading && (
-            <div className="mb-5 flex items-center gap-[var(--space-2)] sm:col-span-2">
-              <Spinner size="sm" label="Loading classes" />
-              <Caption variant="muted" size="sm" className="m-0">
-                Loading available classes…
-              </Caption>
+            <div
+              className="mb-5 sm:col-span-2"
+              role="status"
+              aria-live="polite"
+              aria-label="Loading available classes"
+            >
+              <Skeleton className="h-2 w-full" />
+              <span className="sr-only">Loading available classes…</span>
             </div>
           )}
           <Input

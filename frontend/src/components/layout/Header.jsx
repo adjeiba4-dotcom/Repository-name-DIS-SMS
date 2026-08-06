@@ -1,149 +1,224 @@
-import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useId, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Bell,
+  ChevronDown,
   LogOut,
   Menu,
-  PanelLeftClose,
-  PanelLeftOpen,
   Search,
   Settings,
+  User,
 } from "lucide-react";
 
 import useAuth from "../../hooks/useAuth";
 import { useSidebar } from "../../hooks/useSidebar";
-import { findNavigationItemByPath } from "../../utils/navigation";
+import { useCommandPalette } from "../../contexts/CommandPaletteContext";
+import { useModKeyLabel } from "../../hooks/useHotkeys";
+import { getSearchPlaceholder } from "../../utils/searchPlaceholders";
 import { cn } from "../../utils/cn";
+import {
+  getUserDisplayName,
+  getUserRoleLabel,
+} from "../../utils/userDisplay";
 import Avatar from "../ui/Avatar";
-import Button from "../ui/Button";
-import { Caption, H2 } from "../ui/Typography";
-
-function displayName(user) {
-  if (!user) return "User";
-  return (
-    user.fullName ||
-    user.name ||
-    [user.firstName, user.lastName].filter(Boolean).join(" ") ||
-    user.email ||
-    "User"
-  );
-}
-
-function displayRole(user) {
-  if (!user) return "Signed in";
-  return user.role?.name || user.roleName || user.role || "Member";
-}
-
-const iconButtonClass =
-  "inline-flex items-center justify-center rounded-[var(--radius-lg)] p-[var(--space-2)] text-[var(--color-header-muted)] transition-[background-color,color] duration-[var(--transition-fast)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-header-text)] disabled:cursor-not-allowed disabled:opacity-50";
+import ConfirmDialog from "../ui/ConfirmDialog";
+import { Caption } from "../ui/Typography";
 
 export default function Header() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { user, logout } = useAuth();
-  const { collapsed, toggleCollapsed, toggleMobile } = useSidebar();
+  const { toggleCollapsed, toggleMobile } = useSidebar();
+  const { openPalette } = useCommandPalette();
+  const modKey = useModKeyLabel();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
+  const profileRef = useRef(null);
+  const menuId = useId();
 
-  const activeItem = findNavigationItemByPath(pathname);
-  const pageTitle = activeItem?.label ?? "DIS-SMS";
-  const name = displayName(user);
-  const role = displayRole(user);
+  const name = getUserDisplayName(user);
+  const role = getUserRoleLabel(user, "Signed in");
+  const searchPlaceholder = getSearchPlaceholder(pathname);
 
-  const handleLogout = () => {
+  useEffect(() => {
+    if (!profileOpen) return undefined;
+
+    const onPointerDown = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setProfileOpen(false);
+      }
+    };
+
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setProfileOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [profileOpen]);
+
+  const handleMenuClick = () => {
+    if (window.matchMedia("(min-width: 1024px)").matches) {
+      toggleCollapsed();
+    } else {
+      toggleMobile();
+    }
+  };
+
+  const requestLogout = () => {
+    setProfileOpen(false);
+    setLogoutOpen(true);
+  };
+
+  const confirmLogout = () => {
+    setLogoutOpen(false);
     logout();
     navigate("/login", { replace: true });
   };
 
   return (
-    <header className="sticky top-0 z-[var(--z-header)] flex h-[var(--header-height)] shrink-0 items-center justify-between gap-[var(--space-4)] border-b border-[var(--color-header-border)] bg-[var(--color-header-bg)] px-[var(--space-4)] shadow-[var(--shadow-sm)] md:px-[var(--space-6)]">
-      <div className="flex min-w-0 items-center gap-[var(--space-2)] md:gap-[var(--space-3)]">
-        <button
-          type="button"
-          aria-label="Open navigation"
-          className={cn(iconButtonClass, "lg:hidden")}
-          onClick={toggleMobile}
-        >
-          <Menu size={20} />
-        </button>
+    <>
+      <header className="ds-shell__header relative">
+        <div className="flex min-w-0 flex-1 items-center gap-[var(--space-3)]">
+          <button
+            type="button"
+            aria-label="Toggle navigation"
+            className="ds-icon-btn"
+            onClick={handleMenuClick}
+          >
+            <Menu size={20} />
+          </button>
 
-        <button
-          type="button"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className={cn(iconButtonClass, "hidden lg:inline-flex")}
-          onClick={toggleCollapsed}
-        >
-          {collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
-        </button>
-
-        <H2
-          size="sm"
-          className="truncate text-[var(--color-header-text)] md:text-[length:var(--font-size-xl)]"
-        >
-          {pageTitle}
-        </H2>
-      </div>
-
-      <div className="mx-[var(--space-2)] hidden w-full max-w-md lg:block">
-        <div className="flex items-center rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-muted)] px-[var(--space-3)] py-[var(--space-2)] transition-[border-color,box-shadow] duration-[var(--transition-fast)] focus-within:border-[var(--color-border-focus)] focus-within:shadow-[var(--shadow-sm)]">
-          <Search
-            size={16}
-            className="shrink-0 text-[var(--color-header-muted)]"
-            aria-hidden
-          />
-          <input
-            type="search"
-            placeholder="Search…"
-            disabled
-            aria-label="Global search (coming later)"
-            className="ml-[var(--space-2)] w-full bg-transparent text-[length:var(--font-size-sm)] text-[var(--color-header-text)] outline-none placeholder:text-[var(--color-text-muted)] disabled:cursor-not-allowed"
-          />
+          <button
+            type="button"
+            className="ds-search-trigger hidden md:flex"
+            onClick={openPalette}
+            aria-label="Open command palette"
+          >
+            <Search size={16} className="shrink-0" aria-hidden />
+            <span className="ds-search-trigger__label">{searchPlaceholder}</span>
+            <span className="ds-search-trigger__keys" aria-hidden>
+              <span className="ds-kbd">{modKey}</span>
+              <span className="ds-kbd">K</span>
+            </span>
+          </button>
         </div>
-      </div>
 
-      <div className="flex items-center gap-[var(--space-1)] md:gap-[var(--space-2)]">
-        <button
-          type="button"
-          aria-label="Notifications"
-          disabled
-          className={iconButtonClass}
-        >
-          <Bell size={18} />
-        </button>
+        <div className="flex items-center gap-[var(--space-1)] sm:gap-[var(--space-2)]">
+          <button
+            type="button"
+            aria-label="Open command palette"
+            className={cn("ds-icon-btn", "md:hidden")}
+            onClick={openPalette}
+          >
+            <Search size={18} />
+          </button>
 
-        <button
-          type="button"
-          aria-label="Settings"
-          disabled
-          className={cn(iconButtonClass, "hidden sm:inline-flex")}
-        >
-          <Settings size={18} />
-        </button>
+          <button
+            type="button"
+            aria-label="Notifications"
+            disabled
+            className="ds-icon-btn relative"
+          >
+            <Bell size={18} />
+            <span
+              className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-[var(--radius-none)] bg-[var(--color-accent-red)]"
+              aria-hidden
+            />
+          </button>
 
-        <div className="mx-[var(--space-1)] hidden items-center gap-[var(--space-2)] rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-muted)] px-[var(--space-2)] py-[var(--space-1)] md:flex">
-          <Avatar name={name} size="sm" />
-          <div className="min-w-0 pr-[var(--space-1)]">
-            <p className="truncate text-[length:var(--font-size-sm)] font-[number:var(--font-weight-semibold)] leading-[var(--line-height-tight)] text-[var(--color-header-text)]">
-              {name}
-            </p>
-            <Caption
-              variant="muted"
-              size="sm"
-              className="m-0 truncate text-[var(--color-header-muted)]"
+          <div className="relative" ref={profileRef}>
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={profileOpen}
+              aria-controls={menuId}
+              className="inline-flex items-center gap-[var(--space-2)] rounded-[var(--radius-control)] border border-[var(--color-header-control-border)] bg-[var(--color-header-control-bg)] px-[var(--space-2)] py-[var(--space-1)] transition-[border-color,background-color] duration-[var(--transition-fast)] hover:border-[rgb(255_255_255_/_0.28)] hover:bg-[var(--color-header-control-hover)] focus-visible:outline-none focus-visible:border-[var(--color-ocean-blue)] focus-visible:ring-2 focus-visible:ring-[var(--color-ocean-blue-soft)]"
+              onClick={() => setProfileOpen((open) => !open)}
             >
-              {String(role)}
-            </Caption>
+              <Avatar name={name} size="sm" variant="square" />
+              <div className="hidden min-w-0 text-left sm:block">
+                <p className="truncate text-[length:var(--font-size-sm)] font-[number:var(--font-weight-semibold)] leading-[var(--line-height-tight)] text-[var(--color-header-text)]">
+                  {name}
+                </p>
+                <Caption
+                  variant="muted"
+                  size="sm"
+                  className="m-0 truncate text-[var(--color-header-muted)]"
+                >
+                  {String(role)}
+                </Caption>
+              </div>
+              <ChevronDown
+                size={16}
+                className={cn(
+                  "hidden text-[var(--color-header-muted)] transition-transform duration-[var(--transition-fast)] sm:block",
+                  profileOpen && "rotate-180"
+                )}
+                aria-hidden
+              />
+            </button>
+
+            {profileOpen && (
+              <div id={menuId} role="menu" className="ds-dropdown">
+                <div className="border-b border-[var(--color-border-muted)] px-[var(--space-3)] py-[var(--space-2)] sm:hidden">
+                  <p className="truncate text-[length:var(--font-size-sm)] font-[number:var(--font-weight-semibold)] text-[var(--color-text-primary)]">
+                    {name}
+                  </p>
+                  <p className="truncate text-[length:var(--font-size-xs)] text-[var(--color-text-muted)]">
+                    {String(role)}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="ds-dropdown__item"
+                  disabled
+                >
+                  <User size={16} aria-hidden />
+                  Profile
+                </button>
+
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="ds-dropdown__item"
+                  disabled
+                >
+                  <Settings size={16} aria-hidden />
+                  Settings
+                </button>
+
+                <div className="my-[var(--space-1)] h-px bg-[var(--color-border-muted)]" />
+
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="ds-dropdown__item ds-dropdown__item--danger"
+                  onClick={requestLogout}
+                >
+                  <LogOut size={16} aria-hidden />
+                  Sign out
+                </button>
+              </div>
+            )}
           </div>
         </div>
+      </header>
 
-        <Button
-          type="button"
-          variant="primary"
-          size="sm"
-          onClick={handleLogout}
-          className="w-auto shrink-0 px-[var(--space-3)] shadow-none hover:shadow-none md:px-[var(--space-4)]"
-        >
-          <LogOut size={16} aria-hidden />
-          <span className="hidden sm:inline">Logout</span>
-        </Button>
-      </div>
-    </header>
+      <ConfirmDialog
+        open={logoutOpen}
+        intent="logout"
+        onCancel={() => setLogoutOpen(false)}
+        onConfirm={confirmLogout}
+      />
+    </>
   );
 }

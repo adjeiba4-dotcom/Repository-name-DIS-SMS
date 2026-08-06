@@ -103,20 +103,30 @@ export function mapClassToForm(schoolClass) {
 }
 
 export function buildClassPayload(form) {
-  return {
+  const payload = {
     classCode: form.classCode.trim(),
     className: form.className.trim(),
     academicYearId: parseInt(form.academicYearId, 10),
-    departmentId: form.departmentId
-      ? parseInt(form.departmentId, 10)
-      : null,
-    classTeacherId: form.classTeacherId
-      ? parseInt(form.classTeacherId, 10)
-      : null,
     capacity: parseInt(form.capacity, 10),
-    description: form.description?.trim() || null,
     status: toApiStatus(form.status),
   };
+
+  if (form.departmentId) {
+    payload.departmentId = parseInt(form.departmentId, 10);
+  } else {
+    payload.departmentId = null;
+  }
+
+  if (form.classTeacherId) {
+    payload.classTeacherId = parseInt(form.classTeacherId, 10);
+  } else {
+    payload.classTeacherId = null;
+  }
+
+  const description = form.description?.trim();
+  payload.description = description ? description : null;
+
+  return payload;
 }
 
 export function buildClassTimeline(schoolClass) {
@@ -203,6 +213,39 @@ export function getApiErrorMessage(error, fallback = "Something went wrong.") {
   }
 
   return fallback;
+}
+
+/**
+ * Map express-validator / API field errors onto form keys when present.
+ */
+export function getApiFieldErrors(error) {
+  const data = error?.response?.data;
+  const fieldErrors = {};
+  if (!data) return fieldErrors;
+
+  const list = Array.isArray(data.errors)
+    ? data.errors
+    : data.errors && typeof data.errors === "object"
+      ? Object.entries(data.errors).flatMap(([path, msgs]) =>
+          (Array.isArray(msgs) ? msgs : [msgs]).map((msg) => ({
+            path,
+            msg: typeof msg === "string" ? msg : msg?.msg || msg?.message,
+          }))
+        )
+      : [];
+
+  for (const item of list) {
+    const path = item?.path || item?.param || item?.field;
+    const msg =
+      typeof item === "string"
+        ? item
+        : item?.msg || item?.message || null;
+    if (path && msg) {
+      fieldErrors[path] = msg;
+    }
+  }
+
+  return fieldErrors;
 }
 
 export function validateClassForm(form) {

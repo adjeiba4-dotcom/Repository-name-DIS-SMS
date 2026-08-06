@@ -5,17 +5,17 @@ const variants = {
   glass:
     "border border-white/25 bg-white/12 backdrop-blur-2xl shadow-[0_25px_60px_rgba(15,23,42,0.45)]",
   default:
-    "border border-[var(--color-card-border)] bg-[var(--color-card-bg)] shadow-[var(--color-card-shadow)]",
+    "ds-card border border-[var(--color-card-border)] bg-[var(--color-card-bg)] shadow-[var(--shadow-sm)]",
   outlined:
-    "border border-[var(--color-card-border)] bg-[var(--color-card-bg)] shadow-none",
+    "ds-card border border-[var(--color-card-border)] bg-[var(--color-card-bg)] shadow-none",
   muted:
-    "border border-[var(--color-border-muted)] bg-[var(--color-surface-muted)] shadow-none",
+    "ds-card border border-[var(--color-border-muted)] bg-[var(--color-surface-muted)] shadow-none",
 };
 
 const sizes = {
-  sm: "rounded-[var(--radius-lg)]",
-  md: "rounded-[var(--radius-xl)]",
-  lg: "rounded-[var(--radius-2xl)]",
+  sm: "rounded-[var(--radius-panel)]",
+  md: "rounded-[var(--radius-panel)]",
+  lg: "rounded-[var(--radius-panel)]",
 };
 
 const paddings = {

@@ -1,6 +1,14 @@
 const departmentService = require("../services/department.service");
 const ApiResponse = require("../utils/response");
 
+function actorFrom(req) {
+    return {
+        userId: req.user?.id,
+        ipAddress: req.ip,
+        userAgent: req.get?.("user-agent") || null,
+    };
+}
+
 exports.getDepartments = async(req, res, next) => {
     try {
         const departments = await departmentService.getDepartments();
@@ -64,7 +72,10 @@ exports.getArchivedDepartments = async(req, res, next) => {
 
 exports.createDepartment = async(req, res, next) => {
     try {
-        const department = await departmentService.createDepartment(req.body);
+        const department = await departmentService.createDepartment(
+            req.body,
+            actorFrom(req)
+        );
 
         return ApiResponse.created(
             res,
@@ -80,7 +91,8 @@ exports.updateDepartment = async(req, res, next) => {
     try {
         const department = await departmentService.updateDepartment(
             req.params.id,
-            req.body
+            req.body,
+            actorFrom(req)
         );
 
         return ApiResponse.success(
@@ -96,7 +108,8 @@ exports.updateDepartment = async(req, res, next) => {
 exports.deleteDepartment = async(req, res, next) => {
     try {
         const department = await departmentService.deleteDepartment(
-            req.params.id
+            req.params.id,
+            actorFrom(req)
         );
 
         return ApiResponse.success(
@@ -112,7 +125,8 @@ exports.deleteDepartment = async(req, res, next) => {
 exports.restoreDepartment = async(req, res, next) => {
     try {
         const department = await departmentService.restoreDepartment(
-            req.params.id
+            req.params.id,
+            actorFrom(req)
         );
 
         return ApiResponse.success(

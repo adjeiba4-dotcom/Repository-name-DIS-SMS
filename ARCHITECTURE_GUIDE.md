@@ -1,7 +1,7 @@
 # DIS-SMS Architecture Guide
 
 > Canonical description of the current system architecture.  
-> Last aligned: Sprint 3.5 (Architecture Freeze).
+> Last aligned: Sprint 7.7 (Student Promotion & Graduation) — platform freeze from Sprint 6.8 still applies.
 
 ---
 
@@ -174,6 +174,14 @@ Auth: Bearer JWT + Administrator role (current student routes).
 - **Errors:** Custom `ApiError` hierarchy + global `error.middleware.js`
 - **Docs:** Swagger via backend config
 - **Design system:** Documented in `frontend/DESIGN_SYSTEM.md` and component guides
+- **Platform foundation (Sprint 6.8):**
+  - School Settings: `/api/school-settings`
+  - Global Config: `/api/settings` (+ `/map`, `/bulk`)
+  - Audit Trail service: `services/audit.service.js` + `/api/audits`
+  - File Upload: `/api/uploads` + static `/uploads`
+  - Notifications: `notificationService.notify()` + `/api/notifications` (IN_APP; EMAIL/SMS ready)
+- **Report Cards (Sprint 7.6):** Snapshot engine over published Results; template registry at `services/reportCardTemplates/` (`STANDARD_A4` today). Preview via `GET /api/report-cards/:id/preview`. Do not mutate live Results when rendering cards — always read the frozen `snapshot` JSON. After publish/lock, non-admins cannot update, refresh, archive, or regenerate (Administrator override only).
+- **Student Promotion (Sprint 7.7):** Year-end decisions from published/locked Report Cards via `/api/student-promotions`. Workflow Draft → Approved → Executed. Continuation decisions create next-year enrollments (history preserved); exit decisions (Graduated / Withdrawn / Transferred) set student inactive. Unique per student × from academic year. Thresholds: `academic.promotion_pass_average`, `academic.probation_pass_average`.
 
 ---
 

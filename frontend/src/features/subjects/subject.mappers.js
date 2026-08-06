@@ -83,9 +83,12 @@ export function mapSubjectToRow(subject) {
     description: subject.description ?? "",
     status: formatSubjectStatus(subject.status),
     teacherAssignmentCount: counts.teacherSubjects ?? 0,
+    classAssignmentCount: counts.classSubjects ?? 0,
+    assessmentCount: counts.assessments ?? 0,
     examinationCount: counts.examinations ?? 0,
     resultCount: counts.results ?? 0,
-    timetableCount: counts.timetables ?? 0,
+    timetableCount:
+      (counts.timetables ?? 0) + (counts.timetableEntries ?? 0),
     createdAt: subject.createdAt ?? "",
     updatedAt: subject.updatedAt ?? "",
     deletedAt: subject.deletedAt ?? "",
@@ -215,6 +218,37 @@ export function getApiErrorMessage(error, fallback = "Something went wrong.") {
   }
 
   return fallback;
+}
+
+/**
+ * Map express-validator / API field errors onto form keys when present.
+ */
+export function getApiFieldErrors(error) {
+  const data = error?.response?.data;
+  const fieldErrors = {};
+  if (!data) return fieldErrors;
+
+  const list = Array.isArray(data.errors)
+    ? data.errors
+    : data.errors && typeof data.errors === "object"
+      ? Object.entries(data.errors).flatMap(([path, msgs]) =>
+          (Array.isArray(msgs) ? msgs : [msgs]).map((msg) => ({
+            path,
+            msg: typeof msg === "string" ? msg : msg?.msg || msg?.message,
+          }))
+        )
+      : [];
+
+  for (const item of list) {
+    const path = item?.path || item?.param || item?.field;
+    const msg =
+      typeof item === "string" ? item : item?.msg || item?.message || null;
+    if (path && msg) {
+      fieldErrors[path] = msg;
+    }
+  }
+
+  return fieldErrors;
 }
 
 export function validateSubjectForm(form) {

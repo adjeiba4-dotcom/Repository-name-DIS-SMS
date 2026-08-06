@@ -1,4 +1,7 @@
 const announcementRepository = require("../repositories/announcement.repository");
+const { applyDateFields } = require("../utils/date");
+
+const ANNOUNCEMENT_DATE_FIELDS = ["publishDate", "expiryDate"];
 
 exports.getAnnouncements = async() => {
     return await announcementRepository.findAllAnnouncements();
@@ -17,7 +20,9 @@ exports.getAnnouncementById = async(id) => {
 
 exports.createAnnouncement = async(announcementData) => {
     return await announcementRepository.createAnnouncement(
-        announcementData
+        applyDateFields(announcementData, ANNOUNCEMENT_DATE_FIELDS, {
+            allowNull: true,
+        })
     );
 };
 
@@ -31,7 +36,9 @@ exports.updateAnnouncement = async(id, announcementData) => {
 
     return await announcementRepository.updateAnnouncement(
         id,
-        announcementData
+        applyDateFields(announcementData, ANNOUNCEMENT_DATE_FIELDS, {
+            allowNull: true,
+        })
     );
 };
 

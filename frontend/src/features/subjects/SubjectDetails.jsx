@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  ClipboardList,
   FileText,
   Hash,
   Layers,
@@ -38,6 +39,8 @@ export default function SubjectDetails({ subject, className = "" }) {
         schoolClass.classCode ? ` (${schoolClass.classCode})` : ""
       }`
     : "—";
+  const timetableCount =
+    (counts.timetables ?? 0) + (counts.timetableEntries ?? 0);
 
   return (
     <div className={cn("space-y-[var(--space-6)]", className)}>
@@ -106,6 +109,18 @@ export default function SubjectDetails({ subject, className = "" }) {
             icon: Users,
           },
           {
+            key: "classes",
+            label: "Class allocations",
+            value: String(counts.classSubjects ?? 0),
+            icon: School,
+          },
+          {
+            key: "assessments",
+            label: "Assessments",
+            value: String(counts.assessments ?? 0),
+            icon: ClipboardList,
+          },
+          {
             key: "examinations",
             label: "Examinations",
             value: String(counts.examinations ?? 0),
@@ -120,7 +135,7 @@ export default function SubjectDetails({ subject, className = "" }) {
           {
             key: "timetables",
             label: "Timetables",
-            value: String(counts.timetables ?? 0),
+            value: String(timetableCount),
             icon: Hash,
           },
         ]}

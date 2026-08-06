@@ -78,9 +78,14 @@ class AcademicYearRepository {
     }
 
     async findAcademicYearById(id) {
+        const academicYearId = Number(id);
+        if (!Number.isInteger(academicYearId) || academicYearId < 1) {
+            return null;
+        }
+
         return prisma.academicYear.findFirst({
             where: {
-                id,
+                id: academicYearId,
                 deletedAt: null,
             },
             select: academicYearDetailSelect,
@@ -88,8 +93,13 @@ class AcademicYearRepository {
     }
 
     async findAcademicYearByIdIncludingDeleted(id) {
+        const academicYearId = Number(id);
+        if (!Number.isInteger(academicYearId) || academicYearId < 1) {
+            return null;
+        }
+
         return prisma.academicYear.findFirst({
-            where: { id },
+            where: { id: academicYearId },
             select: academicYearDetailSelect,
         });
     }
@@ -97,11 +107,17 @@ class AcademicYearRepository {
     async findAcademicYearByName(name, { excludeId = null } = {}) {
         if (!name) return null;
 
+        const where = { name };
+
+        if (excludeId != null && excludeId !== "") {
+            const excluded = Number(excludeId);
+            if (Number.isInteger(excluded) && excluded > 0) {
+                where.id = { not: excluded };
+            }
+        }
+
         return prisma.academicYear.findFirst({
-            where: {
-                name,
-                ...(excludeId ? { id: { not: excludeId } } : {}),
-            },
+            where,
             select: {
                 id: true,
                 name: true,
@@ -112,12 +128,20 @@ class AcademicYearRepository {
     }
 
     async findActiveAcademicYear({ excludeId = null } = {}) {
+        const where = {
+            deletedAt: null,
+            status: "ACTIVE",
+        };
+
+        if (excludeId != null && excludeId !== "") {
+            const excluded = Number(excludeId);
+            if (Number.isInteger(excluded) && excluded > 0) {
+                where.id = { not: excluded };
+            }
+        }
+
         return prisma.academicYear.findFirst({
-            where: {
-                deletedAt: null,
-                status: "ACTIVE",
-                ...(excludeId ? { id: { not: excludeId } } : {}),
-            },
+            where,
             select: academicYearListSelect,
         });
     }
@@ -181,13 +205,15 @@ class AcademicYearRepository {
     }
 
     async updateAcademicYear(id, data) {
+        const academicYearId = Number(id);
+
         return prisma.$transaction(async (tx) => {
             if (data.status === "ACTIVE") {
                 await tx.academicYear.updateMany({
                     where: {
                         deletedAt: null,
                         status: "ACTIVE",
-                        id: { not: id },
+                        id: { not: academicYearId },
                     },
                     data: {
                         status: "INACTIVE",
@@ -202,7 +228,7 @@ class AcademicYearRepository {
             }
 
             return tx.academicYear.update({
-                where: { id },
+                where: { id: academicYearId },
                 data: payload,
                 select: academicYearDetailSelect,
             });
@@ -211,7 +237,7 @@ class AcademicYearRepository {
 
     async softDeleteAcademicYear(id) {
         return prisma.academicYear.update({
-            where: { id },
+            where: { id: Number(id) },
             data: {
                 status: "ARCHIVED",
                 isCurrent: false,
@@ -222,6 +248,8 @@ class AcademicYearRepository {
     }
 
     async restoreAcademicYear(id, { activate = false } = {}) {
+        const academicYearId = Number(id);
+
         return prisma.$transaction(async (tx) => {
             if (activate) {
                 await tx.academicYear.updateMany({
@@ -237,7 +265,7 @@ class AcademicYearRepository {
             }
 
             return tx.academicYear.update({
-                where: { id },
+                where: { id: academicYearId },
                 data: {
                     status: activate ? "ACTIVE" : "INACTIVE",
                     isCurrent: Boolean(activate),

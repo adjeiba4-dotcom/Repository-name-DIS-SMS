@@ -36,6 +36,8 @@ const subjectListSelect = {
     _count: {
         select: {
             teacherSubjects: { where: { deletedAt: null } },
+            classSubjects: { where: { deletedAt: null } },
+            assessments: true,
             examinations: true,
             results: true,
             timetables: true,
@@ -214,12 +216,41 @@ class SubjectRepository {
         });
     }
 
+    /**
+     * Count live references that block archive.
+     * Includes legacy Subject.schoolClassId plus ClassSubject allocations
+     * and downstream academic modules that depend on the catalog.
+     */
     async countReferences(id) {
-        const [teacherAssignments, examinations, subject] = await Promise.all([
+        const [
+            teacherAssignments,
+            classSubjectAssignments,
+            assessments,
+            examinations,
+            results,
+            timetables,
+            timetableEntries,
+            subject,
+        ] = await Promise.all([
             prisma.teacherSubject.count({
                 where: { subjectId: id, deletedAt: null },
             }),
+            prisma.classSubject.count({
+                where: { subjectId: id, deletedAt: null },
+            }),
+            prisma.assessment.count({
+                where: { subjectId: id },
+            }),
             prisma.examination.count({
+                where: { subjectId: id },
+            }),
+            prisma.result.count({
+                where: { subjectId: id },
+            }),
+            prisma.timetable.count({
+                where: { subjectId: id },
+            }),
+            prisma.timetableEntry.count({
                 where: { subjectId: id },
             }),
             prisma.subject.findFirst({
@@ -228,13 +259,28 @@ class SubjectRepository {
             }),
         ]);
 
-        const classAssignments = subject?.schoolClassId ? 1 : 0;
+        const legacyClassAssignment = subject?.schoolClassId ? 1 : 0;
+        const classAssignments =
+            classSubjectAssignments + legacyClassAssignment;
 
         return {
             teacherAssignments,
             classAssignments,
+            classSubjectAssignments,
+            legacyClassAssignment,
+            assessments,
             examinations,
-            total: teacherAssignments + classAssignments + examinations,
+            results,
+            timetables,
+            timetableEntries,
+            total:
+                teacherAssignments +
+                classAssignments +
+                assessments +
+                examinations +
+                results +
+                timetables +
+                timetableEntries,
         };
     }
 

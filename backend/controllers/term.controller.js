@@ -3,6 +3,14 @@
 const termService = require("../services/term.service");
 const ApiResponse = require("../utils/response");
 
+function actorFrom(req) {
+    return {
+        userId: req.user?.id,
+        ipAddress: req.ip,
+        userAgent: req.get?.("user-agent") || null,
+    };
+}
+
 exports.getTerms = async (req, res, next) => {
     try {
         const result = await termService.getTerms(req.query);
@@ -55,7 +63,7 @@ exports.getArchivedTerms = async (req, res, next) => {
 
 exports.createTerm = async (req, res, next) => {
     try {
-        const term = await termService.createTerm(req.body);
+        const term = await termService.createTerm(req.body, actorFrom(req));
 
         return ApiResponse.created(
             res,
@@ -71,7 +79,8 @@ exports.updateTerm = async (req, res, next) => {
     try {
         const term = await termService.updateTerm(
             parseInt(req.params.id, 10),
-            req.body
+            req.body,
+            actorFrom(req)
         );
 
         return ApiResponse.success(
@@ -87,7 +96,8 @@ exports.updateTerm = async (req, res, next) => {
 exports.activateTerm = async (req, res, next) => {
     try {
         const term = await termService.activateTerm(
-            parseInt(req.params.id, 10)
+            parseInt(req.params.id, 10),
+            actorFrom(req)
         );
 
         return ApiResponse.success(
@@ -103,7 +113,8 @@ exports.activateTerm = async (req, res, next) => {
 exports.deleteTerm = async (req, res, next) => {
     try {
         const term = await termService.deleteTerm(
-            parseInt(req.params.id, 10)
+            parseInt(req.params.id, 10),
+            actorFrom(req)
         );
 
         return ApiResponse.success(
@@ -123,7 +134,8 @@ exports.restoreTerm = async (req, res, next) => {
 
         const term = await termService.restoreTerm(
             parseInt(req.params.id, 10),
-            { activate }
+            { activate },
+            actorFrom(req)
         );
 
         return ApiResponse.success(

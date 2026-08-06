@@ -1,49 +1,62 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 
+import Breadcrumb from "../components/layout/Breadcrumb";
+import CommandPalette from "../components/layout/CommandPalette";
 import Footer from "../components/layout/Footer";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
+import { CommandPaletteProvider } from "../contexts/CommandPaletteContext";
 import { SidebarProvider, useSidebar } from "../contexts/SidebarContext";
 import { cn } from "../utils/cn";
 
 /**
  * Application chrome only. No business-module imports.
  * Modules render exclusively through <Outlet /> via nested routes.
+ *
+ * Layout contract: an in-flow `.ds-shell__rail` reserves sidebar width so
+ * workspace content never sits underneath the fixed sidebar. On mobile the
+ * rail collapses and the sidebar overlays as a drawer.
  */
 function AppShellFrame() {
   const { collapsed, mobileOpen, closeMobile } = useSidebar();
+  const { pathname } = useLocation();
 
   return (
-    <div className="relative h-screen overflow-hidden bg-[var(--color-surface-page)]">
+    <div
+      className={cn(
+        "ds-shell",
+        collapsed && "ds-shell--collapsed",
+        mobileOpen && "ds-shell--mobile-open"
+      )}
+    >
       {mobileOpen && (
         <button
           type="button"
           aria-label="Close navigation overlay"
-          className="fixed inset-0 z-[calc(var(--z-sidebar)-1)] bg-[color-mix(in_srgb,var(--color-surface-inverse)_40%,transparent)] lg:hidden"
+          className="ds-shell__overlay"
           onClick={closeMobile}
         />
       )}
 
+      {/* In-flow spacer — keeps workspace clear of the fixed sidebar */}
+      <div className="ds-shell__rail" aria-hidden="true" />
+
       <Sidebar />
 
-      <div
-        className={cn(
-          "flex h-full min-w-0 flex-col overflow-hidden transition-[padding] duration-[var(--transition-normal)]",
-          collapsed
-            ? "lg:pl-[var(--sidebar-width-collapsed)]"
-            : "lg:pl-[var(--sidebar-width)]"
-        )}
-      >
+      <div className="ds-shell__workspace">
         <Header />
+        <Breadcrumb />
 
-        <main className="flex-1 overflow-y-auto p-[var(--space-6)] md:p-[var(--space-8)]">
-          <div className="mx-auto w-full max-w-7xl">
+        <main className="ds-shell__content">
+          <div className="ds-shell__content-inner">
             <Outlet />
           </div>
         </main>
 
         <Footer />
       </div>
+
+      <CommandPalette placeholderPath={pathname} />
     </div>
   );
 }
@@ -51,7 +64,9 @@ function AppShellFrame() {
 export default function AppShell() {
   return (
     <SidebarProvider>
-      <AppShellFrame />
+      <CommandPaletteProvider>
+        <AppShellFrame />
+      </CommandPaletteProvider>
     </SidebarProvider>
   );
 }

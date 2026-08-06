@@ -1,4 +1,7 @@
 const eventRepository = require("../repositories/event.repository");
+const { applyDateFields } = require("../utils/date");
+
+const EVENT_DATE_FIELDS = ["startDate", "endDate"];
 
 exports.getEvents = async() => {
     return await eventRepository.findAllEvents();
@@ -15,7 +18,9 @@ exports.getEventById = async(id) => {
 };
 
 exports.createEvent = async(eventData) => {
-    return await eventRepository.createEvent(eventData);
+    return await eventRepository.createEvent(
+        applyDateFields(eventData, EVENT_DATE_FIELDS)
+    );
 };
 
 exports.updateEvent = async(id, eventData) => {
@@ -28,7 +33,7 @@ exports.updateEvent = async(id, eventData) => {
 
     return await eventRepository.updateEvent(
         id,
-        eventData
+        applyDateFields(eventData, EVENT_DATE_FIELDS)
     );
 };
 

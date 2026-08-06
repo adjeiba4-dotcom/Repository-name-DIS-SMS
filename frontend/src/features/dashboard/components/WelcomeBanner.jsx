@@ -1,20 +1,9 @@
 import { CalendarDays } from "lucide-react";
 
-import { DashboardPanel } from "../../../components/dashboard";
+import PageHeader from "../../../components/ui/PageHeader";
 import Badge from "../../../components/ui/Badge";
-import { Body, Caption, H1 } from "../../../components/ui/Typography";
 import useAuth from "../../../hooks/useAuth";
-
-function displayName(user) {
-  if (!user) return "Administrator";
-  return (
-    user.fullName ||
-    user.name ||
-    [user.firstName, user.lastName].filter(Boolean).join(" ") ||
-    user.email ||
-    "Administrator"
-  );
-}
+import { getUserDisplayName } from "../../../utils/userDisplay";
 
 function formatToday() {
   return new Intl.DateTimeFormat(undefined, {
@@ -25,40 +14,40 @@ function formatToday() {
   }).format(new Date());
 }
 
+/**
+ * Executive welcome header — uses shared PageHeader for module consistency.
+ */
 export default function WelcomeBanner() {
   const { user } = useAuth();
-  const name = displayName(user);
+  const name = getUserDisplayName(user);
 
   return (
-    <DashboardPanel
-      size="md"
-      className="border-[var(--color-border-default)] bg-[linear-gradient(135deg,var(--color-brand-50)_0%,var(--color-surface-default)_48%,var(--color-surface-muted)_100%)]"
-    >
-      <div className="flex flex-col gap-[var(--space-4)] sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0 space-y-[var(--space-2)]">
-          <Badge variant="primary" size="sm">
-            Executive Overview
+    <PageHeader
+      variant="default"
+      eyebrow="Executive Overview"
+      breadcrumbs={[
+        { label: "Home", to: "/" },
+        { label: "Dashboard" },
+      ]}
+      title={`Welcome back, ${name}`}
+      description="Executive school operations snapshot. KPI values below are placeholders until live summaries are connected."
+      actions={
+        <div className="flex flex-wrap items-center gap-[var(--space-2)]">
+          <Badge variant="primary" size="sm" rounded={false}>
+            Live Workspace
           </Badge>
-          <H1 size="sm" className="text-balance">
-            Welcome back, {name}
-          </H1>
-          <Body variant="secondary" size="sm" className="max-w-2xl">
-            Your school operations snapshot. Metrics below are placeholders until
-            live summaries are wired in.
-          </Body>
+          <div className="inline-flex items-center gap-[var(--space-2)] border border-[var(--color-border-default)] bg-[var(--color-surface-default)] px-[var(--space-3)] py-[var(--space-2)]">
+            <CalendarDays
+              size={16}
+              className="text-[var(--color-ocean-blue)]"
+              aria-hidden
+            />
+            <span className="text-[length:var(--font-size-xs)] font-[number:var(--font-weight-medium)] text-[var(--color-text-secondary)]">
+              {formatToday()}
+            </span>
+          </div>
         </div>
-
-        <div className="flex shrink-0 items-center gap-[var(--space-2)] rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-default)] px-[var(--space-3)] py-[var(--space-2)] shadow-[var(--shadow-sm)]">
-          <CalendarDays
-            size={16}
-            className="text-[var(--color-brand-600)]"
-            aria-hidden
-          />
-          <Caption variant="secondary" size="sm" className="m-0">
-            {formatToday()}
-          </Caption>
-        </div>
-      </div>
-    </DashboardPanel>
+      }
+    />
   );
 }

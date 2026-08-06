@@ -84,6 +84,63 @@ enum AttendanceStatus {
   EXCUSED
 }
 
+enum AssessmentType {
+  CLASS_WORK
+  HOMEWORK
+  QUIZ
+  ASSIGNMENT
+  PRACTICAL
+  PROJECT
+  ORAL_TEST
+  MID_TERM
+  CONTINUOUS_ASSESSMENT
+}
+
+enum ExaminationType {
+  MID_TERM
+  END_OF_TERM
+  MOCK
+  FINAL
+  ENTRANCE
+}
+
+/// Results Engine release pipeline: Draft → Generated → Verified → Published → Locked
+enum ResultWorkflowStatus {
+  DRAFT
+  GENERATED
+  VERIFIED
+  PUBLISHED
+  LOCKED
+}
+
+/// Report Card release pipeline (mirrors Results): Generated → Verified → Published → Locked
+enum ReportCardWorkflowStatus {
+  DRAFT
+  GENERATED
+  VERIFIED
+  PUBLISHED
+  LOCKED
+}
+
+/// End-of-year / exit decision used by Report Cards and Student Promotions
+enum PromotionDecision {
+  PENDING
+  PROMOTED
+  PROMOTED_ON_PROBATION
+  REPEAT
+  GRADUATED
+  WITHDRAWN
+  TRANSFERRED
+}
+
+/// Promotion pipeline: Draft (preview) → Approved → Executed
+enum PromotionWorkflowStatus {
+  DRAFT
+  APPROVED
+  EXECUTED
+  CANCELLED
+}
+
 enum SubjectCategory {
   CORE
   ELECTIVE
@@ -313,6 +370,20 @@ model User {
 
   fileAssets FileAsset[]
 
+  lockedExaminations Examination[] @relation("ExaminationLockedBy")
+  publishedResults   Result[]      @relation("ResultPublishedBy")
+  lockedResults      Result[]      @relation("ResultLockedBy")
+  verifiedResults    Result[]      @relation("ResultVerifiedBy")
+
+  generatedReportCards  ReportCard[] @relation("ReportCardGeneratedBy")
+  verifiedReportCards   ReportCard[] @relation("ReportCardVerifiedBy")
+  publishedReportCards  ReportCard[] @relation("ReportCardPublishedBy")
+  lockedReportCards     ReportCard[] @relation("ReportCardLockedBy")
+
+  recommendedPromotions StudentPromotion[] @relation("PromotionRecommendedBy")
+  approvedPromotions    StudentPromotion[] @relation("PromotionApprovedBy")
+  executedPromotions    StudentPromotion[] @relation("PromotionExecutedBy")
+
   // =====================================
   // COMMUNICATION
   // =====================================
@@ -523,11 +594,16 @@ model AcademicYear {
   schoolClasses    SchoolClass[]
   enrollments      Enrollment[]
   attendance       Attendance[]
+  assessments      Assessment[]
   examinations     Examination[]
+  results          Result[]
+  reportCards      ReportCard[]
   feeStructures    FeeStructure[]
   timetables       Timetable[]
   teacherSubjects  TeacherSubject[]
   classSubjects    ClassSubject[]
+  promotionsFrom   StudentPromotion[] @relation("PromotionFromYear")
+  promotionsTo     StudentPromotion[] @relation("PromotionToYear")
 
   // ==============================
   // Hostel
@@ -572,12 +648,15 @@ model Term {
   // Academic
   // ==============================
   attendance      Attendance[]
+  assessments     Assessment[]
   examinations    Examination[]
   results         Result[]
+  reportCards     ReportCard[]
   timetables      Timetable[]
   teacherSubjects TeacherSubject[]
   classSubjects   ClassSubject[]
   enrollments     Enrollment[]
+  promotions      StudentPromotion[]
 
   @@unique([academicYearId, name])
   @@unique([academicYearId, code])
@@ -673,6 +752,12 @@ model SchoolClass {
   students      Student[]
   timetables    Timetable[]
   classSubjects ClassSubject[]
+  assessments   Assessment[]
+  examinations  Examination[]
+  results       Result[]
+  reportCards   ReportCard[]
+  promotionsFrom StudentPromotion[] @relation("PromotionFromClass")
+  promotionsTo   StudentPromotion[] @relation("PromotionToClass")
 
   @@unique([academicYearId, classCode])
 
@@ -724,6 +809,7 @@ model Teacher {
 
   teacherSubjects TeacherSubject[]
 
+  assessments  Assessment[]
   examinations Examination[]
 
   classTeacherOf SchoolClass[] @relation("ClassTeacher")
@@ -773,6 +859,7 @@ model Subject {
   teacherSubjects TeacherSubject[]
   classSubjects   ClassSubject[]
 
+  assessments  Assessment[]
   examinations Examination[]
 
   results Result[]
@@ -1009,7 +1096,11 @@ model Student {
 
   enrollments Enrollment[]
   attendance Attendance[]
+  assessmentScores AssessmentScore[]
+  examinationScores ExaminationScore[]
   results Result[]
+  reportCards ReportCard[]
+  promotions StudentPromotion[]
 
   invoices StudentInvoice[]
   payments Payment[]
@@ -1057,6 +1148,7 @@ model Enrollment {
   schoolClass  SchoolClass  @relation(fields: [schoolClassId], references: [id])
   academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
   term         Term?        @relation(fields: [termId], references: [id], onDelete: SetNull)
+  promotions   StudentPromotion[] @relation("PromotionResultingEnrollment")
 
   @@unique([studentId, academicYearId])
 
@@ -1183,6 +1275,80 @@ model TimetableEntry {
 
 //
 // =======================================================
+// ASSESSMENTS
+// =======================================================
+//
+
+model Assessment {
+  id Int @id @default(autoincrement())
+
+  title String?
+
+  academicYearId Int
+  termId         Int
+  classId        Int
+  subjectId      Int
+  teacherId      Int
+
+  assessmentType AssessmentType
+  maxMarks       Decimal        @db.Decimal(6, 2)
+  assessmentDate DateTime
+
+  remarks String?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  term         Term         @relation(fields: [termId], references: [id])
+  schoolClass  SchoolClass  @relation(fields: [classId], references: [id])
+  subject      Subject      @relation(fields: [subjectId], references: [id])
+  teacher      Teacher      @relation(fields: [teacherId], references: [id])
+
+  scores AssessmentScore[]
+
+  @@unique([classId, subjectId, assessmentType, assessmentDate])
+
+  @@index([academicYearId])
+  @@index([termId])
+  @@index([classId])
+  @@index([subjectId])
+  @@index([teacherId])
+  @@index([assessmentType])
+  @@index([assessmentDate])
+  @@index([status])
+
+  @@map("assessments")
+}
+
+model AssessmentScore {
+  id Int @id @default(autoincrement())
+
+  assessmentId Int
+  studentId    Int
+
+  marks   Decimal @db.Decimal(6, 2)
+  remarks String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, studentId])
+
+  @@index([assessmentId])
+  @@index([studentId])
+
+  @@map("assessment_scores")
+}
+
+//
+// =======================================================
 // EXAMINATIONS
 // =======================================================
 //
@@ -1190,42 +1356,79 @@ model TimetableEntry {
 model Examination {
   id Int @id @default(autoincrement())
 
-  name String
+  name String?
 
   academicYearId Int
-  termId Int
+  termId         Int
+  classId        Int
+  subjectId      Int
+  teacherId      Int
 
-  subjectId Int
-  teacherId Int
-
+  examinationType ExaminationType
+  maxMarks        Decimal         @db.Decimal(6, 2)
+  passingMarks    Decimal         @db.Decimal(6, 2)
   examinationDate DateTime
+  durationMinutes Int?
 
-  totalMarks Decimal @db.Decimal(6,2)
-  passMarks  Decimal @db.Decimal(6,2)
+  remarks String?
+
+  isLocked   Boolean   @default(false)
+  lockedAt   DateTime?
+  lockedById Int?
 
   status Status @default(ACTIVE)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  term         Term         @relation(fields: [termId], references: [id])
+  schoolClass  SchoolClass  @relation(fields: [classId], references: [id])
+  subject      Subject      @relation(fields: [subjectId], references: [id])
+  teacher      Teacher      @relation(fields: [teacherId], references: [id])
+  lockedBy     User?        @relation("ExaminationLockedBy", fields: [lockedById], references: [id], onDelete: SetNull)
 
-  term Term @relation(fields: [termId], references: [id])
-
-  subject Subject @relation(fields: [subjectId], references: [id])
-
-  teacher Teacher @relation(fields: [teacherId], references: [id])
-
+  scores  ExaminationScore[]
   results Result[]
+
+  @@unique([classId, subjectId, examinationType, examinationDate], map: "exam_class_subj_type_date_key")
 
   @@index([academicYearId])
   @@index([termId])
+  @@index([classId])
   @@index([subjectId])
   @@index([teacherId])
+  @@index([examinationType])
+  @@index([examinationDate])
   @@index([status])
+  @@index([isLocked])
+  @@index([lockedById])
 
   @@map("examinations")
+}
+
+model ExaminationScore {
+  id Int @id @default(autoincrement())
+
+  examinationId Int
+  studentId     Int
+
+  marks   Decimal @db.Decimal(6, 2)
+  remarks String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  examination Examination @relation(fields: [examinationId], references: [id], onDelete: Cascade)
+  student     Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([examinationId, studentId])
+
+  @@index([examinationId])
+  @@index([studentId])
+
+  @@map("examination_scores")
 }
 
 //
@@ -1237,38 +1440,262 @@ model Examination {
 model Result {
   id Int @id @default(autoincrement())
 
-  examinationId Int
-  studentId Int
-  subjectId Int
-  termId Int
+  academicYearId Int
+  termId         Int
+  classId        Int
+  subjectId      Int
+  studentId      Int
+  examinationId  Int
 
-  marks Decimal @db.Decimal(6,2)
+  caScore    Decimal @db.Decimal(6, 2)
+  examScore  Decimal @db.Decimal(6, 2)
+  caWeight   Decimal @db.Decimal(5, 2)
+  examWeight Decimal @db.Decimal(5, 2)
+  finalScore Decimal @db.Decimal(6, 2)
 
   gradeId Int?
-
   remarks String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  subjectPosition Int?
+  classPosition   Int?
+  subjectAverage  Decimal? @db.Decimal(6, 2)
+  classAverage    Decimal? @db.Decimal(6, 2)
 
-  examination Examination @relation(fields: [examinationId], references: [id], onDelete: Cascade)
+  isPassed Boolean @default(false)
 
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  workflowStatus ResultWorkflowStatus @default(GENERATED)
 
-  subject Subject @relation(fields: [subjectId], references: [id])
+  isVerified   Boolean   @default(false)
+  verifiedAt   DateTime?
+  verifiedById Int?
 
-  term Term @relation(fields: [termId], references: [id])
+  isPublished   Boolean   @default(false)
+  publishedAt   DateTime?
+  publishedById Int?
 
-  grade Grade? @relation(fields: [gradeId], references: [id], onDelete: SetNull)
+  isLocked   Boolean   @default(false)
+  lockedAt   DateTime?
+  lockedById Int?
 
-  @@unique([examinationId, studentId])
+  status Status @default(ACTIVE)
 
-  @@index([studentId])
-  @@index([subjectId])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  term         Term         @relation(fields: [termId], references: [id])
+  schoolClass  SchoolClass  @relation(fields: [classId], references: [id])
+  subject      Subject      @relation(fields: [subjectId], references: [id])
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  examination  Examination @relation(fields: [examinationId], references: [id], onDelete: Restrict)
+  grade        Grade?       @relation(fields: [gradeId], references: [id], onDelete: SetNull)
+  verifiedBy   User?        @relation("ResultVerifiedBy", fields: [verifiedById], references: [id], onDelete: SetNull)
+  publishedBy  User?        @relation("ResultPublishedBy", fields: [publishedById], references: [id], onDelete: SetNull)
+  lockedBy     User?        @relation("ResultLockedBy", fields: [lockedById], references: [id], onDelete: SetNull)
+
+  @@unique([academicYearId, termId, classId, subjectId, studentId], map: "result_scope_student_key")
+
+  @@index([academicYearId])
   @@index([termId])
+  @@index([classId])
+  @@index([subjectId])
+  @@index([studentId])
+  @@index([examinationId])
   @@index([gradeId])
+  @@index([isPassed])
+  @@index([workflowStatus])
+  @@index([isVerified])
+  @@index([isPublished])
+  @@index([isLocked])
+  @@index([status])
+  @@index([verifiedById])
+  @@index([publishedById])
+  @@index([lockedById])
 
   @@map("results")
+}
+
+//
+// =======================================================
+// REPORT CARDS
+// =======================================================
+//
+// Immutable academic snapshot generated only from published/locked Results.
+// templateKey reserves multi-template support (STANDARD_A4 today).
+//
+
+model ReportCard {
+  id Int @id @default(autoincrement())
+
+  studentId      Int
+  academicYearId Int
+  termId         Int
+  classId        Int
+
+  /// Future-ready template registry key (e.g. STANDARD_A4, COMPACT_A4)
+  templateKey String @default("STANDARD_A4")
+
+  /// Full frozen snapshot: school, student, subjects, attendance, positions, grades
+  snapshot Json
+
+  totalScore   Decimal? @db.Decimal(8, 2)
+  averageScore Decimal? @db.Decimal(6, 2)
+  overallGrade String?
+  classPosition Int?
+  subjectCount  Int     @default(0)
+  passedCount   Int     @default(0)
+  failedCount   Int     @default(0)
+
+  daysPresent           Int?
+  daysAbsent            Int?
+  daysLate              Int?
+  daysExcused           Int?
+  attendancePercentage  Decimal? @db.Decimal(5, 2)
+
+  teacherRemarks     String? @db.Text
+  headmasterRemarks  String? @db.Text
+
+  promotionDecision PromotionDecision @default(PENDING)
+  promoted          Boolean           @default(false)
+
+  workflowStatus ReportCardWorkflowStatus @default(GENERATED)
+
+  generatedAt   DateTime?
+  generatedById Int?
+
+  isVerified   Boolean   @default(false)
+  verifiedAt   DateTime?
+  verifiedById Int?
+
+  isPublished   Boolean   @default(false)
+  publishedAt   DateTime?
+  publishedById Int?
+
+  isLocked   Boolean   @default(false)
+  lockedAt   DateTime?
+  lockedById Int?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  term         Term         @relation(fields: [termId], references: [id])
+  schoolClass  SchoolClass  @relation(fields: [classId], references: [id])
+
+  generatedBy  User? @relation("ReportCardGeneratedBy", fields: [generatedById], references: [id], onDelete: SetNull)
+  verifiedBy   User? @relation("ReportCardVerifiedBy", fields: [verifiedById], references: [id], onDelete: SetNull)
+  publishedBy  User? @relation("ReportCardPublishedBy", fields: [publishedById], references: [id], onDelete: SetNull)
+  lockedBy     User? @relation("ReportCardLockedBy", fields: [lockedById], references: [id], onDelete: SetNull)
+
+  promotions StudentPromotion[]
+
+  @@unique([studentId, academicYearId, termId], map: "report_card_student_term_key")
+
+  @@index([academicYearId])
+  @@index([termId])
+  @@index([classId])
+  @@index([studentId])
+  @@index([templateKey])
+  @@index([workflowStatus])
+  @@index([isVerified])
+  @@index([isPublished])
+  @@index([isLocked])
+  @@index([promotionDecision])
+  @@index([status])
+  @@index([generatedById])
+  @@index([verifiedById])
+  @@index([publishedById])
+  @@index([lockedById])
+
+  @@map("report_cards")
+}
+
+//
+// =======================================================
+// STUDENT PROMOTIONS & GRADUATION
+// =======================================================
+//
+// Year-end promotion / exit decisions driven by published Report Cards.
+// Workflow: Draft (preview) → Approved → Executed (enroll / graduate).
+//
+
+model StudentPromotion {
+  id Int @id @default(autoincrement())
+
+  studentId          Int
+  fromClassId        Int
+  toClassId          Int?
+  fromAcademicYearId Int
+  toAcademicYearId   Int?
+  termId             Int?
+  reportCardId       Int?
+
+  decision       PromotionDecision
+  workflowStatus PromotionWorkflowStatus @default(DRAFT)
+
+  averageScore  Decimal? @db.Decimal(6, 2)
+  overallGrade  String?
+  classPosition Int?
+  subjectCount  Int?
+  passedCount   Int?
+  failedCount   Int?
+
+  remarks             String? @db.Text
+  recommendationNotes String? @db.Text
+
+  recommendedAt   DateTime?
+  recommendedById Int?
+
+  approvedAt   DateTime?
+  approvedById Int?
+
+  executedAt          DateTime?
+  executedById        Int?
+  promotionDate       DateTime?
+  resultingEnrollmentId Int?
+
+  status Status @default(ACTIVE)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  student          Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  fromClass        SchoolClass  @relation("PromotionFromClass", fields: [fromClassId], references: [id])
+  toClass          SchoolClass? @relation("PromotionToClass", fields: [toClassId], references: [id])
+  fromAcademicYear AcademicYear @relation("PromotionFromYear", fields: [fromAcademicYearId], references: [id])
+  toAcademicYear   AcademicYear? @relation("PromotionToYear", fields: [toAcademicYearId], references: [id])
+  term             Term?        @relation(fields: [termId], references: [id], onDelete: SetNull)
+  reportCard       ReportCard?  @relation(fields: [reportCardId], references: [id], onDelete: SetNull)
+  resultingEnrollment Enrollment? @relation("PromotionResultingEnrollment", fields: [resultingEnrollmentId], references: [id], onDelete: SetNull)
+
+  recommendedBy User? @relation("PromotionRecommendedBy", fields: [recommendedById], references: [id], onDelete: SetNull)
+  approvedBy    User? @relation("PromotionApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  executedBy    User? @relation("PromotionExecutedBy", fields: [executedById], references: [id], onDelete: SetNull)
+
+  @@unique([studentId, fromAcademicYearId], map: "student_promotion_year_key")
+
+  @@index([studentId])
+  @@index([fromClassId])
+  @@index([toClassId])
+  @@index([fromAcademicYearId])
+  @@index([toAcademicYearId])
+  @@index([termId])
+  @@index([reportCardId])
+  @@index([decision])
+  @@index([workflowStatus])
+  @@index([status])
+  @@index([recommendedById])
+  @@index([approvedById])
+  @@index([executedById])
+  @@index([resultingEnrollmentId])
+
+  @@map("student_promotions")
 }
 
 //
@@ -1280,28 +1707,36 @@ model Result {
 model Grade {
   id Int @id @default(autoincrement())
 
+  gradeScaleId Int?
+
   grade String
 
   description String?
 
-  minimumScore Decimal @db.Decimal(6,2)
+  minimumScore Decimal @db.Decimal(6, 2)
 
-  maximumScore Decimal @db.Decimal(6,2)
+  maximumScore Decimal @db.Decimal(6, 2)
 
-  gradePoint Decimal? @db.Decimal(4,2)
+  gradePoint Decimal? @db.Decimal(4, 2)
 
   remarks String?
+
+  isPass    Boolean @default(true)
+  sortOrder Int     @default(0)
 
   status Status @default(ACTIVE)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  results Result[]
+  gradeScale GradeScale? @relation(fields: [gradeScaleId], references: [id], onDelete: SetNull)
+  results    Result[]
 
   @@unique([grade])
 
+  @@index([gradeScaleId])
   @@index([status])
+  @@index([sortOrder])
 
   @@map("grades")
 }
@@ -1325,6 +1760,8 @@ model GradeScale {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  grades Grade[]
 
   @@index([status])
   @@index([isDefault])

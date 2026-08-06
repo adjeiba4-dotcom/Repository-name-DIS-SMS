@@ -7,9 +7,16 @@ const themeConfig = {
   mode: "light",
   tokens: {
     brand: {
-      primary: "var(--color-brand-600)",
-      hover: "var(--color-brand-700)",
+      primary: "var(--color-ocean-blue)",
+      hover: "var(--color-ocean-blue-hover)",
+      active: "var(--color-ocean-blue-active)",
+      soft: "var(--color-ocean-blue-soft)",
+      muted: "var(--color-ocean-blue-muted)",
       subtle: "var(--color-brand-50)",
+    },
+    chart: {
+      primary: "var(--color-chart-primary)",
+      primarySoft: "var(--color-chart-primary-soft)",
     },
     surface: {
       page: "var(--color-surface-page)",
@@ -51,6 +58,7 @@ const themeConfig = {
       bg: "var(--color-table-bg)",
       headerBg: "var(--color-table-header-bg)",
       border: "var(--color-table-border)",
+      selected: "var(--color-table-row-selected)",
     },
     input: {
       bg: "var(--color-input-bg)",
@@ -60,6 +68,8 @@ const themeConfig = {
     button: {
       primaryBg: "var(--color-button-primary-bg)",
       primaryText: "var(--color-button-primary-text)",
+      primaryHover: "var(--color-button-primary-hover)",
+      primaryActive: "var(--color-button-primary-active)",
       dangerBg: "var(--color-button-danger-bg)",
     },
     success: {

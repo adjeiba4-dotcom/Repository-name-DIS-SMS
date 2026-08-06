@@ -19,7 +19,12 @@ exports.createDepartment = [
     .optional()
     .trim()
     .isLength({ max: 255 })
-    .withMessage("Description must not exceed 255 characters.")
+    .withMessage("Description must not exceed 255 characters."),
+
+    body("status")
+    .optional()
+    .isIn(["ACTIVE", "INACTIVE"])
+    .withMessage("Status must be ACTIVE or INACTIVE.")
 ];
 
 exports.updateDepartment = [
@@ -47,7 +52,12 @@ exports.updateDepartment = [
     .optional()
     .trim()
     .isLength({ max: 255 })
-    .withMessage("Description must not exceed 255 characters.")
+    .withMessage("Description must not exceed 255 characters."),
+
+    body("status")
+    .optional()
+    .isIn(["ACTIVE", "INACTIVE"])
+    .withMessage("Status must be ACTIVE or INACTIVE.")
 ];
 
 exports.validateDepartmentId = [

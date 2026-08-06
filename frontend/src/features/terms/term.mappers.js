@@ -26,6 +26,9 @@ export function toApiStatus(status) {
 
 export function toDateInputValue(value) {
   if (!value) return "";
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+    return value.slice(0, 10);
+  }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return String(value).slice(0, 10);
@@ -102,6 +105,10 @@ export function mapTermToForm(term) {
   };
 }
 
+/**
+ * Backend contract for POST/PUT /api/terms:
+ * { academicYearId:number, code, name, description:string|null, startDate, endDate, status }
+ */
 export function buildTermPayload(form) {
   return {
     academicYearId: parseInt(form.academicYearId, 10),
@@ -207,7 +214,40 @@ export function getApiErrorMessage(error, fallback = "Something went wrong.") {
   return fallback;
 }
 
-export function validateTermForm(form) {
+/**
+ * Map express-validator / API field errors onto form keys when present.
+ */
+export function getApiFieldErrors(error) {
+  const data = error?.response?.data;
+  const fieldErrors = {};
+  if (!data) return fieldErrors;
+
+  const list = Array.isArray(data.errors)
+    ? data.errors
+    : data.errors && typeof data.errors === "object"
+      ? Object.entries(data.errors).flatMap(([path, msgs]) =>
+          (Array.isArray(msgs) ? msgs : [msgs]).map((msg) => ({
+            path,
+            msg: typeof msg === "string" ? msg : msg?.msg || msg?.message,
+          }))
+        )
+      : [];
+
+  for (const item of list) {
+    const path = item?.path || item?.param || item?.field;
+    const msg =
+      typeof item === "string"
+        ? item
+        : item?.msg || item?.message || null;
+    if (path && msg) {
+      fieldErrors[path] = msg;
+    }
+  }
+
+  return fieldErrors;
+}
+
+export function validateTermForm(form, academicYear = null) {
   const errors = {};
 
   if (!form.academicYearId) {
@@ -221,6 +261,26 @@ export function validateTermForm(form) {
   if (form.startDate && form.endDate) {
     if (new Date(form.startDate) >= new Date(form.endDate)) {
       errors.endDate = "End date must be after start date.";
+    }
+  }
+
+  if (
+    academicYear &&
+    form.startDate &&
+    form.endDate &&
+    !errors.endDate &&
+    !errors.startDate
+  ) {
+    const yearStart = toDateInputValue(academicYear.startDate);
+    const yearEnd = toDateInputValue(academicYear.endDate);
+    if (
+      yearStart &&
+      yearEnd &&
+      (form.startDate < yearStart || form.endDate > yearEnd)
+    ) {
+      const message = `Term dates must fall within academic year "${academicYear.name}" (${yearStart} – ${yearEnd}).`;
+      errors.startDate = message;
+      errors.endDate = message;
     }
   }
 

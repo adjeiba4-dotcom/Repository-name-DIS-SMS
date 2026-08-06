@@ -73,6 +73,123 @@ const API = {
         RESTORE: (id) => `/class-subjects/${id}/restore`,
     },
 
+    TIMETABLES: {
+        LIST: "/timetables",
+        CREATE: "/timetables",
+        VIEW: "/timetables/view",
+        DETAIL: (id) => `/timetables/${id}`,
+        UPDATE: (id) => `/timetables/${id}`,
+        DELETE: (id) => `/timetables/${id}`,
+    },
+
+    ATTENDANCE: {
+        LIST: "/attendance",
+        CREATE: "/attendance",
+        BULK: "/attendance/bulk",
+        ROSTER: "/attendance/roster",
+        STATS: "/attendance/stats",
+        DETAIL: (id) => `/attendance/${id}`,
+        UPDATE: (id) => `/attendance/${id}`,
+        DELETE: (id) => `/attendance/${id}`,
+    },
+
+    ASSESSMENTS: {
+        LIST: "/assessments",
+        CREATE: "/assessments",
+        ARCHIVED: "/assessments/archived",
+        STATS: "/assessments/stats",
+        DETAIL: (id) => `/assessments/${id}`,
+        ROSTER: (id) => `/assessments/${id}/roster`,
+        SCORES_BULK: (id) => `/assessments/${id}/scores/bulk`,
+        UPDATE: (id) => `/assessments/${id}`,
+        DELETE: (id) => `/assessments/${id}`,
+        RESTORE: (id) => `/assessments/${id}/restore`,
+    },
+
+    EXAMINATIONS: {
+        LIST: "/examinations",
+        CREATE: "/examinations",
+        ARCHIVED: "/examinations/archived",
+        STATS: "/examinations/stats",
+        DETAIL: (id) => `/examinations/${id}`,
+        ROSTER: (id) => `/examinations/${id}/roster`,
+        SCORES_BULK: (id) => `/examinations/${id}/scores/bulk`,
+        UPDATE: (id) => `/examinations/${id}`,
+        DELETE: (id) => `/examinations/${id}`,
+        RESTORE: (id) => `/examinations/${id}/restore`,
+        LOCK: (id) => `/examinations/${id}/lock`,
+        UNLOCK: (id) => `/examinations/${id}/unlock`,
+    },
+
+    RESULTS: {
+        LIST: "/results",
+        CREATE: "/results",
+        ARCHIVED: "/results/archived",
+        STATS: "/results/stats",
+        WEIGHTINGS: "/results/weightings",
+        BROADSHEET: "/results/broadsheet",
+        MERIT_LIST: "/results/merit-list",
+        STUDENT_PROFILE: (studentId) => `/results/student-profile/${studentId}`,
+        GENERATE: "/results/generate",
+        VERIFY: "/results/verify",
+        UNVERIFY: "/results/unverify",
+        PUBLISH: "/results/publish",
+        UNPUBLISH: "/results/unpublish",
+        LOCK: "/results/lock",
+        UNLOCK: "/results/unlock",
+        RECALCULATE: "/results/recalculate-positions",
+        DETAIL: (id) => `/results/${id}`,
+        UPDATE: (id) => `/results/${id}`,
+        DELETE: (id) => `/results/${id}`,
+        RESTORE: (id) => `/results/${id}/restore`,
+    },
+
+        REPORT_CARDS: {
+        LIST: "/report-cards",
+        ARCHIVED: "/report-cards/archived",
+        STATS: "/report-cards/stats",
+        TEMPLATES: "/report-cards/templates",
+        GENERATE: "/report-cards/generate",
+        GENERATE_BULK: "/report-cards/generate-bulk",
+        VERIFY: "/report-cards/verify",
+        UNVERIFY: "/report-cards/unverify",
+        PUBLISH: "/report-cards/publish",
+        UNPUBLISH: "/report-cards/unpublish",
+        LOCK: "/report-cards/lock",
+        UNLOCK: "/report-cards/unlock",
+        DETAIL: (id) => `/report-cards/${id}`,
+        PREVIEW: (id) => `/report-cards/${id}/preview`,
+        UPDATE: (id) => `/report-cards/${id}`,
+        DELETE: (id) => `/report-cards/${id}`,
+        RESTORE: (id) => `/report-cards/${id}/restore`,
+    },
+
+    STUDENT_PROMOTIONS: {
+        LIST: "/student-promotions",
+        ARCHIVED: "/student-promotions/archived",
+        GRADUATES: "/student-promotions/graduates",
+        STATS: "/student-promotions/stats",
+        HISTORY: (studentId) => `/student-promotions/history/${studentId}`,
+        RECOMMEND: "/student-promotions/recommend",
+        APPROVE: "/student-promotions/approve",
+        UNAPPROVE: "/student-promotions/unapprove",
+        EXECUTE: "/student-promotions/execute",
+        CANCEL: "/student-promotions/cancel",
+        DETAIL: (id) => `/student-promotions/${id}`,
+        UPDATE: (id) => `/student-promotions/${id}`,
+        DELETE: (id) => `/student-promotions/${id}`,
+        RESTORE: (id) => `/student-promotions/${id}/restore`,
+    },
+
+    GRADES: {
+        LIST: "/grades",
+        CREATE: "/grades",
+        DETAIL: (id) => `/grades/${id}`,
+        SCALES: "/grades/scales",
+        SCALE_DETAIL: (id) => `/grades/scales/${id}`,
+        SCALE_DEFAULT: (id) => `/grades/scales/${id}/default`,
+    },
+
     ENROLLMENTS: {
         LIST: "/enrollments",
         CREATE: "/enrollments",
@@ -96,6 +213,13 @@ const API = {
 
     DEPARTMENTS: {
         LIST: "/departments",
+        CREATE: "/departments",
+        SEARCH: "/departments/search",
+        ARCHIVED: "/departments/archived",
+        DETAIL: (id) => `/departments/${id}`,
+        UPDATE: (id) => `/departments/${id}`,
+        DELETE: (id) => `/departments/${id}`,
+        RESTORE: (id) => `/departments/${id}/restore`,
     },
 
     ACADEMIC_YEARS: {
@@ -117,6 +241,45 @@ const API = {
         DELETE: (id) => `/terms/${id}`,
         ACTIVATE: (id) => `/terms/${id}/activate`,
         RESTORE: (id) => `/terms/${id}/restore`,
+    },
+
+    SCHOOL_SETTINGS: {
+        GET: "/school-settings",
+        UPDATE: "/school-settings",
+    },
+
+    SETTINGS: {
+        LIST: "/settings",
+        MAP: "/settings/map",
+        BULK: "/settings/bulk",
+        BY_KEY: (key) => `/settings/key/${encodeURIComponent(key)}`,
+        DETAIL: (id) => `/settings/${id}`,
+        CREATE: "/settings",
+        UPDATE: (id) => `/settings/${id}`,
+        DELETE: (id) => `/settings/${id}`,
+    },
+
+    AUDITS: {
+        LIST: "/audits",
+        DETAIL: (id) => `/audits/${id}`,
+    },
+
+    NOTIFICATIONS: {
+        LIST: "/notifications",
+        UNREAD_COUNT: "/notifications/unread-count",
+        MARK_ALL_READ: "/notifications/mark-all-read",
+        DETAIL: (id) => `/notifications/${id}`,
+        CREATE: "/notifications",
+        MARK_READ: (id) => `/notifications/${id}/read`,
+        UPDATE: (id) => `/notifications/${id}`,
+        DELETE: (id) => `/notifications/${id}`,
+    },
+
+    UPLOADS: {
+        LIST: "/uploads",
+        CREATE: "/uploads",
+        DETAIL: (id) => `/uploads/${id}`,
+        DELETE: (id) => `/uploads/${id}`,
     },
 };
 

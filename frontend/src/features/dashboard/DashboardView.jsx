@@ -1,3 +1,4 @@
+import AcademicSummary from "./components/AcademicSummary";
 import AnalyticsPlaceholders from "./components/AnalyticsPlaceholders";
 import Announcements from "./components/Announcements";
 import KpiGrid from "./components/KpiGrid";
@@ -6,7 +7,7 @@ import RecentActivity from "./components/RecentActivity";
 import WelcomeBanner from "./components/WelcomeBanner";
 
 /**
- * Dashboard 2.0 foundation composition.
+ * Executive enterprise dashboard composition.
  * Presentational placeholders only — no live charts or backend data.
  */
 export default function DashboardView() {
@@ -14,6 +15,7 @@ export default function DashboardView() {
     <div className="space-y-[var(--space-8)]">
       <WelcomeBanner />
       <KpiGrid />
+      <AcademicSummary />
       <AnalyticsPlaceholders />
 
       <section

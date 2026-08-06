@@ -1,11 +1,13 @@
 // services/term.service.js
 
 const termRepository = require("../repositories/term.repository");
+const auditService = require("./audit.service");
 const {
     NotFoundError,
     ConflictError,
     BadRequestError,
 } = require("../errors");
+const { applyDateFields, toDate } = require("../utils/date");
 
 const TERM_FIELDS = [
     "academicYearId",
@@ -16,6 +18,7 @@ const TERM_FIELDS = [
     "endDate",
     "status",
 ];
+const TERM_DATE_FIELDS = ["startDate", "endDate"];
 
 function sanitizeTermData(data = {}) {
     const payload = {};
@@ -37,7 +40,7 @@ function sanitizeTermData(data = {}) {
         }
     }
 
-    return payload;
+    return applyDateFields(payload, TERM_DATE_FIELDS);
 }
 
 function assertDateOrder(startDate, endDate) {
@@ -72,6 +75,45 @@ function assertWithinAcademicYear(startDate, endDate, academicYear) {
             `Term dates must fall within academic year "${academicYear.name}" (${yearStart.toISOString().slice(0, 10)} – ${yearEnd.toISOString().slice(0, 10)}).`
         );
     }
+}
+
+function toAuditSnapshot(term) {
+    if (!term) return null;
+    return {
+        id: term.id,
+        academicYearId: term.academicYearId,
+        code: term.code,
+        name: term.name,
+        description: term.description ?? null,
+        startDate: term.startDate ?? null,
+        endDate: term.endDate ?? null,
+        status: term.status,
+        isCurrent: Boolean(term.isCurrent),
+        deletedAt: term.deletedAt ?? null,
+        createdAt: term.createdAt ?? null,
+        updatedAt: term.updatedAt ?? null,
+    };
+}
+
+async function recordTermAudit({
+    actor = {},
+    action,
+    term,
+    oldTerm = null,
+    description,
+}) {
+    await auditService.recordSafe({
+        userId: actor.userId,
+        module: "Terms",
+        action,
+        entityType: "Term",
+        recordId: term?.id ?? null,
+        description,
+        oldValues: toAuditSnapshot(oldTerm),
+        newValues: toAuditSnapshot(term),
+        ipAddress: actor.ipAddress,
+        userAgent: actor.userAgent,
+    });
 }
 
 class TermService {
@@ -111,11 +153,12 @@ class TermService {
         return termRepository.findArchivedTerms();
     }
 
-    async createTerm(rawData) {
+    async createTerm(rawData, actor = {}) {
         const data = sanitizeTermData(rawData);
 
         if (
             !data.academicYearId ||
+            Number.isNaN(data.academicYearId) ||
             !data.code ||
             !data.name ||
             !data.startDate ||
@@ -166,8 +209,8 @@ class TermService {
 
         const overlapping = await termRepository.findOverlappingTerm({
             academicYearId: data.academicYearId,
-            startDate: new Date(data.startDate),
-            endDate: new Date(data.endDate),
+            startDate: data.startDate,
+            endDate: data.endDate,
         });
         if (overlapping) {
             throw new ConflictError(
@@ -175,11 +218,21 @@ class TermService {
             );
         }
 
-        return termRepository.createTerm(data);
+        const created = await termRepository.createTerm(data);
+
+        await recordTermAudit({
+            actor,
+            action: "CREATE",
+            term: created,
+            description: `Created term ${created.code} — ${created.name}`,
+        });
+
+        return created;
     }
 
-    async updateTerm(id, rawData) {
-        const term = await termRepository.findTermById(id);
+    async updateTerm(id, rawData, actor = {}) {
+        const termId = Number(id);
+        const term = await termRepository.findTermById(termId);
 
         if (!term) {
             throw new NotFoundError("Term not found.");
@@ -199,11 +252,12 @@ class TermService {
             throw new NotFoundError("Academic year not found.");
         }
 
-        if (data.name && data.name !== term.name) {
+        // Always exclude self so unchanged name/code cannot self-conflict.
+        if (data.name !== undefined) {
             const existing = await termRepository.findTermByName(
                 academicYearId,
                 data.name,
-                { excludeId: id }
+                { excludeId: termId }
             );
             if (existing) {
                 throw new ConflictError(
@@ -214,11 +268,11 @@ class TermService {
             }
         }
 
-        if (data.code && data.code !== term.code) {
+        if (data.code !== undefined) {
             const existing = await termRepository.findTermByCode(
                 academicYearId,
                 data.code,
-                { excludeId: id }
+                { excludeId: termId }
             );
             if (existing) {
                 throw new ConflictError(
@@ -236,9 +290,9 @@ class TermService {
 
         const overlapping = await termRepository.findOverlappingTerm({
             academicYearId,
-            startDate: new Date(startDate),
-            endDate: new Date(endDate),
-            excludeId: id,
+            startDate: toDate(startDate),
+            endDate: toDate(endDate),
+            excludeId: termId,
         });
         if (overlapping) {
             throw new ConflictError(
@@ -246,11 +300,22 @@ class TermService {
             );
         }
 
-        return termRepository.updateTerm(id, data);
+        const updated = await termRepository.updateTerm(termId, data);
+
+        await recordTermAudit({
+            actor,
+            action: "UPDATE",
+            term: updated,
+            oldTerm: term,
+            description: `Updated term ${updated.code} — ${updated.name}`,
+        });
+
+        return updated;
     }
 
-    async activateTerm(id) {
-        const term = await termRepository.findTermById(id);
+    async activateTerm(id, actor = {}) {
+        const termId = Number(id);
+        const term = await termRepository.findTermById(termId);
 
         if (!term) {
             throw new NotFoundError("Term not found.");
@@ -260,17 +325,28 @@ class TermService {
             throw new BadRequestError("Term is already active.");
         }
 
-        return termRepository.activateTerm(id);
+        const activated = await termRepository.activateTerm(termId);
+
+        await recordTermAudit({
+            actor,
+            action: "UPDATE",
+            term: activated,
+            oldTerm: term,
+            description: `Activated term ${activated.code} — ${activated.name}`,
+        });
+
+        return activated;
     }
 
-    async deleteTerm(id) {
-        const term = await termRepository.findTermById(id);
+    async deleteTerm(id, actor = {}) {
+        const termId = Number(id);
+        const term = await termRepository.findTermById(termId);
 
         if (!term) {
             throw new NotFoundError("Term not found.");
         }
 
-        const references = await termRepository.countReferences(id);
+        const references = await termRepository.countReferences(termId);
 
         if (references.total > 0) {
             throw new ConflictError(
@@ -278,11 +354,22 @@ class TermService {
             );
         }
 
-        return termRepository.softDeleteTerm(id);
+        const archived = await termRepository.softDeleteTerm(termId);
+
+        await recordTermAudit({
+            actor,
+            action: "ARCHIVE",
+            term: archived,
+            oldTerm: term,
+            description: `Archived term ${archived.code} — ${archived.name}`,
+        });
+
+        return archived;
     }
 
-    async restoreTerm(id, { activate = false } = {}) {
-        const term = await termRepository.findTermByIdIncludingDeleted(id);
+    async restoreTerm(id, { activate = false } = {}, actor = {}) {
+        const termId = Number(id);
+        const term = await termRepository.findTermByIdIncludingDeleted(termId);
 
         if (!term) {
             throw new NotFoundError("Term not found.");
@@ -295,7 +382,7 @@ class TermService {
         const existingName = await termRepository.findTermByName(
             term.academicYearId,
             term.name,
-            { excludeId: id }
+            { excludeId: termId }
         );
         if (existingName && !existingName.deletedAt) {
             throw new ConflictError(
@@ -306,7 +393,7 @@ class TermService {
         const existingCode = await termRepository.findTermByCode(
             term.academicYearId,
             term.code,
-            { excludeId: id }
+            { excludeId: termId }
         );
         if (existingCode && !existingCode.deletedAt) {
             throw new ConflictError(
@@ -316,9 +403,9 @@ class TermService {
 
         const overlapping = await termRepository.findOverlappingTerm({
             academicYearId: term.academicYearId,
-            startDate: new Date(term.startDate),
-            endDate: new Date(term.endDate),
-            excludeId: id,
+            startDate: toDate(term.startDate),
+            endDate: toDate(term.endDate),
+            excludeId: termId,
         });
         if (overlapping) {
             throw new ConflictError(
@@ -326,7 +413,17 @@ class TermService {
             );
         }
 
-        return termRepository.restoreTerm(id, { activate });
+        const restored = await termRepository.restoreTerm(termId, { activate });
+
+        await recordTermAudit({
+            actor,
+            action: "RESTORE",
+            term: restored,
+            oldTerm: term,
+            description: `Restored term ${restored.code} — ${restored.name}`,
+        });
+
+        return restored;
     }
 }
 

@@ -84,6 +84,48 @@ const DEFAULT_PLATFORM_CONFIG = [
     isSystem: true,
   },
   {
+    settingKey: "academic.ca_weight",
+    settingValue: "40",
+    description: "Continuous Assessment weight percentage for final results (default 40)",
+    category: CONFIG_CATEGORIES.ACADEMIC,
+    dataType: "NUMBER",
+    isSystem: true,
+  },
+  {
+    settingKey: "academic.exam_weight",
+    settingValue: "60",
+    description: "Examination weight percentage for final results (default 60)",
+    category: CONFIG_CATEGORIES.ACADEMIC,
+    dataType: "NUMBER",
+    isSystem: true,
+  },
+  {
+    settingKey: "academic.pass_mark",
+    settingValue: "50",
+    description: "Minimum final score percentage required to pass",
+    category: CONFIG_CATEGORIES.ACADEMIC,
+    dataType: "NUMBER",
+    isSystem: true,
+  },
+  {
+    settingKey: "academic.promotion_pass_average",
+    settingValue: "50",
+    description:
+      "Minimum report-card average for automatic PROMOTED recommendation",
+    category: CONFIG_CATEGORIES.ACADEMIC,
+    dataType: "NUMBER",
+    isSystem: true,
+  },
+  {
+    settingKey: "academic.probation_pass_average",
+    settingValue: "40",
+    description:
+      "Minimum report-card average for PROMOTED_ON_PROBATION (below promotion pass)",
+    category: CONFIG_CATEGORIES.ACADEMIC,
+    dataType: "NUMBER",
+    isSystem: true,
+  },
+  {
     settingKey: "app.school_year_label",
     settingValue: "Academic Year",
     description: "Label used for academic year in UI",

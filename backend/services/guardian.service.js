@@ -6,6 +6,7 @@ const {
     ConflictError,
     BadRequestError,
 } = require("../errors");
+const { applyDateFields } = require("../utils/date");
 
 const GUARDIAN_FIELDS = [
     "firstName",
@@ -63,11 +64,7 @@ function sanitizeGuardianData(data = {}) {
         payload[field] = data[field];
     }
 
-    if (payload.dateOfBirth) {
-        payload.dateOfBirth = new Date(payload.dateOfBirth);
-    }
-
-    return payload;
+    return applyDateFields(payload, ["dateOfBirth"], { allowNull: true });
 }
 
 function sanitizeLinkData(data = {}) {

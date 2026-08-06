@@ -16,6 +16,14 @@ const departmentSelect = {
     stockIssues: true,
 };
 
+const departmentConflictSelect = {
+    id: true,
+    code: true,
+    name: true,
+    status: true,
+    deletedAt: true,
+};
+
 exports.findAllDepartments = async() => {
     return prisma.department.findMany({
         where: {
@@ -35,17 +43,35 @@ exports.findDepartmentById = async(id) => {
     });
 };
 
-exports.findDepartmentByCode = async(code) => {
-    return prisma.department.findUnique({
-        where: { code },
-        select: departmentSelect,
+/**
+ * Lookup by code across active and archived rows (unique constraint spans both).
+ * Pass excludeId when updating so the current row is ignored.
+ */
+exports.findDepartmentByCode = async(code, { excludeId = null } = {}) => {
+    if (!code) return null;
+
+    return prisma.department.findFirst({
+        where: {
+            code,
+            ...(excludeId ? { id: { not: excludeId } } : {}),
+        },
+        select: departmentConflictSelect,
     });
 };
 
-exports.findDepartmentByName = async(name) => {
-    return prisma.department.findUnique({
-        where: { name },
-        select: departmentSelect,
+/**
+ * Lookup by name across active and archived rows (unique constraint spans both).
+ * Pass excludeId when updating so the current row is ignored.
+ */
+exports.findDepartmentByName = async(name, { excludeId = null } = {}) => {
+    if (!name) return null;
+
+    return prisma.department.findFirst({
+        where: {
+            name,
+            ...(excludeId ? { id: { not: excludeId } } : {}),
+        },
+        select: departmentConflictSelect,
     });
 };
 

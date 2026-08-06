@@ -2,7 +2,7 @@
 
 import Input from "../ui/Input";
 import { cn } from "../../utils/cn";
-import { fieldHelperClassName } from "./fieldStyles";
+import FieldMessage from "./FieldMessage";
 
 /**
  * Generic text input field with validation/helper message support.
@@ -27,11 +27,12 @@ export default function TextField({
   className = "",
   ...props
 }) {
+  const fieldId = id || name;
   const messageId =
-    helperText && !error ? `${id || name || "field"}-helper` : undefined;
+    error || helperText ? `${fieldId || "field"}-message` : undefined;
 
   return (
-    <div className={cn("mb-5", className)}>
+    <div className={cn("ds-field mb-5", className)}>
       <Input
         label={label}
         name={name}
@@ -40,7 +41,7 @@ export default function TextField({
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        error={error}
+        error=""
         disabled={disabled}
         required={required}
         leftIcon={leftIcon}
@@ -48,14 +49,11 @@ export default function TextField({
         variant={variant}
         size={size}
         className="mb-0"
+        aria-invalid={error ? true : undefined}
         aria-describedby={messageId}
         {...props}
       />
-      {helperText && !error ? (
-        <p id={messageId} className={fieldHelperClassName}>
-          {helperText}
-        </p>
-      ) : null}
+      <FieldMessage id={messageId} error={error} helperText={helperText} />
     </div>
   );
 }

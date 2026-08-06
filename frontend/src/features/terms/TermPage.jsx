@@ -73,9 +73,12 @@ export default function TermPage() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileTermId, setProfileTermId] = useState(null);
 
-  const [formOpen, setFormOpen] = useState(false);
-  const [formMode, setFormMode] = useState("create");
-  const [editingTerm, setEditingTerm] = useState(null);
+  // Atomic drawer state — open/record always update together so edit
+  // cannot mount as create.
+  const [drawer, setDrawer] = useState({
+    open: false,
+    record: null,
+  });
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -198,25 +201,32 @@ export default function TermPage() {
         : "";
 
   const openCreateForm = () => {
-    setFormMode("create");
-    setEditingTerm(null);
-    setFormOpen(true);
+    setDrawer({ open: true, record: null });
   };
 
   const openEditForm = async (termLike) => {
     const id = termLike?.id;
-    if (!id) return;
+    if (id == null || id === "") return;
 
     setProfileOpen(false);
+
+    let record = termLike;
     try {
       const response = await getTermById(id);
-      setEditingTerm(response?.data ?? termLike);
+      if (response?.data?.id != null) {
+        record = response.data;
+      }
     } catch {
-      setEditingTerm(termLike);
-    } finally {
-      setFormMode("edit");
-      setFormOpen(true);
+      // Fall back to the row/detail already in hand.
     }
+
+    if (record?.id == null || record.id === "") return;
+
+    setDrawer({ open: true, record });
+  };
+
+  const closeForm = () => {
+    setDrawer({ open: false, record: null });
   };
 
   const handleView = (row) => {
@@ -358,7 +368,7 @@ export default function TermPage() {
     onStatusChange: setStatus,
     onSortChange: handleSortChange,
     onView: handleView,
-    onEdit: (row) => openEditForm({ id: row.id }),
+    onEdit: (row) => openEditForm(row),
     onDelete: (row) => {
       setDeleteError("");
       setDeleteTarget(row);
@@ -446,14 +456,9 @@ export default function TermPage() {
       />
 
       <TermForm
-        open={formOpen}
-        mode={formMode}
-        term={formMode === "edit" ? editingTerm : null}
-        onClose={() => {
-          setFormOpen(false);
-          setEditingTerm(null);
-          setFormMode("create");
-        }}
+        open={drawer.open}
+        term={drawer.record}
+        onClose={closeForm}
         onSuccess={handleFormSuccess}
       />
 

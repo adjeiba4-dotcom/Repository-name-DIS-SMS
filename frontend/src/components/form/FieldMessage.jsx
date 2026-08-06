@@ -8,6 +8,7 @@ import {
 
 /**
  * Validation or helper text under a form field.
+ * Prefer error over helper when both are provided.
  */
 export default function FieldMessage({
   id,

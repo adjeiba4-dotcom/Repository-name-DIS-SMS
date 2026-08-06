@@ -4,7 +4,7 @@ import { cn } from "../../utils/cn";
 const variants = {
   circular: "rounded-[var(--radius-full)]",
   rounded: "rounded-[var(--radius-lg)]",
-  square: "rounded-[var(--radius-sm)]",
+  square: "rounded-[var(--radius-panel)]",
 };
 
 const sizes = {

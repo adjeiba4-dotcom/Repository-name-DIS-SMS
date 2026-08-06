@@ -1,66 +1,83 @@
 import Badge from "../ui/Badge";
 import Card from "../ui/Card";
+import AnimatedCounter from "../ui/AnimatedCounter";
 import { Body, Caption, H3 } from "../ui/Typography";
 import { cn } from "../../utils/cn";
 
 const TONE_STYLES = {
+  ocean: {
+    iconWrap: "ds-kpi-icon ds-kpi-icon--ocean",
+    badge: "primary",
+  },
+  yellow: {
+    iconWrap: "ds-kpi-icon ds-kpi-icon--yellow",
+    badge: "warning",
+  },
+  cyan: {
+    iconWrap: "ds-kpi-icon ds-kpi-icon--cyan",
+    badge: "info",
+  },
+  lime: {
+    iconWrap: "ds-kpi-icon ds-kpi-icon--lime",
+    badge: "success",
+  },
+  red: {
+    iconWrap: "ds-kpi-icon ds-kpi-icon--red",
+    badge: "danger",
+  },
   brand: {
-    iconWrap: "bg-[var(--color-brand-100)] text-[var(--color-brand-700)]",
+    iconWrap: "ds-kpi-icon ds-kpi-icon--ocean",
     badge: "primary",
   },
   success: {
-    iconWrap: "bg-[var(--color-success-100)] text-[var(--color-success-700)]",
+    iconWrap: "ds-kpi-icon ds-kpi-icon--lime",
     badge: "success",
   },
   warning: {
-    iconWrap: "bg-[var(--color-warning-100)] text-[var(--color-warning-700)]",
+    iconWrap: "ds-kpi-icon ds-kpi-icon--yellow",
     badge: "warning",
   },
   info: {
-    iconWrap: "bg-[var(--color-info-100)] text-[var(--color-info-700)]",
+    iconWrap: "ds-kpi-icon ds-kpi-icon--cyan",
     badge: "info",
   },
 };
 
 /**
- * KPI / metric card for dashboard surfaces.
+ * KPI / metric card for dashboard surfaces — square enterprise panel.
+ * Numeric values animate via AnimatedCounter when `animate` is true.
  */
 export default function StatCard({
   label,
   value,
   hint,
   trend,
-  tone = "brand",
+  tone = "ocean",
   icon: Icon,
+  animate = true,
   className = "",
   ...props
 }) {
-  const toneStyles = TONE_STYLES[tone] ?? TONE_STYLES.brand;
+  const toneStyles = TONE_STYLES[tone] ?? TONE_STYLES.ocean;
 
   return (
     <Card
       variant="default"
       size="sm"
       className={cn(
-        "transition-[box-shadow,transform] duration-[var(--transition-normal)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]",
+        "transition-[box-shadow] duration-[var(--transition-normal)] hover:shadow-[var(--shadow-md)]",
         className
       )}
       {...props}
     >
       <div className="flex items-start justify-between gap-[var(--space-3)]">
         {Icon && (
-          <div
-            className={cn(
-              "inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-lg)]",
-              toneStyles.iconWrap
-            )}
-            aria-hidden
-          >
+          <div className={toneStyles.iconWrap} aria-hidden>
             <Icon size={18} />
           </div>
         )}
         {trend && (
-          <Badge variant={toneStyles.badge} size="sm">
+          <Badge variant={toneStyles.badge} size="sm" rounded={false}>
             {trend}
           </Badge>
         )}
@@ -76,8 +93,8 @@ export default function StatCard({
             {label}
           </Caption>
         )}
-        <H3 size="md" className="tabular-nums tracking-tight">
-          {value}
+        <H3 size="md" className="tracking-tight">
+          <AnimatedCounter value={value} animate={animate} />
         </H3>
         {hint && (
           <Body variant="muted" size="sm" className="m-0">

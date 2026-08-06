@@ -11,6 +11,20 @@ function unwrapAuthPayload(envelope) {
   return envelope;
 }
 
+/**
+ * Normalize /auth/me envelopes to the user object.
+ */
+function unwrapUserPayload(envelope) {
+  if (envelope?.data && typeof envelope.data === "object") {
+    // Login-shaped accidental wrap should not apply here.
+    if (envelope.data.accessToken && envelope.data.user) {
+      return envelope.data.user;
+    }
+    return envelope.data;
+  }
+  return envelope;
+}
+
 export const login = async (email, password) => {
   const response = await api.post(API.AUTH.LOGIN, {
     email,
@@ -18,6 +32,11 @@ export const login = async (email, password) => {
   });
 
   return unwrapAuthPayload(response.data);
+};
+
+export const fetchCurrentUser = async () => {
+  const response = await api.get(API.AUTH.ME);
+  return unwrapUserPayload(response.data);
 };
 
 export const logout = () => {

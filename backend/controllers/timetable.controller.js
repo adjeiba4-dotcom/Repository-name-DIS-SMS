@@ -3,33 +3,45 @@
 const timetableService = require("../services/timetable.service");
 const ApiResponse = require("../utils/response");
 
-/**
- * Get all timetable entries
- */
-const getTimetables = async(req, res, next) => {
+exports.getTimetables = async (req, res, next) => {
     try {
-        const timetables =
-            await timetableService.getTimetables();
+        const result = await timetableService.getTimetables(req.query);
 
-        return ApiResponse.success(
+        return ApiResponse.paginated(
             res,
             "Timetable entries retrieved successfully.",
-            timetables
+            result.data,
+            {
+                page: result.page,
+                limit: result.limit,
+                total: result.total,
+                totalPages: result.totalPages,
+            }
         );
     } catch (error) {
         next(error);
     }
 };
 
-/**
- * Get timetable by ID
- */
-const getTimetableById = async(req, res, next) => {
+exports.getTimetableView = async (req, res, next) => {
     try {
-        const timetable =
-            await timetableService.getTimetableById(
-                Number(req.params.id)
-            );
+        const view = await timetableService.getTimetableView(req.query);
+
+        return ApiResponse.success(
+            res,
+            "Timetable view retrieved successfully.",
+            view
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getTimetableById = async (req, res, next) => {
+    try {
+        const timetable = await timetableService.getTimetableById(
+            parseInt(req.params.id, 10)
+        );
 
         return ApiResponse.success(
             res,
@@ -41,39 +53,13 @@ const getTimetableById = async(req, res, next) => {
     }
 };
 
-/**
- * Search timetable
- */
-const searchTimetables = async(req, res, next) => {
+exports.createTimetable = async (req, res, next) => {
     try {
-        const timetables =
-            await timetableService.searchTimetables(
-                req.query.keyword || ""
-            );
-
-        return ApiResponse.success(
-            res,
-            "Timetable entries retrieved successfully.",
-            timetables
-        );
-    } catch (error) {
-        next(error);
-    }
-};
-
-/**
- * Create timetable
- */
-const createTimetable = async(req, res, next) => {
-    try {
-        const timetable =
-            await timetableService.createTimetable(
-                req.body
-            );
+        const timetable = await timetableService.createTimetable(req.body);
 
         return ApiResponse.created(
             res,
-            "Timetable created successfully.",
+            "Timetable entry created successfully.",
             timetable
         );
     } catch (error) {
@@ -81,20 +67,16 @@ const createTimetable = async(req, res, next) => {
     }
 };
 
-/**
- * Update timetable
- */
-const updateTimetable = async(req, res, next) => {
+exports.updateTimetable = async (req, res, next) => {
     try {
-        const timetable =
-            await timetableService.updateTimetable(
-                Number(req.params.id),
-                req.body
-            );
+        const timetable = await timetableService.updateTimetable(
+            parseInt(req.params.id, 10),
+            req.body
+        );
 
         return ApiResponse.success(
             res,
-            "Timetable updated successfully.",
+            "Timetable entry updated successfully.",
             timetable
         );
     } catch (error) {
@@ -102,29 +84,15 @@ const updateTimetable = async(req, res, next) => {
     }
 };
 
-/**
- * Delete timetable
- */
-const deleteTimetable = async(req, res, next) => {
+exports.deleteTimetable = async (req, res, next) => {
     try {
-        await timetableService.deleteTimetable(
-            Number(req.params.id)
-        );
+        await timetableService.deleteTimetable(parseInt(req.params.id, 10));
 
         return ApiResponse.success(
             res,
-            "Timetable deleted successfully."
+            "Timetable entry deleted successfully."
         );
     } catch (error) {
         next(error);
     }
-};
-
-module.exports = {
-    getTimetables,
-    getTimetableById,
-    searchTimetables,
-    createTimetable,
-    updateTimetable,
-    deleteTimetable,
 };

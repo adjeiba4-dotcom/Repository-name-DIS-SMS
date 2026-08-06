@@ -5,6 +5,7 @@ const {
     ConflictError,
     BadRequestError,
 } = require("../errors");
+const { applyDateFields } = require("../utils/date");
 
 const STUDENT_FIELDS = [
     "admissionNo",
@@ -53,15 +54,9 @@ function sanitizeStudentData(data = {}) {
         payload.classId = Number(payload.classId);
     }
 
-    if (payload.dateOfBirth) {
-        payload.dateOfBirth = new Date(payload.dateOfBirth);
-    }
-
-    if (payload.admissionDate) {
-        payload.admissionDate = new Date(payload.admissionDate);
-    }
-
-    return payload;
+    return applyDateFields(payload, ["dateOfBirth", "admissionDate"], {
+        allowNull: true,
+    });
 }
 
 function extractGuardianLink(data = {}) {

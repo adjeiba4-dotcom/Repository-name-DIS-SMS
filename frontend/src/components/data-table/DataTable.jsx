@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 
 import { EmptyState, Panel } from "../dashboard";
-import Button from "../ui/Button";
 import Input from "../ui/Input";
 import { DataTableSkeleton } from "../ui/Skeleton";
 import { Caption } from "../ui/Typography";
@@ -63,6 +62,7 @@ export default function DataTable({
   emptyDescription = "Try adjusting search or filters.",
   emptyActionLabel,
   onEmptyAction,
+  emptyIllustration = "inbox",
 
   // Server-side pagination
   page = 1,
@@ -96,6 +96,7 @@ export default function DataTable({
   // Row click / styling
   onRowClick,
   mutedRows = false,
+  zebra = true,
 
   className = "",
   panelProps = {},
@@ -125,8 +126,8 @@ export default function DataTable({
   return (
     <div className={cn("space-y-[var(--space-4)]", className)}>
       {showToolbar ? (
-        <div className="flex flex-col gap-[var(--space-4)] lg:flex-row lg:items-end lg:justify-between">
-          <div className="grid flex-1 grid-cols-1 gap-[var(--space-3)] sm:grid-cols-2 xl:grid-cols-3">
+        <div className="ds-table-toolbar">
+          <div className="ds-table-toolbar__filters">
             {searchable ? (
               <Input
                 id={searchId}
@@ -145,7 +146,7 @@ export default function DataTable({
             {filters.map((filter) => {
               const filterId = filter.id || filter.key;
               return (
-                <div key={filterId}>
+                <div key={filterId} className="ds-field">
                   <label htmlFor={filterId} className={fieldLabelClassName}>
                     {filter.label}
                   </label>
@@ -187,9 +188,7 @@ export default function DataTable({
           </div>
 
           {toolbarActions ? (
-            <div className="flex flex-col items-stretch gap-[var(--space-2)] sm:items-end">
-              {toolbarActions}
-            </div>
+            <div className="ds-table-toolbar__actions">{toolbarActions}</div>
           ) : null}
         </div>
       ) : null}
@@ -199,6 +198,7 @@ export default function DataTable({
           <DataTableSkeleton rows={Math.min(pageSize, 6)} />
         ) : isEmpty ? (
           <EmptyState
+            illustration={emptyIllustration}
             icon={EmptyIcon}
             title={emptyTitle}
             description={emptyDescription}
@@ -207,9 +207,9 @@ export default function DataTable({
           />
         ) : (
           <>
-            <div className="-mx-[var(--space-6)] overflow-x-auto">
-              <table className="min-w-full">
-                <thead className="bg-[var(--color-table-header-bg)]">
+            <div className="ds-table-scroll -mx-[var(--space-6)]">
+              <table className="ds-table">
+                <thead className="ds-table__head">
                   <tr>
                     {columns.map((column) => {
                       const align =
@@ -226,11 +226,7 @@ export default function DataTable({
                         <th
                           key={column.key}
                           scope="col"
-                          className={cn(
-                            "px-[var(--space-4)] py-[var(--space-3)] text-[length:var(--font-size-xs)] font-[number:var(--font-weight-bold)] uppercase tracking-wider text-[var(--color-table-muted)] md:px-[var(--space-6)]",
-                            align,
-                            column.className
-                          )}
+                          className={cn(align, column.className)}
                         >
                           {isSortable ? (
                             <button
@@ -256,7 +252,7 @@ export default function DataTable({
                     })}
                   </tr>
                 </thead>
-                <tbody className="bg-[var(--color-table-bg)]">
+                <tbody>
                   {rows.map((row, index) => {
                     const key = rowKey(row, index);
                     const actions = getRowActions?.(row, index) || [];
@@ -268,9 +264,10 @@ export default function DataTable({
                           onRowClick ? () => onRowClick(row, index) : undefined
                         }
                         className={cn(
-                          "border-t border-[var(--color-table-border)] transition-colors duration-[var(--transition-fast)] hover:bg-[var(--color-table-row-hover)]",
-                          mutedRows && "bg-[var(--color-surface-muted)]/40",
-                          onRowClick && "cursor-pointer"
+                          "ds-table__row",
+                          zebra && index % 2 === 1 && "ds-table__row--zebra",
+                          mutedRows && "ds-table__row--muted",
+                          onRowClick && "ds-table__row--clickable"
                         )}
                       >
                         {columns.map((column) => {
@@ -293,11 +290,7 @@ export default function DataTable({
                           return (
                             <td
                               key={column.key}
-                              className={cn(
-                                "px-[var(--space-4)] py-[var(--space-4)] text-[length:var(--font-size-sm)] text-[var(--color-text-primary)] md:px-[var(--space-6)]",
-                                align,
-                                column.className
-                              )}
+                              className={cn(align, column.className)}
                             >
                               {content}
                             </td>
@@ -310,21 +303,21 @@ export default function DataTable({
               </table>
             </div>
 
-            <div className="mt-[var(--space-4)] flex flex-col gap-[var(--space-3)] border-t border-[var(--color-border-muted)] pt-[var(--space-4)] sm:flex-row sm:items-center sm:justify-between">
+            <div className="ds-table__pagination mt-[var(--space-4)]">
               <Caption variant="muted" size="sm" className="m-0">
                 Showing {startIndex}–{endIndex} of {total}
               </Caption>
 
-              <div className="flex flex-wrap items-center gap-[var(--space-3)]">
-                <label className="flex items-center gap-[var(--space-2)] text-[length:var(--font-size-sm)] text-[var(--color-text-secondary)]">
-                  Rows
+              <div className="ds-table__page-controls">
+                <label className="ds-table__page-size">
+                  <span>Rows</span>
                   <select
                     value={pageSize}
                     onChange={(event) =>
                       onPageSizeChange?.(Number(event.target.value))
                     }
                     disabled={loading || !onPageSizeChange}
-                    className="h-9 rounded-[var(--radius-lg)] border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-[var(--space-2)] text-[length:var(--font-size-sm)] outline-none focus:border-[var(--color-input-border-focus)]"
+                    aria-label="Rows per page"
                   >
                     {pageSizeOptions.map((size) => (
                       <option key={size} value={size}>
@@ -334,12 +327,10 @@ export default function DataTable({
                   </select>
                 </label>
 
-                <div className="flex items-center gap-[var(--space-2)]">
-                  <Button
+                <div className="ds-pager" role="group" aria-label="Pagination">
+                  <button
                     type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-auto px-[var(--space-3)]"
+                    className="ds-pager__btn"
                     disabled={currentPage <= 1 || loading || !onPageChange}
                     onClick={() =>
                       onPageChange?.(Math.max(1, currentPage - 1))
@@ -347,19 +338,13 @@ export default function DataTable({
                   >
                     <ChevronLeft size={16} aria-hidden />
                     Prev
-                  </Button>
-                  <Caption
-                    variant="muted"
-                    size="sm"
-                    className="m-0 tabular-nums"
-                  >
+                  </button>
+                  <span className="ds-pager__status">
                     {currentPage} / {totalPages}
-                  </Caption>
-                  <Button
+                  </span>
+                  <button
                     type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-auto px-[var(--space-3)]"
+                    className="ds-pager__btn"
                     disabled={
                       currentPage >= totalPages || loading || !onPageChange
                     }
@@ -369,7 +354,7 @@ export default function DataTable({
                   >
                     Next
                     <ChevronRight size={16} aria-hidden />
-                  </Button>
+                  </button>
                 </div>
               </div>
             </div>

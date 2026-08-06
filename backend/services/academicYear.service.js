@@ -1,13 +1,16 @@
 // services/academicYear.service.js
 
 const academicYearRepository = require("../repositories/academicYear.repository");
+const auditService = require("./audit.service");
 const {
     NotFoundError,
     ConflictError,
     BadRequestError,
 } = require("../errors");
+const { applyDateFields } = require("../utils/date");
 
 const ACADEMIC_YEAR_FIELDS = ["name", "startDate", "endDate", "status"];
+const ACADEMIC_YEAR_DATE_FIELDS = ["startDate", "endDate"];
 
 function sanitizeAcademicYearData(data = {}) {
     const payload = {};
@@ -21,7 +24,7 @@ function sanitizeAcademicYearData(data = {}) {
         }
     }
 
-    return payload;
+    return applyDateFields(payload, ACADEMIC_YEAR_DATE_FIELDS);
 }
 
 function assertDateOrder(startDate, endDate) {
@@ -41,6 +44,42 @@ function assertValidStatus(status, { allowArchived = false } = {}) {
             `Status must be one of: ${allowed.join(", ")}.`
         );
     }
+}
+
+function toAuditSnapshot(year) {
+    if (!year) return null;
+    return {
+        id: year.id,
+        name: year.name,
+        startDate: year.startDate ?? null,
+        endDate: year.endDate ?? null,
+        status: year.status,
+        isCurrent: Boolean(year.isCurrent),
+        deletedAt: year.deletedAt ?? null,
+        createdAt: year.createdAt ?? null,
+        updatedAt: year.updatedAt ?? null,
+    };
+}
+
+async function recordAcademicYearAudit({
+    actor = {},
+    action,
+    academicYear,
+    oldAcademicYear = null,
+    description,
+}) {
+    await auditService.recordSafe({
+        userId: actor.userId,
+        module: "Academic Years",
+        action,
+        entityType: "AcademicYear",
+        recordId: academicYear?.id ?? null,
+        description,
+        oldValues: toAuditSnapshot(oldAcademicYear),
+        newValues: toAuditSnapshot(academicYear),
+        ipAddress: actor.ipAddress,
+        userAgent: actor.userAgent,
+    });
 }
 
 class AcademicYearService {
@@ -74,7 +113,7 @@ class AcademicYearService {
         return academicYearRepository.findArchivedAcademicYears();
     }
 
-    async createAcademicYear(rawData) {
+    async createAcademicYear(rawData, actor = {}) {
         const data = sanitizeAcademicYearData(rawData);
 
         if (!data.name || !data.startDate || !data.endDate) {
@@ -99,12 +138,22 @@ class AcademicYearService {
             );
         }
 
-        return academicYearRepository.createAcademicYear(data);
+        const created = await academicYearRepository.createAcademicYear(data);
+
+        await recordAcademicYearAudit({
+            actor,
+            action: "CREATE",
+            academicYear: created,
+            description: `Created academic year ${created.name}`,
+        });
+
+        return created;
     }
 
-    async updateAcademicYear(id, rawData) {
+    async updateAcademicYear(id, rawData, actor = {}) {
+        const academicYearId = Number(id);
         const academicYear =
-            await academicYearRepository.findAcademicYearById(id);
+            await academicYearRepository.findAcademicYearById(academicYearId);
 
         if (!academicYear) {
             throw new NotFoundError("Academic year not found.");
@@ -116,10 +165,12 @@ class AcademicYearService {
             assertValidStatus(data.status);
         }
 
-        if (data.name && data.name !== academicYear.name) {
+        // Always exclude the current row when validating uniqueness so an
+        // unchanged name (or string id from callers) cannot self-conflict.
+        if (data.name !== undefined) {
             const existing =
                 await academicYearRepository.findAcademicYearByName(data.name, {
-                    excludeId: id,
+                    excludeId: academicYearId,
                 });
             if (existing) {
                 throw new ConflictError(
@@ -134,19 +185,33 @@ class AcademicYearService {
         const endDate = data.endDate ?? academicYear.endDate;
         assertDateOrder(startDate, endDate);
 
-        return academicYearRepository.updateAcademicYear(id, data);
+        const updated = await academicYearRepository.updateAcademicYear(
+            academicYearId,
+            data
+        );
+
+        await recordAcademicYearAudit({
+            actor,
+            action: "UPDATE",
+            academicYear: updated,
+            oldAcademicYear: academicYear,
+            description: `Updated academic year ${updated.name}`,
+        });
+
+        return updated;
     }
 
-    async deleteAcademicYear(id) {
+    async deleteAcademicYear(id, actor = {}) {
+        const academicYearId = Number(id);
         const academicYear =
-            await academicYearRepository.findAcademicYearById(id);
+            await academicYearRepository.findAcademicYearById(academicYearId);
 
         if (!academicYear) {
             throw new NotFoundError("Academic year not found.");
         }
 
         const references =
-            await academicYearRepository.countReferences(id);
+            await academicYearRepository.countReferences(academicYearId);
 
         if (references.total > 0) {
             throw new ConflictError(
@@ -154,13 +219,25 @@ class AcademicYearService {
             );
         }
 
-        return academicYearRepository.softDeleteAcademicYear(id);
+        const archived =
+            await academicYearRepository.softDeleteAcademicYear(academicYearId);
+
+        await recordAcademicYearAudit({
+            actor,
+            action: "ARCHIVE",
+            academicYear: archived,
+            oldAcademicYear: academicYear,
+            description: `Archived academic year ${archived.name}`,
+        });
+
+        return archived;
     }
 
-    async restoreAcademicYear(id, { activate = false } = {}) {
+    async restoreAcademicYear(id, { activate = false } = {}, actor = {}) {
+        const academicYearId = Number(id);
         const academicYear =
             await academicYearRepository.findAcademicYearByIdIncludingDeleted(
-                id
+                academicYearId
             );
 
         if (!academicYear) {
@@ -173,7 +250,7 @@ class AcademicYearService {
 
         const existing = await academicYearRepository.findAcademicYearByName(
             academicYear.name,
-            { excludeId: id }
+            { excludeId: academicYearId }
         );
         if (existing && !existing.deletedAt) {
             throw new ConflictError(
@@ -181,7 +258,20 @@ class AcademicYearService {
             );
         }
 
-        return academicYearRepository.restoreAcademicYear(id, { activate });
+        const restored = await academicYearRepository.restoreAcademicYear(
+            academicYearId,
+            { activate }
+        );
+
+        await recordAcademicYearAudit({
+            actor,
+            action: "RESTORE",
+            academicYear: restored,
+            oldAcademicYear: academicYear,
+            description: `Restored academic year ${restored.name}`,
+        });
+
+        return restored;
     }
 }
 

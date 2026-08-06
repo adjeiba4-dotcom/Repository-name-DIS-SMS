@@ -1,17 +1,8 @@
 // controllers/user.controller.js
 
 const userService = require("../services/user.service");
+const { sanitizeUser } = require("../helpers/user.helper");
 const ApiResponse = require("../utils/response");
-
-/**
- * Remove sensitive fields before returning user data.
- */
-const sanitizeUser = (user) => {
-    if (!user) return user;
-
-    const { password, refreshTokens, ...sanitized } = user;
-    return sanitized;
-};
 
 /**
  * Get all users.

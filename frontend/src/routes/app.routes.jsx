@@ -2,13 +2,22 @@ import Dashboard from "../pages/dashboard/Dashboard";
 import Students from "../pages/students/Students";
 import Teachers from "../pages/teachers/Teachers";
 import Guardians from "../pages/guardians/Guardians";
+import Departments from "../pages/departments/Departments";
 import Classes from "../pages/classes/Classes";
 import Subjects from "../pages/subjects/Subjects";
 import TeacherSubjects from "../pages/teacher-subjects/TeacherSubjects";
 import ClassSubjects from "../pages/class-subjects/ClassSubjects";
+import Timetables from "../pages/timetables/Timetables";
+import Attendance from "../pages/attendance/Attendance";
+import Assessments from "../pages/assessments/Assessments";
+import Examinations from "../pages/examinations/Examinations";
+import Results from "../pages/results/Results";
+import ReportCards from "../pages/report-cards/ReportCards";
+import Promotions from "../pages/promotions/Promotions";
 import Enrollments from "../pages/enrollments/Enrollments";
 import AcademicYears from "../pages/academic-years/AcademicYears";
 import Terms from "../pages/terms/Terms";
+import Settings from "../pages/settings/Settings";
 import ModulePlaceholder from "../pages/common/ModulePlaceholder";
 import {
   getNavigationItems,
@@ -25,13 +34,22 @@ const PAGE_REGISTRY = {
   students: Students,
   teachers: Teachers,
   guardians: Guardians,
+  departments: Departments,
   classes: Classes,
   subjects: Subjects,
   "teacher-subjects": TeacherSubjects,
   "class-subjects": ClassSubjects,
+  timetables: Timetables,
+  attendance: Attendance,
+  assessments: Assessments,
+  examinations: Examinations,
+  results: Results,
+  "report-cards": ReportCards,
+  promotions: Promotions,
   enrollments: Enrollments,
   "academic-years": AcademicYears,
   terms: Terms,
+  settings: Settings,
 };
 
 /**

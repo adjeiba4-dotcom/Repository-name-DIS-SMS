@@ -2,15 +2,8 @@
 
 const authService = require("../services/auth.service");
 const JwtHelper = require("../helpers/jwt.helper");
+const { sanitizeUser } = require("../helpers/user.helper");
 const ApiResponse = require("../utils/response");
-
-/**
- * Remove sensitive fields before sending user data to the client.
- */
-const sanitizeUser = (user) => {
-    const { password, refreshTokens, ...sanitized } = user;
-    return sanitized;
-};
 
 /**
  * Authenticate user and issue Access & Refresh Tokens.

@@ -5,6 +5,7 @@ const {
     NotFoundError,
     ConflictError,
 } = require("../errors");
+const { applyDateFields } = require("../utils/date");
 
 const TEACHER_FIELDS = [
     "staffNo",
@@ -33,7 +34,7 @@ function sanitizeTeacherData(data = {}) {
         payload.departmentId = Number(payload.departmentId);
     }
 
-    return payload;
+    return applyDateFields(payload, ["employmentDate"], { allowNull: true });
 }
 
 class TeacherService {
